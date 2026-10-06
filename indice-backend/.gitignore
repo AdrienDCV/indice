@@ -1,0 +1,55 @@
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+### Kotlin ###
+.kotlin/
+
+### Logs ###
+*.log
+logs/
+
+### Secrets / local config ###
+# Ne versionner que application.yaml (sans secrets). Les surcharges locales
+# et les secrets passent par ces fichiers ou des variables d'environnement.
+.env
+.env.*
+!.env.example
+src/main/resources/application-local.*
+src/main/resources/application-secret*.*
+src/main/resources/application-dev.*
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
