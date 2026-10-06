@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: indice-db
+    environment:
+      POSTGRES_DB: indicedb
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      PGDATA: /data/postgres
+    volumes:
+      - postgres_data:/data/postgres
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
