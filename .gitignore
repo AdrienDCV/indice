@@ -34,3 +34,6 @@ logs/
 *.jks
 *.keystore
 secrets/
+
+### Fichiers temporaires générés pour les PR ###
+pr-description.md

@@ -48,9 +48,7 @@ docker compose up -d                                        # Base PostgreSQL lo
 - Changements petits et ciblés ; ne pas refactorer hors du périmètre demandé (le proposer plutôt).
 - **Ne pas ajouter de dépendance** sans l'annoncer et le justifier.
 - Toute nouvelle logique métier est livrée **avec ses tests unitaires**. Lancer `./mvnw test` avant d'annoncer qu'une tâche est terminée.
-- Ne jamais commiter sans demande. Convention de commit (gitmoji) :
-  `<gitmoji> : backend - <message court en minuscules>`
-  ex. `✨ : backend - add etf comparison endpoint`, `🐛 : backend - fix media type detection`
+- Ne jamais commiter sans demande. Commits et pull requests : voir `../CLAUDE.md` (scope `backend`).
 - Aucun secret en dur hors `application-local.yaml` ; utiliser les variables d'environnement.
 
 ## Architecture (package by feature, puis par couche)
