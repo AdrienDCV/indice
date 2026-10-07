@@ -16,6 +16,7 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    baseline-version: 0
     locations: classpath:db/migration
     default-schema: ${DB_SCHEMA:public}
 
@@ -29,3 +30,36 @@ spring:
     properties:
       hibernate:
         default_schema: ${DB_SCHEMA:public}
+
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
+  http:
+    clients:
+      connect-timeout: 5s
+      read-timeout: 10s
+
+eodhd:
+  base-url: https://eodhd.com/api
+  api-token: ${EODHD_API_TOKEN}
+
+etf:
+  catalog:
+    # ETF proposés dans l'application (ISIN cotés sur Euronext Paris).
+    # Un ISIN absent de la réponse EODHD n'apparaît pas dans le catalogue.
+    selected-isins:
+      - LU1681043599 # Amundi MSCI World (CW8)
+      - FR0010315770 # Amundi MSCI World (WLD)
+      - FR0011869353 # Amundi PEA Monde MSCI World (EWLD)
+      - IE0002XZSHO1 # iShares MSCI World Swap PEA (WPEA)
+      - LU1681048804 # Amundi S&P 500 (500)
+      - FR0011871128 # Amundi PEA S&P 500 (PSP5)
+      - FR0011550185 # BNP Paribas Easy S&P 500 (ESE)
+      - LU1681038243 # Amundi Nasdaq-100 (ANX)
+      - FR0011871110 # Amundi PEA Nasdaq-100 (PUST)
+      - FR0007052782 # Amundi CAC 40 (CAC)
+      - LU0908500753 # Amundi Core STOXX Europe 600 (MEUD)
+      - LU1681045370 # Amundi MSCI Emerging Markets (AEEM)
+      - FR0013412020 # Amundi PEA MSCI Emerging Markets (PAEEM)
