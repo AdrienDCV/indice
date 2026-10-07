@@ -33,10 +33,20 @@ class HomePage extends StatelessWidget {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
-        child: ModuleButton(
-          title: 'Apprendre',
-          subtitle: 'Comprendre les bases des ETF et de la finance',
-          onTap: () {},
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Prêt à découvrir\nl’investissement ?',
+              style: TextStyle(color: Color(0xFF61B396), fontSize: 32),
+            ),
+            const SizedBox(height: 16),
+            ModuleButton(
+              title: 'Apprendre',
+              subtitle: 'Comprendre les bases des ETF et de la finance',
+              onTap: () {},
+            ),
+          ],
         ),
       ),
     );
