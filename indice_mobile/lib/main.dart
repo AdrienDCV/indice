@@ -1,65 +1,53 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/module_button.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(const IndiceApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class IndiceApp extends StatelessWidget {
+  const IndiceApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+    return const MaterialApp(title: 'Indice', home: HomePage());
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: const Text(
+          'Accueil',
+          style: TextStyle(
+            color: Color(0xFF307A60),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        centerTitle: true,
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const Text(
+              'Prêt à découvrir\nl’investissement ?',
+              style: TextStyle(color: Color(0xFF61B396), fontSize: 32),
+            ),
+            const SizedBox(height: 16),
+            ModuleButton(
+              title: 'Apprendre',
+              subtitle: 'Comprendre les bases des ETF et de la finance',
+              onTap: () {},
             ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
