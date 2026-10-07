@@ -9,6 +9,7 @@ void main() {
 
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.text('Accueil'), findsOneWidget);
+    expect(find.text('Prêt à découvrir\nl’investissement ?'), findsOneWidget);
     expect(find.text('Apprendre'), findsOneWidget);
     expect(
       find.text('Comprendre les bases des ETF et de la finance'),
