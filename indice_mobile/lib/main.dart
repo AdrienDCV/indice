@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'widgets/module_button.dart';
+
 void main() {
   runApp(const IndiceApp());
 }
@@ -9,10 +11,7 @@ class IndiceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Indice',
-      home: HomePage(),
-    );
+    return const MaterialApp(title: 'Indice', home: HomePage());
   }
 }
 
@@ -31,6 +30,14 @@ class HomePage extends StatelessWidget {
           ),
         ),
         centerTitle: true,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: ModuleButton(
+          title: 'Apprendre',
+          subtitle: 'Comprendre les bases des ETF et de la finance',
+          onTap: () {},
+        ),
       ),
     );
   }
