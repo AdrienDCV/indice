@@ -44,13 +44,12 @@ fun RetrievedEtfCatalog.toDto(): EtfCatalogResponseDto = EtfCatalogResponseDto(
 )
 
 fun EodhdSymbolDto.toModelOrNull(fetchedAt: Instant): Etf? =
-    isin?.takeIf { it.isNotBlank() }?.let {
-        Etf(
-            isin = it,
-            ticker = code,
-            exchange = exchange,
-            name = name,
-            currency = currency,
-            fetchedAt = fetchedAt,
-        )
-    }
+    if (isin.isNullOrBlank()) null
+    else Etf(
+        isin = isin,
+        ticker = code,
+        exchange = exchange,
+        name = name,
+        currency = currency,
+        fetchedAt = fetchedAt,
+    )

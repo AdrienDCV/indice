@@ -18,12 +18,6 @@ data class Etf(
 
     fun refreshedFrom(source: Etf): Etf {
         require(source.isin == isin) { "Cannot refresh ETF $isin from ETF ${source.isin}" }
-        return copy(
-            ticker = source.ticker,
-            exchange = source.exchange,
-            name = source.name,
-            currency = source.currency,
-            fetchedAt = source.fetchedAt,
-        )
+        return source.copy(id = id)
     }
 }

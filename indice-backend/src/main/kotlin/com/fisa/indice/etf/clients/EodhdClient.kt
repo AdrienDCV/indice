@@ -4,10 +4,10 @@ import com.fisa.indice.etf.dtos.responses.EodhdSymbolDto
 import com.fisa.indice.etf.exceptions.EodhdDataUnavailableException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.core.ParameterizedTypeReference
 import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.RestClientException
+import org.springframework.web.client.body
 
 @Component
 class EodhdClient(
@@ -23,7 +23,7 @@ class EodhdClient(
             restClient.get()
                 .uri("/exchange-symbol-list/{exchange}?api_token={token}&fmt=json&type=etf", exchange, apiToken)
                 .retrieve()
-                .body(object : ParameterizedTypeReference<List<EodhdSymbolDto>>() {})
+                .body<List<EodhdSymbolDto>>()
         } catch (exception: RestClientException) {
             throw EodhdDataUnavailableException(exception)
         }
