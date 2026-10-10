@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:17-trixie
     container_name: indice-db
     environment:
       POSTGRES_DB: indicedb

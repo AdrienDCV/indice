@@ -1,0 +1,20 @@
+[
+  {
+    "Code": "CW8",
+    "Name": "Amundi MSCI World UCITS ETF",
+    "Country": "France",
+    "Exchange": "PA",
+    "Currency": "EUR",
+    "Type": "ETF",
+    "Isin": "LU1681043599"
+  },
+  {
+    "Code": "NOISIN",
+    "Name": "ETF without ISIN",
+    "Country": "France",
+    "Exchange": "PA",
+    "Currency": "EUR",
+    "Type": "ETF",
+    "Isin": null
+  }
+]
