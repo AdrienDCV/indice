@@ -14,10 +14,7 @@ class EtfEntity(
     val id: UUID,
 
     @Column(nullable = false, unique = true)
-    val isin: String,
-
-    @Column(nullable = false)
-    var ticker: String,
+    val ticker: String,
 
     @Column(nullable = false)
     var exchange: String,

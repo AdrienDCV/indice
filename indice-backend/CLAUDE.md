@@ -72,9 +72,9 @@ com.fisa.indice
 │   ├── entities/           # EtfEntity, EtfPerformanceEntity… (entités JPA)
 │   ├── dtos/
 │   │   ├── requests/       # corps de requêtes : CreateEtfRequestDto…
-│   │   └── responses/      # corps de réponses : EtfResponseDto, EodhdSymbolDto…
+│   │   └── responses/      # corps de réponses : EtfResponseDto, TwelveDataEtfDto…
 │   ├── mappers/            # EtfMapper.kt (DTO <-> métier <-> entité)
-│   ├── clients/            # appels aux API externes (EodhdClient…), utilisés par les services uniquement
+│   ├── clients/            # appels aux API externes (TwelveDataClient…), utilisés par les services uniquement
 │   ├── config/             # @ConfigurationProperties du domaine (EtfCatalogProperties…)
 │   └── exceptions/         # EtfNotFoundException…
 └── resource/               # RessourcePedagogique + Media, même découpage
@@ -98,19 +98,19 @@ com.fisa.indice
 |---|---|---|
 | Objet métier | aucun | `Etf`, `RessourcePedagogique`, `Media` |
 | Entité JPA | `Entity` | `EtfEntity` |
-| DTO | `Dto` (précédé de `Request` / `Response` pour l'API Indice) | `EtfResponseDto`, `CreateEtfRequestDto`, `EodhdSymbolDto` |
+| DTO | `Dto` (précédé de `Request` / `Response` pour l'API Indice) | `EtfResponseDto`, `CreateEtfRequestDto`, `TwelveDataEtfDto` |
 | Mapper | `Mapper` (fichier de fonctions d'extension) | `EtfMapper.kt` |
 
 ## Objets métier (`models/`)
 
-- **Tell, don't ask** : un objet métier porte sa propre logique et protège ses invariants. On lui **demande d'agir** (`etf.refreshedFrom(...)`, `catalog.isStaleAt(now)`) au lieu de lire ses propriétés pour décider à sa place dans le service.
+- **Tell, don't ask** : un objet métier porte sa propre logique et protège ses invariants. On lui **demande d'agir** (`etf.refreshedFrom(...)`, `catalog.synchronizedWith(...)`) au lieu de lire ses propriétés pour décider à sa place dans le service.
 - Classes Kotlin pures : **aucune annotation** Spring, JPA ou Jackson.
 - **Immuables** : `data class` en `val` uniquement. Une méthode qui « modifie » l'objet renvoie une nouvelle instance via `copy()`, et son nom le reflète (`refreshedFrom`, `synchronizedWith`).
 - `copy()` n'est appelé qu'**à l'intérieur** de l'objet métier : un service ne fait jamais `etf.copy(name = ...)`, il appelle la méthode métier correspondante.
 - `copy()` repasse par le constructeur : les invariants du bloc `init` sont donc vérifiés à chaque nouvelle instance.
 - Invariants vérifiés à la construction (`init { require(...) }`) : un objet métier invalide ne peut pas exister.
 - Les objets métier ne connaissent ni les DTOs ni les entités.
-- **Pas de données de paramétrage en dur** dans un objet métier (listes d'ISIN, seuils modifiables…) : elles vont dans `application.yaml`, sont lues par une classe `@ConfigurationProperties` (`<domaine>/config/`), et passées en paramètre par le service (types simples, ou objet métier si une logique le justifie). Les constantes qui définissent une règle métier stable (ex. `TTL`) restent dans l'objet.
+- **Pas de données de paramétrage en dur** dans un objet métier (listes de tickers, seuils modifiables…) : elles vont dans `application.yaml`, sont lues par une classe `@ConfigurationProperties` (`<domaine>/config/`), et passées en paramètre par le service (types simples, ou objet métier si une logique le justifie). Les constantes qui définissent une règle métier stable (ex. `TTL`) restent dans l'objet.
 - `application.yaml` pour le paramétrage versionné ; `.env` / variables d'environnement uniquement pour les secrets et ce qui varie selon l'environnement.
 
 ## Controllers
@@ -119,7 +119,7 @@ com.fisa.indice
 - N'injecte **jamais** un repository.
 - Expose uniquement des DTOs : ne reçoit ni ne renvoie **jamais** une entité JPA ou un objet métier dans la requête ou la réponse HTTP.
 - Pas de `try/catch` : les erreurs sont gérées par le `@RestControllerAdvice` global.
-- Routes REST en kebab-case et au pluriel : `/etfs`, `/etfs/{isin}`, `/etfs/compare?isins=...`, `/resources`.
+- Routes REST en kebab-case et au pluriel : `/etfs`, `/etfs/{ticker}`, `/etfs/compare?tickers=...`, `/resources`.
 
 ### Pagination
 
@@ -141,7 +141,7 @@ com.fisa.indice
 - `data class` immuables (`val`), suffixées `Dto`.
 - Rangées selon leur rôle HTTP :
   - `dtos/requests/` : corps des **requêtes**, c'est-à-dire ce que l'API Indice reçoit (ou envoie à une API externe) ;
-  - `dtos/responses/` : corps des **réponses**, c'est-à-dire ce que l'API Indice renvoie (ou reçoit d'une API externe, ex. `EodhdSymbolDto`).
+  - `dtos/responses/` : corps des **réponses**, c'est-à-dire ce que l'API Indice renvoie (ou reçoit d'une API externe, ex. `TwelveDataEtfDto`).
 - Aucune logique : ce sont de simples structures de transport (API Indice ou API externe).
 - Validation des entrées avec Jakarta Validation (`@field:NotBlank`, `@field:Size`…). *Nécessite `spring-boot-starter-validation`, à ajouter au premier besoin.*
 
@@ -177,14 +177,14 @@ com.fisa.indice
       }
   }
   ```
-- **Clés de message** au format `error.<domaine>.<erreur-en-kebab-case>` (ex. `error.etfs.etf-not-found`), et non des phrases : c'est l'application mobile qui les traduit pour l'affichage. Même règle pour les messages de validation (`@field:NotBlank(message = "error.etfs.isin-required")`).
-- Nommage : `<Notion><Problème>Exception` (`EtfNotFoundException`, `EtfAlreadyExistsException`, `InvalidIsinException`).
+- **Clés de message** au format `error.<domaine>.<erreur-en-kebab-case>` (ex. `error.etfs.etf-not-found`), et non des phrases : c'est l'application mobile qui les traduit pour l'affichage. Même règle pour les messages de validation (`@field:NotBlank(message = "error.etfs.ticker-required")`).
+- Nommage : `<Notion><Problème>Exception` (`EtfNotFoundException`, `EtfAlreadyExistsException`, `InvalidTickerException`).
 - **`ExceptionController`** (`common/controllers/`, `@RestControllerAdvice`) est le seul endroit qui traduit les exceptions en réponses HTTP. Le corps est toujours une **liste** d'`ErrorResponseDto(error, message)` :
   - `MethodArgumentNotValidException` → 400, une entrée par erreur de validation ;
   - `PropertyReferenceException` (tri sur un champ inconnu) → 400 avec la clé `error.pagination.invalid-sort`, sans exposer le nom de l'entité ;
   - `BusinessException` → statut et clé portés par l'exception ;
   - toute autre exception → 500 avec la clé `error.unexpected`, journalisée en `error`. Aucun détail technique (message SQL, URL, trace) n'est renvoyé au client.
-- Les **exceptions techniques** qu'un service sait gérer (ex. `EodhdDataUnavailableException`) héritent de `RuntimeException`, pas de `BusinessException` : elles sont interceptées dans le service et n'atteignent jamais le controller.
+- Les **exceptions techniques** qu'un service sait gérer (ex. `TwelveDataUnavailableException`) héritent de `RuntimeException`, pas de `BusinessException` : elles sont interceptées dans le service et n'atteignent jamais le controller.
 - Pas de `try/catch` dans les controllers, ni de `ResponseEntity` d'erreur construite à la main ailleurs que dans `ExceptionController`.
 - Chaque nouveau handler de `ExceptionController` est couvert par un test unitaire (`ExceptionControllerTest`).
 
@@ -230,7 +230,7 @@ Une migration s'exécute sur des données réelles et ne peut pas être annulée
 - Injection par constructeur, pas de `@Autowired` sur champ.
 - Préférer les fonctions de collection idiomatiques (`map`, `filter`, `associateBy`…) aux boucles impératives.
 - `operator fun invoke` est permis lorsqu'il rend le code plus compact **sans perte de sens**, par exemple pour une fabrique dans un `companion object` qui construit un objet à partir d'autres données, en plus du constructeur.
-- Ne pas l'utiliser sur les services, ni lorsque le nom de la méthode porte une information utile : `eodhdClient.fetchEtfs(exchange)` est plus clair que `eodhdClient(exchange)`.
+- Ne pas l'utiliser sur les services, ni lorsque le nom de la méthode porte une information utile : `twelveDataClient.fetchEtfs(country)` est plus clair que `twelveDataClient(country)`.
 
 ## Tests
 
@@ -240,5 +240,5 @@ Une migration s'exécute sur des données réelles et ne peut pas être annulée
 - **Controllers** : `@WebMvcTest` + service mocké — vérifier statut HTTP, JSON et validation.
 - **Repositories** : `@DataJpaTest` uniquement pour les requêtes custom.
 - Arborescence miroir de `src/main` (ex. `etf/services/EtfServiceTest.kt`), classe `XxxTest`.
-- Nommage descriptif avec backticks : ``fun `should throw EtfNotFoundException when isin is unknown`()``.
+- Nommage descriptif avec backticks : ``fun `should throw EtfNotFoundException when ticker is unknown`()``.
 - Structure **Given / When / Then**, un comportement par test, cas nominal **et** cas limites/erreurs.

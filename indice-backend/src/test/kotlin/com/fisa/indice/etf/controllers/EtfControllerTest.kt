@@ -33,7 +33,7 @@ class EtfControllerTest(
     }
 
     private val fetchedAt = Instant.parse("2026-10-07T08:00:00Z")
-    private val etf = Etf("LU1681043599", "CW8", "PA", "Amundi MSCI World UCITS ETF", "EUR", fetchedAt)
+    private val etf = Etf("SPY", "NYSE", "SPDR S&P 500 ETF Trust", "USD", fetchedAt)
 
     private fun givenServiceReturnsOneEtf(): CapturingSlot<Pageable> {
         val pageable = slot<Pageable>()
@@ -51,11 +51,11 @@ class EtfControllerTest(
         // When / Then
         mockMvc.get("/etfs?page=1&size=5").andExpect {
             status { isOk() }
-            jsonPath("$.etfs.content[0].isin") { value("LU1681043599") }
-            jsonPath("$.etfs.content[0].ticker") { value("CW8") }
-            jsonPath("$.etfs.content[0].exchange") { value("PA") }
-            jsonPath("$.etfs.content[0].name") { value("Amundi MSCI World UCITS ETF") }
-            jsonPath("$.etfs.content[0].currency") { value("EUR") }
+            jsonPath("$.etfs.content[0].ticker") { value("SPY") }
+            jsonPath("$.etfs.content[0].exchange") { value("NYSE") }
+            jsonPath("$.etfs.content[0].name") { value("SPDR S&P 500 ETF Trust") }
+            jsonPath("$.etfs.content[0].isin") { doesNotExist() }
+            jsonPath("$.etfs.content[0].currency") { value("USD") }
             jsonPath("$.etfs.page") { value(1) }
             jsonPath("$.etfs.size") { value(5) }
             jsonPath("$.etfs.totalElements") { value(12) }

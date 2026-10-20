@@ -4,7 +4,6 @@ import java.time.Instant
 import java.util.UUID
 
 data class Etf(
-    val isin: String,
     val ticker: String,
     val exchange: String,
     val name: String,
@@ -13,11 +12,11 @@ data class Etf(
     val id: UUID = UUID.randomUUID(),
 ) {
     init {
-        require(isin.isNotBlank()) { "An ETF must have an ISIN" }
+        require(ticker.isNotBlank()) { "An ETF must have a ticker" }
     }
 
     fun refreshedFrom(source: Etf): Etf {
-        require(source.isin == isin) { "Cannot refresh ETF $isin from ETF ${source.isin}" }
+        require(source.ticker == ticker) { "Cannot refresh ETF $ticker from ETF ${source.ticker}" }
         return source.copy(id = id)
     }
 }

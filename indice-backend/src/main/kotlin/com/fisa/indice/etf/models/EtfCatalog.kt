@@ -5,14 +5,13 @@ import java.time.Instant
 
 data class EtfCatalog(val etfs: List<Etf>) {
 
-    fun synchronizedWith(source: List<Etf>, selectedIsins: Set<String>): EtfCatalog {
-        val currentByIsin = etfs.associateBy { it.isin }
+    fun synchronizedWith(source: List<Etf>, selectedTickers: Set<String>): EtfCatalog {
+        val currentByTicker = etfs.associateBy { it.ticker }
         return EtfCatalog(
             source
-                .filter { it.isin in selectedIsins }
-                .sortedWith(PREFERRED_LISTING_FIRST)
-                .distinctBy { it.isin }
-                .map { candidate -> currentByIsin[candidate.isin]?.refreshedFrom(candidate) ?: candidate }
+                .filter { it.ticker in selectedTickers }
+                .distinctBy { it.ticker }
+                .map { candidate -> currentByTicker[candidate.ticker]?.refreshedFrom(candidate) ?: candidate }
         )
     }
 
@@ -23,9 +22,6 @@ data class EtfCatalog(val etfs: List<Etf>) {
 
     companion object {
         val TTL: Duration = Duration.ofDays(7)
-
-        private const val PREFERRED_CURRENCY = "EUR"
-        private val PREFERRED_LISTING_FIRST = compareBy<Etf>({ it.currency != PREFERRED_CURRENCY }, { it.ticker })
 
         fun isStale(lastSynchronizedAt: Instant?, now: Instant): Boolean =
             lastSynchronizedAt == null || lastSynchronizedAt.plus(TTL).isBefore(now)

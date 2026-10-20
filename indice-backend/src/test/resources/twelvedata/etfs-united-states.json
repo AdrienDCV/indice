@@ -1,0 +1,30 @@
+{
+  "data": [
+    {
+      "symbol": "SPY",
+      "name": "State Street SPDR S&P 500 ETF Trust",
+      "currency": "USD",
+      "exchange": "NYSE",
+      "mic_code": "ARCX",
+      "country": "United States",
+      "figi_code": "BBG000BDTBL9",
+      "cfi_code": "CEOGEU",
+      "isin": "request_access_via_add_ons",
+      "cusip": "request_access_via_add_ons"
+    },
+    {
+      "symbol": "QQQ",
+      "name": "Invesco QQQ Trust, Series 1",
+      "currency": "USD",
+      "exchange": "NASDAQ",
+      "mic_code": "XNMS",
+      "country": "United States",
+      "figi_code": "BBG000BSWKH7",
+      "cfi_code": "CEOGEU",
+      "isin": "request_access_via_add_ons",
+      "cusip": "request_access_via_add_ons"
+    }
+  ],
+  "count": 2,
+  "status": "ok"
+}

@@ -1,10 +1,10 @@
 package com.fisa.indice.etf.services
 
-import com.fisa.indice.etf.clients.EodhdClient
+import com.fisa.indice.etf.clients.TwelveDataClient
 import com.fisa.indice.etf.config.EtfCatalogProperties
-import com.fisa.indice.etf.dtos.responses.EodhdSymbolDto
+import com.fisa.indice.etf.dtos.responses.TwelveDataEtfDto
 import com.fisa.indice.etf.entities.EtfEntity
-import com.fisa.indice.etf.exceptions.EodhdDataUnavailableException
+import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.repositories.EtfRepository
 import io.mockk.CapturingSlot
 import io.mockk.every
@@ -30,23 +30,24 @@ class EtfServiceTest {
     private val now = Instant.parse("2026-10-07T08:00:00Z")
     private val yesterday = now.minus(Duration.ofDays(1))
     private val lastWeek = now.minus(Duration.ofDays(8))
-    private val first = "LU1681043599"
-    private val second = "LU1681048804"
+    private val first = "SPY"
+    private val second = "QQQ"
+    private val country = "United States"
     private val pageable = PageRequest.of(0, 20)
 
     private val etfRepository = mockk<EtfRepository>()
-    private val eodhdClient = mockk<EodhdClient>()
+    private val twelveDataClient = mockk<TwelveDataClient>()
     private val etfService = EtfService(
         etfRepository,
-        eodhdClient,
+        twelveDataClient,
         Clock.fixed(now, ZoneOffset.UTC),
-        EtfCatalogProperties(setOf(first, second)),
+        EtfCatalogProperties(country, setOf(first, second)),
     )
 
-    private fun entity(isin: String, fetchedAt: Instant) =
-        EtfEntity(UUID.randomUUID(), isin, "T-$isin", "PA", "ETF $isin", "EUR", fetchedAt)
+    private fun entity(ticker: String, fetchedAt: Instant) =
+        EtfEntity(UUID.randomUUID(), ticker, "NYSE", "ETF $ticker", "USD", fetchedAt)
 
-    private fun symbol(isin: String?) = EodhdSymbolDto("T-$isin", "ETF $isin", "PA", "EUR", isin)
+    private fun etf(ticker: String) = TwelveDataEtfDto(ticker, "ETF $ticker", "USD", "NYSE")
 
     private fun givenStoredEtfs(vararg entities: EtfEntity) {
         every { etfRepository.findFirstByOrderByFetchedAtDesc() } returns entities.maxByOrNull { it.fetchedAt }
@@ -61,7 +62,7 @@ class EtfServiceTest {
     }
 
     @Test
-    fun `should return requested page without calling eodhd when catalog is up to date`() {
+    fun `should return requested page without calling twelve data when catalog is up to date`() {
         // Given
         givenStoredEtfs(entity(first, yesterday))
 
@@ -69,10 +70,10 @@ class EtfServiceTest {
         val result = etfService.retrieveEtfs(pageable)
 
         // Then
-        verify(exactly = 0) { eodhdClient.fetchEtfs(any()) }
+        verify(exactly = 0) { twelveDataClient.fetchEtfs(any()) }
         verify(exactly = 0) { etfRepository.findAll() }
         verify(exactly = 0) { etfRepository.saveAll(any<List<EtfEntity>>()) }
-        assertEquals(listOf(first), result.etfs.content.map { it.isin })
+        assertEquals(listOf(first), result.etfs.content.map { it.ticker })
         assertEquals(yesterday, result.lastSynchronizedAt)
         assertFalse(result.stale)
     }
@@ -81,28 +82,28 @@ class EtfServiceTest {
     fun `should synchronize catalog once then return requested page when catalog is stale`() {
         // Given
         givenStoredEtfs(entity(first, lastWeek))
-        every { eodhdClient.fetchEtfs(EtfService.EXCHANGE) } returns listOf(symbol(first), symbol(second))
+        every { twelveDataClient.fetchEtfs(country) } returns listOf(etf(first), etf(second))
         val saved = givenSaveAllReturnsItsArgument()
 
         // When
         val result = etfService.retrieveEtfs(pageable)
 
         // Then
-        verify(exactly = 1) { eodhdClient.fetchEtfs(EtfService.EXCHANGE) }
+        verify(exactly = 1) { twelveDataClient.fetchEtfs(country) }
         verify(exactly = 0) { etfRepository.deleteAllByIdInBatch(any()) }
         verify(exactly = 1) { etfRepository.findAll(pageable) }
-        assertEquals(setOf(first, second), saved.captured.map { it.isin }.toSet())
+        assertEquals(setOf(first, second), saved.captured.map { it.ticker }.toSet())
         assertTrue(saved.captured.all { it.fetchedAt == now })
         assertEquals(now, result.lastSynchronizedAt)
         assertFalse(result.stale)
     }
 
     @Test
-    fun `should delete etfs absent from eodhd response`() {
+    fun `should delete etfs absent from twelve data response`() {
         // Given
         val absent = entity(second, lastWeek)
         givenStoredEtfs(entity(first, lastWeek), absent)
-        every { eodhdClient.fetchEtfs(EtfService.EXCHANGE) } returns listOf(symbol(first))
+        every { twelveDataClient.fetchEtfs(country) } returns listOf(etf(first))
         justRun { etfRepository.deleteAllByIdInBatch(any()) }
         val saved = givenSaveAllReturnsItsArgument()
 
@@ -111,28 +112,28 @@ class EtfServiceTest {
 
         // Then
         verify(exactly = 1) { etfRepository.deleteAllByIdInBatch(listOf(absent.id)) }
-        assertEquals(listOf(first), saved.captured.map { it.isin })
+        assertEquals(listOf(first), saved.captured.map { it.ticker })
     }
 
     @Test
-    fun `should ignore eodhd entries that are not selected or have no isin`() {
+    fun `should ignore twelve data etfs that are not selected`() {
         // Given
         givenStoredEtfs()
-        every { eodhdClient.fetchEtfs(EtfService.EXCHANGE) } returns listOf(symbol(null), symbol("XS0000000000"), symbol(first))
+        every { twelveDataClient.fetchEtfs(country) } returns listOf(etf("ARKK"), etf(first))
         val saved = givenSaveAllReturnsItsArgument()
 
         // When
         etfService.retrieveEtfs(pageable)
 
         // Then
-        assertEquals(listOf(first), saved.captured.map { it.isin })
+        assertEquals(listOf(first), saved.captured.map { it.ticker })
     }
 
     @Test
-    fun `should keep stored etfs flagged as stale when eodhd response contains no selected etf`() {
+    fun `should keep stored etfs flagged as stale when twelve data response contains no selected etf`() {
         // Given
         givenStoredEtfs(entity(first, lastWeek))
-        every { eodhdClient.fetchEtfs(EtfService.EXCHANGE) } returns listOf(symbol("XS0000000000"))
+        every { twelveDataClient.fetchEtfs(country) } returns listOf(etf("ARKK"))
 
         // When
         val result = etfService.retrieveEtfs(pageable)
@@ -142,14 +143,14 @@ class EtfServiceTest {
         verify(exactly = 0) { etfRepository.saveAll(any<List<EtfEntity>>()) }
         assertTrue(result.stale)
         assertEquals(lastWeek, result.lastSynchronizedAt)
-        assertEquals(listOf(first), result.etfs.content.map { it.isin })
+        assertEquals(listOf(first), result.etfs.content.map { it.ticker })
     }
 
     @Test
-    fun `should return stored etfs flagged as stale when eodhd is unavailable`() {
+    fun `should return stored etfs flagged as stale when twelve data is unavailable`() {
         // Given
         givenStoredEtfs(entity(first, lastWeek))
-        every { eodhdClient.fetchEtfs(any()) } throws EodhdDataUnavailableException()
+        every { twelveDataClient.fetchEtfs(any()) } throws TwelveDataUnavailableException()
 
         // When
         val result = etfService.retrieveEtfs(pageable)
@@ -157,14 +158,14 @@ class EtfServiceTest {
         // Then
         verify(exactly = 0) { etfRepository.saveAll(any<List<EtfEntity>>()) }
         assertTrue(result.stale)
-        assertEquals(listOf(first), result.etfs.content.map { it.isin })
+        assertEquals(listOf(first), result.etfs.content.map { it.ticker })
     }
 
     @Test
-    fun `should return empty stale page when database is empty and eodhd is unavailable`() {
+    fun `should return empty stale page when database is empty and twelve data is unavailable`() {
         // Given
         givenStoredEtfs()
-        every { eodhdClient.fetchEtfs(any()) } throws EodhdDataUnavailableException()
+        every { twelveDataClient.fetchEtfs(any()) } throws TwelveDataUnavailableException()
 
         // When
         val result = etfService.retrieveEtfs(pageable)
