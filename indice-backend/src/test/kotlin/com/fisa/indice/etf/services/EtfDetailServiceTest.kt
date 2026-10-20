@@ -45,7 +45,7 @@ class EtfDetailServiceTest {
     )
 
     private fun storedPrice(date: String, close: String, fetchedAt: Instant) =
-        EtfClosingPriceEntity(UUID.randomUUID(), etf.id, LocalDate.parse(date), BigDecimal(close), fetchedAt)
+        EtfClosingPriceEntity(etf.id, LocalDate.parse(date), BigDecimal(close), fetchedAt)
 
     private fun givenStoredPrices(vararg prices: EtfClosingPriceEntity) {
         every { etfRepository.findByTicker("SPY") } returns etf

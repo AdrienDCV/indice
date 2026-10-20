@@ -27,7 +27,7 @@ class EtfClosingPriceRepositoryTest(
         val etf = etfRepository.save(EtfEntity(UUID.randomUUID(), ticker, "NYSE", "ETF $ticker", "USD", now))
         etfClosingPriceRepository.saveAll(
             listOf("2026-10-16", "2026-10-19").map {
-                EtfClosingPriceEntity(UUID.randomUUID(), etf.id, LocalDate.parse(it), BigDecimal("100"), now)
+                EtfClosingPriceEntity(etf.id, LocalDate.parse(it), BigDecimal("100"), now)
             }
         )
         entityManager.flush()
