@@ -70,6 +70,14 @@ indice/
 
 Quand l'utilisateur demande un titre de commit, proposer **un seul** titre conforme. Si les changements relèvent des deux projets, proposer un commit par projet.
 
+### Description de commit
+
+Quand l'utilisateur demande une description de commit :
+1. l'écrire en **anglais** dans `docs/commit-message.md` du projet concerné (fichier temporaire **ignoré par Git** ; créer `docs/` si besoin) : le titre, une ligne vide, un court paragraphe expliquant le **pourquoi**, puis la liste des changements ;
+2. signaler tout changement cassant pour l'autre projet (contrat d'API) sur une ligne dédiée ;
+3. la copier dans le presse-papiers avec `pbcopy < docs/commit-message.md` ;
+4. rappeler qu'elle s'utilise avec `git commit -F docs/commit-message.md`, depuis la racine du projet.
+
 ## Pull requests
 
 ### Titre
@@ -107,6 +115,6 @@ Règles de rédaction :
 ### Livraison
 
 Le texte se copie mal depuis le terminal. Quand l'utilisateur demande une description de PR :
-1. l'écrire dans un fichier `pr-description.md` à la racine du projet concerné (fichier temporaire, **jamais commité**) ;
-2. la copier dans le presse-papiers avec `pbcopy < pr-description.md` ;
+1. l'écrire dans `docs/pr-description.md` du projet concerné (fichier temporaire **ignoré par Git**, jamais commité ; créer `docs/` si besoin) ;
+2. la copier dans le presse-papiers avec `pbcopy < docs/pr-description.md` ;
 3. rappeler de supprimer le fichier une fois la PR créée.
