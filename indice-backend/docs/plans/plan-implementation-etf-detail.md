@@ -165,8 +165,8 @@ CREATE TABLE IF NOT EXISTS etf_closing_price (
 
 ### 6.2 Entité et repository
 
-- `EtfClosingPriceEntity` (`@Table(name = "etf_closing_price")`) : `id`, `etfId`, `tradingDate`, `adjustedClose`, `fetchedAt`. Elle référence l'ETF par son identifiant (`etfId: UUID`), sans relation JPA : c'est suffisant et ça évite les chargements implicites.
-- **Insertion en lot efficace** : l'identifiant étant fourni par le code, `saveAll` ferait un `SELECT` par ligne avant d'insérer (1 260 requêtes). L'entité implémente donc `Persistable<UUID>` avec `isNew() = true`, pour que Hibernate insère directement, et le lot JDBC est activé dans `application.yaml` :
+- `EtfClosingPriceEntity` (`@Table(name = "etf_closing_price")`) : `id`, `etfId`, `tradingDate`, `adjustedClose`, `fetchedAt`. L'`id` n'a pas de sens métier (`ClosingPrice` n'en a pas) : il est **généré par Hibernate** (`@GeneratedValue(strategy = GenerationType.UUID)`, côté application, sans aller-retour avec la base). Elle référence l'ETF par son identifiant (`etfId: UUID`), sans relation JPA : c'est suffisant et ça évite les chargements implicites.
+- **Insertion en lot efficace** : l'`id` étant `null` à la création, Spring Data fait directement un `persist`, sans `SELECT` préalable (ce qui aurait été le cas avec un identifiant fourni par le code). Le lot JDBC est activé dans `application.yaml` :
 
   ```yaml
   spring:

@@ -17,7 +17,6 @@ fun EtfClosingPriceEntity.toModel(): ClosingPrice = ClosingPrice(
 )
 
 fun ClosingPrice.toEntity(etfId: UUID, fetchedAt: Instant): EtfClosingPriceEntity = EtfClosingPriceEntity(
-    id = UUID.randomUUID(),
     etfId = etfId,
     tradingDate = date,
     adjustedClose = adjustedClose,
