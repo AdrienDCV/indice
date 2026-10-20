@@ -7,4 +7,6 @@ import java.util.UUID
 interface EtfRepository : JpaRepository<EtfEntity, UUID> {
 
     fun findFirstByOrderByFetchedAtDesc(): EtfEntity?
+
+    fun findByTicker(ticker: String): EtfEntity?
 }

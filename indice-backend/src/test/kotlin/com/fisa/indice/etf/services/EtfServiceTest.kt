@@ -2,7 +2,7 @@ package com.fisa.indice.etf.services
 
 import com.fisa.indice.etf.clients.TwelveDataClient
 import com.fisa.indice.etf.config.EtfCatalogProperties
-import com.fisa.indice.etf.dtos.responses.TwelveDataEtfDto
+import com.fisa.indice.etf.dtos.twelvedata.TwelveDataEtfDto
 import com.fisa.indice.etf.entities.EtfEntity
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.repositories.EtfRepository

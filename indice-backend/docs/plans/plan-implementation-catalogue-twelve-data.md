@@ -147,7 +147,7 @@ etf:
   ```
 - **Ne pas modifier la V1**, déjà appliquée et mergée.
 
-### 6.3 DTOs (`etf/dtos/responses`)
+### 6.3 DTOs (`etf/dtos/twelvedata`, `etf/dtos/responses`)
 
 - **Supprimer** `EodhdSymbolDto`.
 - **Ajouter** :

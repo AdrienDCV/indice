@@ -1,4 +1,4 @@
-package com.fisa.indice.etf.dtos.responses
+package com.fisa.indice.etf.dtos.twelvedata
 
 data class TwelveDataEtfDto(
     val symbol: String,
