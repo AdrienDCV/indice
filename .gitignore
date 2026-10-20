@@ -35,5 +35,6 @@ logs/
 *.keystore
 secrets/
 
-### Fichiers temporaires générés pour les PR ###
+### Fichiers temporaires générés pour les commits et les PR ###
 pr-description.md
+commit-message.md
