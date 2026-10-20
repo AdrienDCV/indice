@@ -10,18 +10,10 @@ import kotlin.test.assertTrue
 class EtfCatalogTest {
 
     private val now = Instant.parse("2026-10-07T08:00:00Z")
-    private val first = "LU1681043599"
-    private val second = "LU1681048804"
-    private val third = "FR0007052782"
-    private val selectedIsins = setOf(first, second, third)
+    private val selectedTickers = setOf("SPY", "QQQ", "BND")
 
-    private fun etf(
-        isin: String,
-        ticker: String = "T-$isin",
-        name: String = "ETF $isin",
-        currency: String = "EUR",
-        fetchedAt: Instant = now,
-    ) = Etf(isin, ticker, "PA", name, currency, fetchedAt)
+    private fun etf(ticker: String, name: String = "ETF $ticker", fetchedAt: Instant = now) =
+        Etf(ticker, "NYSE", name, "USD", fetchedAt)
 
     @Test
     fun `should be stale when never synchronized`() {
@@ -46,44 +38,38 @@ class EtfCatalogTest {
     @Test
     fun `should only keep selected etfs when synchronized`() {
         // Given
-        val source = listOf(etf(first), etf("XS0000000000"), etf(second))
+        val source = listOf(etf("SPY"), etf("ARKK"), etf("QQQ"))
 
         // When
-        val catalog = EtfCatalog(emptyList()).synchronizedWith(source, selectedIsins)
+        val catalog = EtfCatalog(emptyList()).synchronizedWith(source, selectedTickers)
 
         // Then
-        assertEquals(setOf(first, second), catalog.etfs.map { it.isin }.toSet())
+        assertEquals(setOf("SPY", "QQQ"), catalog.etfs.map { it.ticker }.toSet())
     }
 
     @Test
-    fun `should keep the euro listing whatever the source order when an isin is listed twice`() {
-        // Given
-        val usd = etf(first, ticker = "AAA", currency = "USD")
-        val eur = etf(first, ticker = "ZZZ", currency = "EUR")
-
+    fun `should keep a single etf when a ticker is listed twice`() {
         // When
-        val fromSource = EtfCatalog(emptyList()).synchronizedWith(listOf(usd, eur), selectedIsins)
-        val fromReversedSource = EtfCatalog(emptyList()).synchronizedWith(listOf(eur, usd), selectedIsins)
+        val catalog = EtfCatalog(emptyList()).synchronizedWith(listOf(etf("SPY"), etf("SPY", name = "Duplicate")), selectedTickers)
 
         // Then
-        assertEquals(listOf("ZZZ"), fromSource.etfs.map { it.ticker })
-        assertEquals(fromSource.etfs.map { it.ticker }, fromReversedSource.etfs.map { it.ticker })
+        assertEquals(listOf("SPY"), catalog.etfs.map { it.ticker })
     }
 
     @Test
     fun `should refresh known etfs keeping their id, add new ones and drop absent ones`() {
         // Given
         val lastWeek = now.minus(Duration.ofDays(8))
-        val known = etf(first, name = "Old name", fetchedAt = lastWeek)
-        val absent = etf(second, fetchedAt = lastWeek)
+        val known = etf("SPY", name = "Old name", fetchedAt = lastWeek)
+        val absent = etf("QQQ", fetchedAt = lastWeek)
         val catalog = EtfCatalog(listOf(known, absent))
 
         // When
-        val synchronized = catalog.synchronizedWith(listOf(etf(first, name = "New name"), etf(third)), selectedIsins)
+        val synchronized = catalog.synchronizedWith(listOf(etf("SPY", name = "New name"), etf("BND")), selectedTickers)
 
         // Then
-        assertEquals(setOf(first, third), synchronized.etfs.map { it.isin }.toSet())
-        val refreshed = synchronized.etfs.single { it.isin == first }
+        assertEquals(setOf("SPY", "BND"), synchronized.etfs.map { it.ticker }.toSet())
+        val refreshed = synchronized.etfs.single { it.ticker == "SPY" }
         assertEquals(known.id, refreshed.id)
         assertEquals("New name", refreshed.name)
         assertTrue(synchronized.etfs.all { it.fetchedAt == now })
@@ -92,8 +78,8 @@ class EtfCatalogTest {
     @Test
     fun `should list etfs missing from another catalog`() {
         // Given
-        val kept = etf(first)
-        val removed = etf(second)
+        val kept = etf("SPY")
+        val removed = etf("QQQ")
 
         // When
         val missing = EtfCatalog(listOf(kept, removed)).etfsMissingFrom(EtfCatalog(listOf(kept)))
@@ -105,11 +91,11 @@ class EtfCatalogTest {
     @Test
     fun `should leave original catalog unchanged when synchronized`() {
         // Given
-        val original = EtfCatalog(listOf(etf(first, name = "Old", fetchedAt = now.minus(Duration.ofDays(8)))))
+        val original = EtfCatalog(listOf(etf("SPY", name = "Old", fetchedAt = now.minus(Duration.ofDays(8)))))
         val snapshot = original.copy()
 
         // When
-        original.synchronizedWith(listOf(etf(first, name = "New")), selectedIsins)
+        original.synchronizedWith(listOf(etf("SPY", name = "New")), selectedTickers)
 
         // Then
         assertEquals(snapshot, original)

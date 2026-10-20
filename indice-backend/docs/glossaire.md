@@ -1,4 +1,4 @@
-# Glossaire
+I# Glossaire
 
 Vocabulaire utilisé dans le projet Indice : termes financiers, termes propres à l'application, et termes techniques du backend.
 
@@ -12,9 +12,9 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 |---|---|
 | **ETF** (*Exchange Traded Fund*, fonds indiciel coté) | Fonds qui réplique la performance d'un **indice** et s'échange en bourse comme une action. Acheter une part d'ETF MSCI World revient à investir d'un coup dans plus de 1 000 entreprises. |
 | **Indice** | Panier d'actifs représentatif d'un marché, calculé par un fournisseur (MSCI, S&P, Stoxx…). Ex. : CAC 40, S&P 500, MSCI World. Un ETF « suit » un indice. |
-| **ISIN** (*International Securities Identification Number*) | Code international unique de 12 caractères qui identifie un titre financier (ex. `LU1681043599`). Les deux premières lettres désignent le pays d'enregistrement du fonds. Il identifie un fonds, pas sa cotation : le même ISIN peut être coté sur plusieurs places. Dans Indice, il est unique et sert de clé de rapprochement avec EODHD, mais ce n'est pas la clé primaire (voir **Identifiant technique**). |
+| **ISIN** (*International Securities Identification Number*) | Code international unique de 12 caractères qui identifie un titre financier (ex. `US78462F1030` pour SPY). Il n'est **pas utilisé** par Indice : il est réservé à une option payante chez Twelve Data. Les ETF sont identifiés par leur **ticker**. |
 | **Ticker** (code mnémonique) | Code court qui identifie un titre **sur une place de cotation** (ex. `CW8`). Un même ETF peut avoir des tickers différents selon la place ou la devise. |
-| **Place de cotation** (*exchange*) | Marché boursier sur lequel un titre s'échange. Indice utilise **Euronext Paris**, codé `PA` chez EODHD. |
+| **Place de cotation** (*exchange*) | Marché boursier sur lequel un titre s'échange. Les ETF d'Indice sont cotés aux États-Unis (`NYSE`, `NASDAQ`), seuls couverts par l'offre gratuite de Twelve Data. |
 | **Devise** (*currency*) | Monnaie dans laquelle un ETF est coté sur une place (ex. `EUR`). À distinguer des devises des actifs qu'il contient : un ETF coté en euros peut détenir des actions américaines, ce qui crée un **risque de change**. |
 | **Frais courants** (*TER*, *Total Expense Ratio*) | Frais annuels prélevés par le gestionnaire de l'ETF, exprimés en pourcentage de l'encours (ex. 0,38 %/an). Critère de comparaison clé sur le long terme. |
 | **Encours** (*AUM*, *Assets Under Management*) | Montant total investi dans un ETF. Un encours élevé est en général signe de liquidité et de pérennité. |
@@ -42,12 +42,12 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 | **Ressource pédagogique** (`RessourcePedagogique`) | Contenu du module *Apprendre*. Peut contenir un **média**. |
 | **Média** (`Media`) | Image ou vidéo associée à une ressource. Son type (`MediaType` : `IMAGE` ou `VIDEO`) est déduit de l'extension du fichier ou du lien. |
 | **Catalogue d'ETF** (`EtfCatalog`) | Liste des ETF proposés dans l'application, stockée en base et exposée par `GET /api/etfs`. |
-| **Synchronisation** | Mise à jour du catalogue à partir des données d'EODHD. Elle a lieu **à la demande**, lorsqu'un utilisateur consulte un catalogue périmé. Les ETF connus sont rafraîchis, les ETF sélectionnés nouveaux sont ajoutés, et ceux absents de la réponse sont retirés. |
+| **Synchronisation** | Mise à jour du catalogue à partir de l'annuaire des ETF de Twelve Data. Elle a lieu **à la demande**, lorsqu'un utilisateur consulte un catalogue périmé. Les ETF connus sont rafraîchis, les ETF sélectionnés nouveaux sont ajoutés, et ceux absents de la réponse sont retirés. |
 | **Date de synchronisation** (`fetchedAt`) | Date de la dernière synchronisation réussie d'un ETF. Celle du catalogue est la plus récente de ses ETF. |
 | **Durée de validité** (`TTL`, *Time To Live*) | Durée pendant laquelle le catalogue est considéré comme à jour : 7 jours. |
-| **Catalogue périmé** (`isStaleAt`) | Catalogue vide, ou dont la dernière synchronisation date de plus de 7 jours. Déclenche un appel à EODHD. |
+| **Catalogue périmé** (`EtfCatalog.isStale`) | Catalogue vide, ou dont la dernière synchronisation date de plus de 7 jours. Déclenche un appel à Twelve Data. |
 | **Données obsolètes** (`stale` dans la réponse) | Indique que le catalogue renvoyé est périmé **et** que sa synchronisation vient d'échouer : les données affichées peuvent être anciennes. |
-| **ETF sélectionnés** (`etf.catalog.selected-isins`) | Liste d'ISIN choisie à la main pour leur intérêt pédagogique, définie dans `application.yaml`. Le catalogue contient exactement ceux de ces ETF qu'EODHD renvoie. |
+| **ETF sélectionnés** (`etf.catalog.selected-tickers`) | Liste de tickers choisie à la main pour leur intérêt pédagogique, définie dans `application.yaml`. Le catalogue contient exactement ceux de ces ETF que Twelve Data renvoie. |
 
 ---
 
@@ -55,11 +55,11 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 
 | Terme | Définition |
 |---|---|
-| **EODHD** (*End Of Day Historical Data*) | Fournisseur de données financières utilisé pour alimenter le catalogue. |
-| **Symbole** (*symbol*, `EodhdSymbolDto`) | Dans le vocabulaire EODHD, un titre coté sur une place, décrit par son code (le **ticker**, champ `Code`), son nom, sa place, sa devise, son type et, s'il est connu, son ISIN. Il est noté `<ticker>.<place>` (ex. `CW8.PA`). Un symbole n'est pas encore un `Etf` : il n'en devient un que s'il a un ISIN. |
-| **Liste des symboles** (*exchange symbol list*) | Endpoint EODHD qui renvoie, en un seul appel, tous les titres d'une place de cotation (filtrés ici sur les ETF). |
-| **Quota** | Nombre d'appels autorisés par EODHD : 20 par jour en offre gratuite. Chaque synchronisation en consomme un. |
-| **Token d'API** (`eodhd.api-token`) | Clé secrète qui authentifie les appels à EODHD. Ne doit apparaître ni dans un fichier versionné ni dans les logs. |
+| **Twelve Data** | Fournisseur de données financières utilisé pour le catalogue (offre gratuite, ETF américains uniquement). EODHD et Alpha Vantage ont été étudiés puis écartés (voir `docs/plans/plan-implementation-catalogue-twelve-data.md`). |
+| **Ticker** (*symbol*) | Code court d'un ETF sur sa place de cotation (ex. `SPY`). C'est l'**identifiant** des ETF dans Indice, et le champ `symbol` des réponses de Twelve Data. |
+| **Annuaire des ETF** (`/etfs`) | Endpoint de Twelve Data qui renvoie, en un seul appel (1 crédit), tous les ETF d'un pays avec leur nom, leur devise et leur place. |
+| **Quota** | Nombre d'appels autorisés par Twelve Data : 800 crédits par jour et 8 par minute en offre gratuite. Chaque synchronisation du catalogue consomme 1 crédit. |
+| **Token d'API** (`twelvedata.api-token`) | Clé secrète qui authentifie les appels à Twelve Data, envoyée dans l'en-tête `Authorization`. Ne doit apparaître ni dans un fichier versionné ni dans les logs. |
 
 ---
 
@@ -72,12 +72,12 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 | **Controller** (`controllers/`) | Point d'entrée HTTP. Reçoit une requête, convertit les DTOs ⇄ objets métier, délègue à un service et renvoie un DTO. Aucune logique métier. |
 | **Service** (`services/`) | Coordonne un cas d'usage : charge les données, demande aux objets métier d'agir, enregistre et renvoie le résultat sous forme d'objet métier (jamais de DTO). |
 | **Objet métier** (`models/`) | Classe Kotlin immuable (`data class`) qui porte la logique propre à une notion (ex. `Etf`, `EtfCatalog`). Sans annotation Spring, JPA ou Jackson. |
-| **Identifiant technique** (`id`) | UUID généré à la création d'un objet métier, qui sert de clé primaire en base. Interne au backend, il ne change jamais, contrairement aux données externes comme l'ISIN. |
+| **Identifiant technique** (`id`) | UUID généré à la création d'un objet métier, qui sert de clé primaire en base. Interne au backend, il ne change jamais, contrairement aux données externes comme le ticker. |
 | **Entité** (`entities/`, suffixe `Entity`) | Classe JPA qui reflète une table de la base. Aucune logique. |
 | **DTO** (*Data Transfer Object*, suffixe `Dto`) | Structure de transport de données, sans logique : entrée ou sortie de l'API Indice (`Request` / `Response`), ou format d'une API externe. Rangé dans `dtos/requests/` (corps de requête) ou `dtos/responses/` (corps de réponse). |
 | **Mapper** (`mappers/`) | Fonctions d'extension qui convertissent DTO ⇄ objet métier ⇄ entité. Jamais de conversion directe DTO ⇄ entité. |
 | **Repository** (`repositories/`) | Interface Spring Data qui lit et écrit les entités en base. |
-| **Client** (`clients/`) | Classe qui appelle une API externe (ex. `EodhdClient`). |
+| **Client** (`clients/`) | Classe qui appelle une API externe (ex. `TwelveDataClient`). |
 | **Exception métier** (`BusinessException`) | Erreur prévue par les règles de l'application (ex. ETF introuvable). Elle porte son statut HTTP et une clé de message, et elle est convertie en réponse HTTP par `ExceptionController`. |
 | **Exception technique** | Erreur d'infrastructure (API externe indisponible, réseau…). Gérée dans le service lorsque c'est possible ; sinon renvoyée au client comme une erreur 500 générique. |
 | **Clé de message** | Identifiant d'un message d'erreur (ex. `error.etfs.etf-not-found`) renvoyé par l'API à la place d'une phrase. L'application mobile le traduit pour l'affichage. |
@@ -98,6 +98,6 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 | **DRY** (*Don't Repeat Yourself*) | Éviter la duplication de logique, sans factoriser prématurément. |
 | **Tell, don't ask** | Demander à un objet d'agir (`etf.refreshedFrom(source)`) plutôt que de lire son état pour décider à sa place. |
 | **Immuabilité** | Un objet n'est jamais modifié après sa création : une « modification » produit une nouvelle instance via `copy()`. |
-| **Invariant** | Règle toujours vraie pour un objet valide (ex. un `Etf` a un ISIN non vide), vérifiée à la construction. |
+| **Invariant** | Règle toujours vraie pour un objet valide (ex. un `Etf` a un ticker non vide), vérifiée à la construction. |
 | **Given / When / Then** | Structure d'un test : contexte initial, action testée, résultat attendu. |
 | **Mock** | Faux objet qui remplace une dépendance dans un test (bibliothèque **MockK**). |

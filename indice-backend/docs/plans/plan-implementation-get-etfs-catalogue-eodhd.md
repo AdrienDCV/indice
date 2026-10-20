@@ -549,3 +549,9 @@ Règle ajoutée au `CLAUDE.md` : tout endpoint de listing est paginé.
 - **Vérification manuelle** : faite avec un token invalide uniquement. L'API renvoie `{"data":[],"fetchedAt":null,"stale":true}`, et le token n'apparaît pas dans les logs. Le cas nominal, avec un token valide, reste à vérifier (voir la section 11).
 - **Consommation du quota** : tant que la base est vide et qu'EODHD échoue, **chaque requête** rappelle EODHD (observé lors du test manuel). Le délai avant une nouvelle tentative est hors périmètre (section 2), mais il faudra le traiter avant une mise en production : 20 requêtes suffisent à épuiser le quota journalier.
 - **Sélection des ETF** : résolu par la liste d'ISIN (voir le point 12.4).
+
+### 12.9 Passage à Twelve Data
+
+EODHD a été remplacé par **Twelve Data**, et le catalogue porte désormais sur **10 ETF américains identifiés par leur ticker** (colonne `isin` supprimée par la migration V2). L'offre gratuite d'EODHD ne permettait pas d'obtenir les données de la future fiche détaillée, et aucune API gratuite ne couvre les fondamentaux des ETF européens.
+
+Les règles de synchronisation de ce plan restent valables, à l'exception de la préférence pour l'EUR et de tout ce qui concerne l'ISIN. Voir `plan-implementation-catalogue-twelve-data.md`.

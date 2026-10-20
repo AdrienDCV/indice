@@ -1,11 +1,10 @@
 package com.fisa.indice.etf.services
 
-import com.fisa.indice.etf.clients.EodhdClient
+import com.fisa.indice.etf.clients.TwelveDataClient
 import com.fisa.indice.etf.config.EtfCatalogProperties
-import com.fisa.indice.etf.exceptions.EodhdDataUnavailableException
+import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.mappers.toEntity
 import com.fisa.indice.etf.mappers.toModel
-import com.fisa.indice.etf.mappers.toModelOrNull
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfCatalog
 import com.fisa.indice.etf.models.RetrievedEtfCatalog
@@ -20,11 +19,10 @@ import java.time.Instant
 @Service
 class EtfService(
     private val etfRepository: EtfRepository,
-    private val eodhdClient: EodhdClient,
+    private val twelveDataClient: TwelveDataClient,
     private val clock: Clock,
-    etfCatalogProperties: EtfCatalogProperties,
+    private val etfCatalogProperties: EtfCatalogProperties,
 ) {
-    private val selectedIsins: Set<String> = etfCatalogProperties.selectedIsins
 
     @Transactional
     fun retrieveEtfs(pageable: Pageable): RetrievedEtfCatalog {
@@ -44,18 +42,17 @@ class EtfService(
     )
 
     private fun fetchSource(fetchedAt: Instant): List<Etf>? {
-        val symbols = try {
-            eodhdClient.fetchEtfs(EXCHANGE)
-        } catch (_: EodhdDataUnavailableException) {
-            logger.warn("Rafraîchissement du catalogue d'ETF impossible : données EODHD indisponibles")
+        val etfs = try {
+            twelveDataClient.fetchEtfs(etfCatalogProperties.country)
+        } catch (_: TwelveDataUnavailableException) {
+            logger.warn("Rafraîchissement du catalogue d'ETF impossible : Twelve Data indisponible")
             return null
         }
-        val source = symbols.asSequence()
-            .filter { it.isin in selectedIsins }
-            .mapNotNull { it.toModelOrNull(fetchedAt) }
-            .toList()
+        val source = etfs
+            .filter { it.symbol in etfCatalogProperties.selectedTickers }
+            .map { it.toModel(fetchedAt) }
         if (source.isEmpty()) {
-            logger.warn("Rafraîchissement du catalogue d'ETF ignoré : aucun ETF sélectionné dans la réponse EODHD")
+            logger.warn("Rafraîchissement du catalogue d'ETF ignoré : aucun ETF sélectionné dans la réponse de Twelve Data")
             return null
         }
         return source
@@ -63,14 +60,13 @@ class EtfService(
 
     private fun synchronize(source: List<Etf>) {
         val catalog = EtfCatalog(etfRepository.findAll().map { it.toModel() })
-        val synchronized = catalog.synchronizedWith(source, selectedIsins)
+        val synchronized = catalog.synchronizedWith(source, etfCatalogProperties.selectedTickers)
         val removedIds = catalog.etfsMissingFrom(synchronized).map { it.id }
         if (removedIds.isNotEmpty()) etfRepository.deleteAllByIdInBatch(removedIds)
         etfRepository.saveAll(synchronized.etfs.map { it.toEntity() })
     }
 
     companion object {
-        const val EXCHANGE = "PA"
         private val logger = LoggerFactory.getLogger(EtfService::class.java)
     }
 }
