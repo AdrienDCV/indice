@@ -30,6 +30,8 @@ spring:
     properties:
       hibernate:
         default_schema: ${DB_SCHEMA:public}
+        jdbc.batch_size: 100
+        order_inserts: true
 
   data:
     web:

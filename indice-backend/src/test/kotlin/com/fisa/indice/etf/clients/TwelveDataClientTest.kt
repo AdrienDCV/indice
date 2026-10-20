@@ -1,6 +1,7 @@
 package com.fisa.indice.etf.clients
 
-import com.fisa.indice.etf.dtos.responses.TwelveDataEtfDto
+import com.fisa.indice.etf.dtos.twelvedata.TwelveDataEtfDto
+import com.fisa.indice.etf.dtos.twelvedata.TwelveDataPriceDto
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -14,6 +15,8 @@ import org.springframework.test.web.client.match.MockRestRequestMatchers.request
 import org.springframework.test.web.client.response.MockRestResponseCreators.withStatus
 import org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess
 import org.springframework.web.client.RestClient
+import java.math.BigDecimal
+import java.time.LocalDate
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
@@ -100,9 +103,56 @@ class TwelveDataClientTest {
         assertFalse(exception.message.orEmpty().contains(TOKEN))
     }
 
+    private fun expectTimeSeriesCall() = server.expect(
+        requestTo("$BASE_URL/time_series?symbol=SPY&interval=1day&start_date=2021-10-13&adjust=all&order=asc&outputsize=5000")
+    )
+
+    @Test
+    fun `should deserialize daily closing prices from strings`() {
+        // Given
+        expectTimeSeriesCall().andRespond(withSuccess(ClassPathResource("twelvedata/time-series-spy.json"), MediaType.APPLICATION_JSON))
+
+        // When
+        val prices = twelveDataClient.fetchDailyClosingPrices("SPY", START_DATE)
+
+        // Then
+        assertEquals(
+            listOf(
+                TwelveDataPriceDto(LocalDate.parse("2026-10-15"), BigDecimal("768.010010")),
+                TwelveDataPriceDto(LocalDate.parse("2026-10-16"), BigDecimal("763.25")),
+            ),
+            prices,
+        )
+        server.verify()
+    }
+
+    @Test
+    fun `should throw TwelveDataUnavailableException when time series reports an error with a 200 status`() {
+        expectTimeSeriesCall().andRespond(
+            withSuccess("""{"code":400,"message":"symbol not found","status":"error"}""", MediaType.APPLICATION_JSON)
+        )
+
+        assertThrows<TwelveDataUnavailableException> { twelveDataClient.fetchDailyClosingPrices("SPY", START_DATE) }
+    }
+
+    @Test
+    fun `should throw TwelveDataUnavailableException when time series has no value`() {
+        expectTimeSeriesCall().andRespond(withSuccess("""{"values":[],"status":"ok"}""", MediaType.APPLICATION_JSON))
+
+        assertThrows<TwelveDataUnavailableException> { twelveDataClient.fetchDailyClosingPrices("SPY", START_DATE) }
+    }
+
+    @Test
+    fun `should throw TwelveDataUnavailableException when time series responds with an error status`() {
+        expectTimeSeriesCall().andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE))
+
+        assertThrows<TwelveDataUnavailableException> { twelveDataClient.fetchDailyClosingPrices("SPY", START_DATE) }
+    }
+
     companion object {
         private const val BASE_URL = "https://twelvedata.test"
         private const val TOKEN = "secret-token"
         private const val COUNTRY = "United States"
+        private val START_DATE = LocalDate.parse("2021-10-13")
     }
 }

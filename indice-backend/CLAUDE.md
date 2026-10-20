@@ -71,8 +71,9 @@ com.fisa.indice
 │   ├── models/             # Etf, EtfPerformance… (objets métier, portent la logique)
 │   ├── entities/           # EtfEntity, EtfPerformanceEntity… (entités JPA)
 │   ├── dtos/
-│   │   ├── requests/       # corps de requêtes : CreateEtfRequestDto…
-│   │   └── responses/      # corps de réponses : EtfResponseDto, TwelveDataEtfDto…
+│   │   ├── requests/       # ce que l'API Indice reçoit : CreateEtfRequestDto…
+│   │   ├── responses/      # ce que l'API Indice renvoie : EtfResponseDto…
+│   │   └── twelvedata/     # format d'une API externe (un dossier par fournisseur) : TwelveDataEtfDto…
 │   ├── mappers/            # EtfMapper.kt (DTO <-> métier <-> entité)
 │   ├── clients/            # appels aux API externes (TwelveDataClient…), utilisés par les services uniquement
 │   ├── config/             # @ConfigurationProperties du domaine (EtfCatalogProperties…)
@@ -139,9 +140,11 @@ com.fisa.indice
 ## DTOs
 
 - `data class` immuables (`val`), suffixées `Dto`.
-- Rangées selon leur rôle HTTP :
-  - `dtos/requests/` : corps des **requêtes**, c'est-à-dire ce que l'API Indice reçoit (ou envoie à une API externe) ;
-  - `dtos/responses/` : corps des **réponses**, c'est-à-dire ce que l'API Indice renvoie (ou reçoit d'une API externe, ex. `TwelveDataEtfDto`).
+- Rangées selon le contrat qu'elles décrivent :
+  - `dtos/requests/` : ce que **l'API Indice reçoit** (corps et paramètres des requêtes du mobile) ;
+  - `dtos/responses/` : ce que **l'API Indice renvoie** au mobile ;
+  - `dtos/<fournisseur>/` (ex. `dtos/twelvedata/`) : le **format d'une API externe**, préfixé par le nom du fournisseur (`TwelveDataEtfDto`). Ces DTOs ne sortent jamais de notre API : ils sont convertis en objets métier par les mappers.
+- Un DTO externe et un DTO de réponse peuvent porter des informations proches (`TwelveDataEtfDto` et `EtfResponseDto`) : ce sont deux contrats distincts, qui évoluent indépendamment. Ne jamais les fusionner.
 - Aucune logique : ce sont de simples structures de transport (API Indice ou API externe).
 - Validation des entrées avec Jakarta Validation (`@field:NotBlank`, `@field:Size`…). *Nécessite `spring-boot-starter-validation`, à ajouter au premier besoin.*
 
@@ -193,7 +196,7 @@ com.fisa.indice
 - Entités JPA en `class` (pas `data class`), `equals`/`hashCode` basés sur l'identifiant.
 - Simple reflet de la table : **aucune logique métier**. Nom de table explicite avec `@Table(name = "...")`, puisque le suffixe `Entity` fausserait le nom par défaut.
 - Valeurs fermées en `enum` stockées en `@Enumerated(EnumType.STRING)` (ex. `MediaType { IMAGE, VIDEO }`).
-- Montants et pourcentages financiers en `BigDecimal`, jamais `Double`.
+- Montants et pourcentages financiers en `BigDecimal`, jamais `Double`. Seule exception : une puissance non entière (ex. rendement annualisé), que `BigDecimal` ne sait pas calculer, passe par `Math.pow` ; le résultat est aussitôt reconverti en `BigDecimal` et arrondi.
 - Schéma géré **uniquement par Flyway** (`ddl-auto: validate`) : voir la section suivante.
 
 ## Migrations Flyway (sécurité)

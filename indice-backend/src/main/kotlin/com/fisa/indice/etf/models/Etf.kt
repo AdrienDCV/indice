@@ -1,5 +1,6 @@
 package com.fisa.indice.etf.models
 
+import com.fisa.indice.etf.exceptions.InvalidTickerException
 import java.time.Instant
 import java.util.UUID
 
@@ -18,5 +19,15 @@ data class Etf(
     fun refreshedFrom(source: Etf): Etf {
         require(source.ticker == ticker) { "Cannot refresh ETF $ticker from ETF ${source.ticker}" }
         return source.copy(id = id)
+    }
+
+    companion object {
+        private val TICKER_FORMAT = Regex("^[A-Z0-9.-]{1,10}$")
+
+        fun normalizeTicker(raw: String): String {
+            val ticker = raw.trim().uppercase()
+            if (!TICKER_FORMAT.matches(ticker)) throw InvalidTickerException()
+            return ticker
+        }
     }
 }

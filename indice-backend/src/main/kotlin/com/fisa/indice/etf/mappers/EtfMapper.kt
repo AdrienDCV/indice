@@ -3,7 +3,7 @@ package com.fisa.indice.etf.mappers
 import com.fisa.indice.common.mappers.toDto
 import com.fisa.indice.etf.dtos.responses.EtfCatalogResponseDto
 import com.fisa.indice.etf.dtos.responses.EtfResponseDto
-import com.fisa.indice.etf.dtos.responses.TwelveDataEtfDto
+import com.fisa.indice.etf.dtos.twelvedata.TwelveDataEtfDto
 import com.fisa.indice.etf.entities.EtfEntity
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.RetrievedEtfCatalog

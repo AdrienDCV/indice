@@ -1,5 +1,6 @@
 package com.fisa.indice.etf.models
 
+import com.fisa.indice.etf.exceptions.InvalidTickerException
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
@@ -40,5 +41,18 @@ class EtfTest {
     @Test
     fun `should reject refresh from an etf with another ticker`() {
         assertThrows<IllegalArgumentException> { etf().refreshedFrom(etf(ticker = "QQQ")) }
+    }
+
+    @Test
+    fun `should normalize ticker to trimmed upper case`() {
+        assertEquals("SPY", Etf.normalizeTicker(" spy "))
+        assertEquals("BRK.B", Etf.normalizeTicker("brk.b"))
+    }
+
+    @Test
+    fun `should reject invalid tickers`() {
+        listOf("", "SP Y", "SPY$", "ABCDEFGHIJK").forEach {
+            assertThrows<InvalidTickerException> { Etf.normalizeTicker(it) }
+        }
     }
 }

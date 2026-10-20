@@ -24,6 +24,15 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 | **UCITS** (OPCVM en français) | Cadre réglementaire européen qui encadre les fonds vendus au grand public (diversification minimale, contrôle des risques). Mention fréquente dans le nom des ETF européens. |
 | **PEA** (Plan d'Épargne en Actions) | Enveloppe fiscale française avantageuse après 5 ans. Seuls certains ETF y sont **éligibles**. |
 | **Diversification** | Répartition d'un investissement sur de nombreux actifs, secteurs ou pays pour réduire le risque. C'est le principal intérêt pédagogique des ETF. |
+| **Jour de bourse** | Jour où le marché est ouvert. Il y en a environ **252 par an** aux États-Unis (hors week-ends et jours fériés), d'où environ 1 260 cours sur 5 ans. |
+| **Clôture ajustée** (`ClosingPrice.adjustedClose`) | Cours de clôture d'un jour de bourse, corrigé des divisions d'actions **et des dividendes** (`adjust=all` chez Twelve Data). Il permet de comparer les cours dans le temps comme si les dividendes avaient été réinvestis. |
+| **Rendement total** | Rendement calculé sur des clôtures ajustées, donc **dividendes réinvestis**. C'est la seule façon de comparer équitablement un ETF qui verse des dividendes et un ETF qui n'en verse pas. |
+| **Rendement sur N ans** | `dernière clôture / clôture de référence − 1`, où la clôture de référence est la dernière clôture située au moins N ans avant la dernière clôture (si cette date tombe un jour de fermeture, on prend le jour de bourse précédent). |
+| **Rendement annualisé** (CAGR) | Rendement moyen par an sur une période : `(1 + rendement sur N ans)^(1/N) − 1`. Ex. un ETF qui double en 5 ans a un rendement annualisé d'environ 14,9 %. |
+| **Volatilité annualisée** | Écart-type des rendements journaliers sur 1 an, multiplié par √252. Elle mesure l'amplitude habituelle des variations : plus elle est élevée, plus l'ETF est risqué. |
+| **Perte maximale** (*max drawdown*) | Plus forte baisse entre un sommet et le creux qui le suit, sur 5 ans (ex. −24,5 % pour SPY entre janvier et octobre 2022). Elle montre concrètement ce qu'un investisseur aurait pu perdre au pire moment. |
+| **Fourchette sur 52 semaines** | Plus bas et plus haut des clôtures sur 1 an, et **position** du dernier cours dans cette fourchette, entre 0 (au plus bas) et 1 (au plus haut). |
+| **Historique des clôtures** (`ClosingPriceHistory`) | Objet métier qui regroupe les clôtures ajustées d'un ETF sur 5 ans et calcule tous les indicateurs de la fiche détaillée. Les cours sont stockés dans la table `etf_closing_price` et rafraîchis au plus une fois par jour. |
 | **Volatilité** | Ampleur des variations du prix d'un actif. Une volatilité élevée signifie un risque plus élevé, à la hausse comme à la baisse. |
 | **Rendement / performance** | Gain ou perte d'un investissement sur une période, exprimé en pourcentage. Les performances passées ne préjugent pas des performances futures. |
 | **ETF à effet de levier** (*leveraged*) | ETF qui multiplie la variation **quotidienne** d'un indice (ex. ×2). Produit spéculatif, inadapté aux débutants et à une détention longue. |
