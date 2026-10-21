@@ -218,4 +218,195 @@ class ClosingPriceHistoryTest {
 
         assertTrue(ClosingPriceHistory.isStale(now.minus(Duration.ofDays(1).plusSeconds(1)), now))
     }
+
+    @Test
+    fun `should keep only the dates both histories have in common`() {
+        // Given
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "101"), price("2026-10-14", "102"), price("2026-10-15", "103"))
+        val second = history(price("2026-10-13", "50"), price("2026-10-15", "52"), price("2026-10-16", "53"))
+
+        // When
+        val common = first.commonPeriodWith(second)
+
+        // Then
+        assertEquals(history(price("2026-10-13", "101"), price("2026-10-15", "103")), common?.first)
+        assertEquals(history(price("2026-10-13", "50"), price("2026-10-15", "52")), common?.second)
+    }
+
+    @Test
+    fun `should have no common period when histories share no date`() {
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "101"))
+        val second = history(price("2026-10-14", "50"), price("2026-10-15", "52"))
+
+        assertNull(first.commonPeriodWith(second))
+    }
+
+    @Test
+    fun `should cover one year only when a close exists at least one year before the date`() {
+        val history = history(price("2025-10-19", "100"), price("2026-10-19", "110"))
+
+        assertTrue(history.coversOneYearUntil(LocalDate.parse("2026-10-19")))
+        assertTrue(history.coversOneYearUntil(LocalDate.parse("2026-10-20")))
+        assertFalse(history.coversOneYearUntil(LocalDate.parse("2026-10-18")))
+    }
+
+    @Test
+    fun `should compute total return over the whole history`() {
+        val history = history(price("2025-10-17", "100"), price("2026-04-01", "130"), price("2026-10-19", "125"))
+
+        assertDecimal("0.2500", history.totalReturn())
+    }
+
+    @Test
+    fun `should annualize the return over five years like the detail sheet`() {
+        // Given : le cours double en 5 ans (1 826 jours)
+        val history = history(price("2021-10-19", "100"), price("2026-10-19", "200"))
+
+        // When / Then : 2^(365,25 / 1826) - 1
+        assertDecimal("0.1487", history.annualizedReturn())
+    }
+
+    @Test
+    fun `should annualize the return over a non whole number of years`() {
+        // Given : +21 % en 548 jours
+        val history = history(price("2025-04-19", "100"), price("2026-10-19", "121"))
+
+        // When / Then : 1,21^(365,25 / 548) - 1
+        assertDecimal("0.1355", history.annualizedReturn())
+    }
+
+    @Test
+    fun `should not annualize a return over less than one year`() {
+        val history = history(price("2025-10-20", "100"), price("2026-10-19", "120"))
+
+        assertNull(history.annualizedReturn())
+        assertNull(history.returnToRiskRatio())
+    }
+
+    @Test
+    fun `should compute the whole history volatility`() {
+        // Given : rendements de +10 % puis -10 %, écart-type sqrt(0.02)
+        val history = history(price("2025-10-19", "100"), price("2026-04-01", "110"), price("2026-10-19", "99"))
+
+        // When / Then
+        assertDecimal("2.2450", history.volatility())
+    }
+
+    @Test
+    fun `should compute max drawdown over the whole history`() {
+        val history = history(price("2025-10-19", "100"), price("2026-01-05", "120"), price("2026-06-01", "90"), price("2026-10-19", "130"))
+
+        assertEquals(
+            Drawdown(BigDecimal("-0.2500"), LocalDate.parse("2026-01-05"), LocalDate.parse("2026-06-01")),
+            history.maxDrawdown(),
+        )
+    }
+
+    @Test
+    fun `should divide annualized return by volatility for the return to risk ratio`() {
+        // Given : +21 % en 548 jours, rendements +10 %, -10 %, +22,2 %
+        val history = history(price("2025-04-19", "100"), price("2025-09-01", "110"), price("2026-02-02", "99"), price("2026-10-19", "121"))
+
+        // When / Then : 0,13548 / 2,58228
+        assertDecimal("0.0525", history.returnToRiskRatio())
+    }
+
+    @Test
+    fun `should not compute the return to risk ratio when volatility is zero`() {
+        val history = history(price("2025-10-19", "100"), price("2026-04-01", "100"), price("2026-10-19", "100"))
+
+        assertNull(history.returnToRiskRatio())
+    }
+
+    @Test
+    fun `should gather all indicators in performance`() {
+        // Given
+        val history = history(price("2025-04-19", "100"), price("2025-09-01", "110"), price("2026-02-02", "99"), price("2026-10-19", "121"))
+
+        // When
+        val performance = history.performance()
+
+        // Then
+        assertDecimal("0.2100", performance.totalReturn)
+        assertDecimal("0.1355", performance.annualizedReturn)
+        assertDecimal("2.5823", performance.volatility)
+        assertDecimal("0.0525", performance.returnToRiskRatio)
+        assertEquals(Drawdown(BigDecimal("-0.1000"), LocalDate.parse("2025-09-01"), LocalDate.parse("2026-02-02")), performance.maxDrawdown)
+    }
+
+    @Test
+    fun `should rebase every close to 100 from the first close`() {
+        // Given
+        val history = history(
+            price("2026-01-05", "50"),
+            price("2026-01-06", "55"),
+            price("2026-01-07", "45"),
+            price("2026-01-08", "75.123"),
+        )
+
+        // When / Then : une valeur par jour de bourse, arrondie à 2 décimales
+        assertEquals(
+            listOf(
+                RebasedPrice(LocalDate.parse("2026-01-05"), BigDecimal("100.00")),
+                RebasedPrice(LocalDate.parse("2026-01-06"), BigDecimal("110.00")),
+                RebasedPrice(LocalDate.parse("2026-01-07"), BigDecimal("90.00")),
+                RebasedPrice(LocalDate.parse("2026-01-08"), BigDecimal("150.25")),
+            ),
+            history.rebased(),
+        )
+    }
+
+    @Test
+    fun `should show the max drawdown trough on the rebased curve`() {
+        // Given : le creux tombe un mercredi, au milieu de la semaine
+        val history = history(price("2026-01-05", "100"), price("2026-01-07", "80"), price("2026-01-09", "95"))
+
+        // When
+        val lowestPoint = history.rebased().minBy { it.value }
+
+        // Then
+        assertEquals(history.maxDrawdown().troughDate, lowestPoint.date)
+    }
+
+    @Test
+    fun `should have a correlation of 1 when daily returns are proportional`() {
+        // Given : le second ETF bouge exactement comme le premier, à un prix double
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "110"), price("2026-10-14", "99"), price("2026-10-15", "105"))
+        val second = history(price("2026-10-12", "200"), price("2026-10-13", "220"), price("2026-10-14", "198"), price("2026-10-15", "210"))
+
+        assertDecimal("1.0000", first.correlationWith(second))
+    }
+
+    @Test
+    fun `should have a correlation of -1 when daily returns are opposite`() {
+        // Given : +10 %, -10 %, +10 % contre -10 %, +10 %, -10 %
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "110"), price("2026-10-14", "99"), price("2026-10-15", "108.9"))
+        val second = history(price("2026-10-12", "100"), price("2026-10-13", "90"), price("2026-10-14", "99"), price("2026-10-15", "89.1"))
+
+        assertDecimal("-1.0000", first.correlationWith(second))
+    }
+
+    @Test
+    fun `should not compute correlation when one etf never moves`() {
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "110"), price("2026-10-14", "99"))
+        val second = history(price("2026-10-12", "50"), price("2026-10-13", "50"), price("2026-10-14", "50"))
+
+        assertNull(first.correlationWith(second))
+    }
+
+    @Test
+    fun `should not compute correlation with less than two daily returns`() {
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "110"))
+        val second = history(price("2026-10-12", "50"), price("2026-10-13", "55"))
+
+        assertNull(first.correlationWith(second))
+    }
+
+    @Test
+    fun `should refuse to correlate histories with different dates`() {
+        val first = history(price("2026-10-12", "100"), price("2026-10-13", "110"), price("2026-10-14", "99"))
+        val second = history(price("2026-10-12", "50"), price("2026-10-14", "55"), price("2026-10-15", "60"))
+
+        assertThrows<IllegalArgumentException> { first.correlationWith(second) }
+    }
 }

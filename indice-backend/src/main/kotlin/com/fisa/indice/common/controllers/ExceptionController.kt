@@ -7,6 +7,7 @@ import org.springframework.data.core.PropertyReferenceException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
@@ -27,6 +28,12 @@ class ExceptionController {
         return ResponseEntity(listOf(error), HttpStatus.BAD_REQUEST)
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingParameterException(exception: MissingServletRequestParameterException): ResponseEntity<List<ErrorResponseDto>> {
+        val error = ErrorResponseDto(error = HttpStatus.BAD_REQUEST.reasonPhrase, message = MISSING_PARAMETER_MESSAGE)
+        return ResponseEntity(listOf(error), HttpStatus.BAD_REQUEST)
+    }
+
     @ExceptionHandler(BusinessException::class)
     fun handleBusinessException(exception: BusinessException): ResponseEntity<List<ErrorResponseDto>> {
         val error = ErrorResponseDto(error = exception.status.reasonPhrase, message = exception.message)
@@ -42,6 +49,7 @@ class ExceptionController {
 
     companion object {
         private const val INVALID_SORT_MESSAGE = "error.pagination.invalid-sort"
+        private const val MISSING_PARAMETER_MESSAGE = "error.request.missing-parameter"
         private const val UNEXPECTED_ERROR_MESSAGE = "error.unexpected"
         private val logger = LoggerFactory.getLogger(ExceptionController::class.java)
     }

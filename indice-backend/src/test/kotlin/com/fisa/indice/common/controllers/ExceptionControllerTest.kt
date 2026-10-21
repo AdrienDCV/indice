@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.http.HttpStatus
 import org.springframework.validation.ObjectError
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import kotlin.test.assertEquals
 
 class ExceptionControllerTest {
@@ -59,6 +60,16 @@ class ExceptionControllerTest {
         // Then
         assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         assertEquals(listOf(ErrorResponseDto("Bad Request", "error.pagination.invalid-sort")), response.body)
+    }
+
+    @Test
+    fun `should return bad request with a generic key when a request parameter is missing`() {
+        // When
+        val response = exceptionController.handleMissingParameterException(MissingServletRequestParameterException("etfB", "String"))
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals(listOf(ErrorResponseDto("Bad Request", "error.request.missing-parameter")), response.body)
     }
 
     @Test
