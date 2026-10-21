@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/indicedb
+    username: admin
+    password: admin
+
+twelvedata:
+  api-token: test-token

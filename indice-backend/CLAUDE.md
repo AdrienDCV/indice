@@ -26,7 +26,7 @@ Kotlin · Java 25 · Spring Boot 4 (Web MVC, Data JPA, Batch) · PostgreSQL 17 �
 ```bash
 docker compose up -d                                        # Base PostgreSQL locale
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=local     # Lancer l'API (http://localhost:8080/api)
-./mvnw test                                                 # Tous les tests
+./mvnw test                                                 # Tous les tests (base Docker démarrée)
 ./mvnw test -Dtest=EtfServiceTest                           # Une classe de test
 ```
 
@@ -51,7 +51,7 @@ docker compose up -d                                        # Base PostgreSQL lo
 - **Ne pas ajouter de dépendance** sans l'annoncer et le justifier.
 - Toute nouvelle logique métier est livrée **avec ses tests unitaires**. Lancer `./mvnw test` avant d'annoncer qu'une tâche est terminée.
 - Ne jamais commiter sans demande. Commits et pull requests : voir `../CLAUDE.md` (scope `backend`).
-- Aucun secret en dur hors `application-local.yaml` ; utiliser les variables d'environnement.
+- Aucun secret en dur hors `application-local.yaml` ; utiliser les variables d'environnement. Seule exception : `src/test/resources/application-test.yaml` contient les identifiants de la base Docker locale, déjà publics dans `docker-compose.yml`, et un faux token Twelve Data.
 
 ## Architecture (package by feature, puis par couche)
 
@@ -225,7 +225,7 @@ Une migration s'exécute sur des données réelles et ne peut pas être annulée
 - Si `baseline-on-migrate` est activé, `baseline-version` doit être **inférieure à la première migration** (ex. `0`). Sinon, sur une base non vide sans historique, Flyway considère la V1 comme déjà appliquée et ne l'exécute jamais.
 - Ne jamais modifier à la main la table `flyway_schema_history`, ni lancer une migration sur une autre base que la base Docker locale.
 - Toute remise à zéro de la base locale (suppression de tables, `docker compose down -v`) est **annoncée et validée par l'utilisateur** avant exécution.
-- Vérifier chaque nouvelle migration sur la base locale (`SPRING_PROFILES_ACTIVE=local ./mvnw test`) : Flyway doit l'appliquer, et Hibernate doit valider le schéma au démarrage.
+- Vérifier chaque nouvelle migration sur la base locale (`./mvnw test`) : Flyway doit l'appliquer, et Hibernate doit valider le schéma au démarrage.
 
 ## Kotlin
 
@@ -242,6 +242,7 @@ Une migration s'exécute sur des données réelles et ne peut pas être annulée
 - **Mappers** : un test d'aller-retour lorsque le mapping n'est pas trivial.
 - **Controllers** : `@WebMvcTest` + service mocké — vérifier statut HTTP, JSON et validation.
 - **Repositories** : `@DataJpaTest` uniquement pour les requêtes custom.
+- Tout test qui démarre Spring avec la base (`@SpringBootTest`, `@DataJpaTest`) porte `@ActiveProfiles("test")` : il utilise alors la base Docker locale décrite dans `src/test/resources/application-test.yaml`.
 - Arborescence miroir de `src/main` (ex. `etf/services/EtfServiceTest.kt`), classe `XxxTest`.
 - Nommage descriptif avec backticks : ``fun `should throw EtfNotFoundException when ticker is unknown`()``.
 - Structure **Given / When / Then**, un comportement par test, cas nominal **et** cas limites/erreurs.

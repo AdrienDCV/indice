@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase
+import org.springframework.test.context.ActiveProfiles
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -15,6 +16,7 @@ import kotlin.test.assertEquals
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@ActiveProfiles("test")
 class EtfClosingPriceRepositoryTest(
     @Autowired private val etfRepository: EtfRepository,
     @Autowired private val etfClosingPriceRepository: EtfClosingPriceRepository,
