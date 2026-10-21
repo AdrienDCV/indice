@@ -1,30 +1,40 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:indice_mobile/data/fake_resources.dart';
 import 'package:indice_mobile/main.dart';
+import 'package:indice_mobile/pages/home_page.dart';
+import 'package:indice_mobile/pages/learn_page.dart';
+import 'package:indice_mobile/widgets/module_button.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('displays the home page on startup', (WidgetTester tester) async {
+    await tester.pumpWidget(const IndiceApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'Accueil'), findsOneWidget);
+    expect(find.text('Prêt à découvrir\nl’investissement ?'), findsOneWidget);
+    expect(find.widgetWithText(ModuleButton, 'Apprendre'), findsOneWidget);
+    expect(
+      find.text('Comprendre les bases des ETF et de la finance'),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.arrow_forward), findsOneWidget);
+    expect(find.text('Nouveauté pédagogique :'), findsOneWidget);
+    expect(find.text(fakeResources.first.title), findsOneWidget);
+    expect(find.text(fakeResources.first.duration), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_border), findsWidgets);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+  testWidgets('opens the learn page from the navigation bar', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const IndiceApp());
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.school_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LearnPage), findsOneWidget);
+    expect(find.byType(HomePage), findsNothing);
   });
 }
