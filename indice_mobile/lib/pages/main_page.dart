@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/fake_resources.dart';
+import '../widgets/app_navigation_bar.dart';
 import 'build_page.dart';
 import 'compare_page.dart';
 import 'home_page.dart';
@@ -28,32 +29,10 @@ class _MainPageState extends State<MainPage> {
           LearnPage(resources: fakeResources),
         ],
       ),
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: AppNavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: (index) =>
             setState(() => _selectedIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Accueil',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.pie_chart_outline),
-            selectedIcon: Icon(Icons.pie_chart),
-            label: 'Construire',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.candlestick_chart_outlined),
-            selectedIcon: Icon(Icons.candlestick_chart),
-            label: 'Comparer',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.school_outlined),
-            selectedIcon: Icon(Icons.school),
-            label: 'Apprendre',
-          ),
-        ],
       ),
     );
   }
