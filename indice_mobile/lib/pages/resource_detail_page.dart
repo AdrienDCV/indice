@@ -62,11 +62,7 @@ class ResourceDetailPage extends StatelessWidget {
             const SizedBox(height: 24),
             Text(
               resource.title,
-              style: const TextStyle(
-                color: Color(0xFF307A60),
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 16),
             Text(

@@ -17,11 +17,8 @@ class ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Couleur, bordure et angles viennent du thème (lib/theme/app_theme.dart).
     return Card(
-      color: Colors.white,
-      elevation: 2,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -80,7 +77,7 @@ class ResourceCard extends StatelessWidget {
                             resource.isFavorite
                                 ? Icons.bookmark
                                 : Icons.bookmark_border,
-                            color: const Color(0xFF336C4C),
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],

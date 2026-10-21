@@ -15,7 +15,7 @@ class ModuleButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: const Color(0xFF336C4C),
+      color: Theme.of(context).colorScheme.primary,
       borderRadius: BorderRadius.circular(16),
       clipBehavior: Clip.antiAlias,
       child: InkWell(

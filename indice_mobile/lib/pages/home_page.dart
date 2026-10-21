@@ -10,14 +10,16 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Accueil')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
+          Text(
             'Prêt à découvrir\nl’investissement ?',
-            style: TextStyle(color: Color(0xFF61B396), fontSize: 32),
+            style: textTheme.headlineLarge,
           ),
           const SizedBox(height: 16),
           ModuleButton(
@@ -26,14 +28,7 @@ class HomePage extends StatelessWidget {
             onTap: () {},
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Nouveauté pédagogique :',
-            style: TextStyle(
-              color: Color(0xFF307A60),
-              fontSize: 22,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+          Text('Nouveauté pédagogique :', style: textTheme.titleLarge),
           const SizedBox(height: 12),
           for (final resource in fakeResources)
             ResourceCard(
