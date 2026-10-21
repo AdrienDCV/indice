@@ -73,7 +73,9 @@ class ResourceCard extends StatelessWidget {
                         const Spacer(),
                         IconButton(
                           onPressed: onFavoriteTap,
-                          tooltip: 'Ajouter aux favoris',
+                          tooltip: resource.isFavorite
+                              ? 'Retirer des favoris'
+                              : 'Ajouter aux favoris',
                           icon: Icon(
                             resource.isFavorite
                                 ? Icons.bookmark
