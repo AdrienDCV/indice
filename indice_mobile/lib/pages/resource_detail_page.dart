@@ -19,47 +19,51 @@ class ResourceDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(resource.type.label)),
-      body: ListView(
+      // Pas de ListView : elle supprimerait le lecteur vidéo sorti de l'écran.
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: resource.videoUrl == null
-                ? ResourceThumbnail(type: resource.type, iconSize: 64)
-                : ResourceVideoPlayer(url: resource.videoUrl!),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _InfoItem(icon: Icons.schedule, text: resource.duration),
-              _InfoItem(
-                icon: Icons.signal_cellular_alt,
-                text: resource.level.label,
-              ),
-              _InfoItem(
-                icon: resource.isFavorite
-                    ? Icons.bookmark
-                    : Icons.bookmark_border,
-                text: resource.isFavorite ? 'En favori' : 'Pas en favori',
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Text(
-            resource.title,
-            style: const TextStyle(
-              color: Color(0xFF307A60),
-              fontSize: 26,
-              fontWeight: FontWeight.w600,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AspectRatio(
+              aspectRatio: 16 / 9,
+              child: resource.videoUrl == null
+                  ? ResourceThumbnail(type: resource.type, iconSize: 64)
+                  : ResourceVideoPlayer(url: resource.videoUrl!),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            resource.content,
-            style: const TextStyle(fontSize: 16, height: 1.5),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _InfoItem(icon: Icons.schedule, text: resource.duration),
+                _InfoItem(
+                  icon: Icons.signal_cellular_alt,
+                  text: resource.level.label,
+                ),
+                _InfoItem(
+                  icon: resource.isFavorite
+                      ? Icons.bookmark
+                      : Icons.bookmark_border,
+                  text: resource.isFavorite ? 'En favori' : 'Pas en favori',
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Text(
+              resource.title,
+              style: const TextStyle(
+                color: Color(0xFF307A60),
+                fontSize: 26,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              resource.content,
+              style: const TextStyle(fontSize: 16, height: 1.5),
+            ),
+          ],
+        ),
       ),
     );
   }

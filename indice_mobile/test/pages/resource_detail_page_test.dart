@@ -101,4 +101,28 @@ void main() {
     expect(find.byType(ResourceVideoPlayer), findsOneWidget);
     expect(find.byType(ResourceThumbnail), findsNothing);
   });
+
+  testWidgets('keeps the video player when scrolling a long description', (
+    WidgetTester tester,
+  ) async {
+    final videoWithLongDescription = Resource(
+      title: 'Vidéo avec un long descriptif',
+      description: 'Résumé',
+      content: List.filled(100, 'Un paragraphe du descriptif.').join('\n\n'),
+      type: ResourceType.video,
+      duration: '5 min',
+      level: Level.beginner,
+      isFavorite: false,
+      videoUrl: 'https://example.com/video.mp4',
+    );
+
+    await pumpDetailPage(tester, videoWithLongDescription);
+    await tester.drag(find.byType(Scrollable), const Offset(0, -3000));
+    await tester.pump();
+
+    expect(
+      find.byType(ResourceVideoPlayer, skipOffstage: false),
+      findsOneWidget,
+    );
+  });
 }
