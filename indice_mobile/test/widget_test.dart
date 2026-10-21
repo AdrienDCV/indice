@@ -5,6 +5,7 @@ import 'package:indice_mobile/data/fake_resources.dart';
 import 'package:indice_mobile/main.dart';
 import 'package:indice_mobile/pages/home_page.dart';
 import 'package:indice_mobile/pages/learn_page.dart';
+import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
 void main() {
@@ -23,7 +24,12 @@ void main() {
     expect(find.text('Nouveauté pédagogique :'), findsOneWidget);
     expect(find.text(fakeResources.first.title), findsOneWidget);
     expect(find.text(fakeResources.first.duration), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark_border), findsWidgets);
+    expect(
+      find.byIcon(
+        fakeResources.first.isFavorite ? Icons.bookmark : Icons.bookmark_border,
+      ),
+      findsWidgets,
+    );
   });
 
   testWidgets('opens the learn page from the navigation bar', (
@@ -36,5 +42,6 @@ void main() {
 
     expect(find.byType(LearnPage), findsOneWidget);
     expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(AppSearchBar), findsOneWidget);
   });
 }

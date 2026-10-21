@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../data/fake_resources.dart';
 import 'build_page.dart';
 import 'compare_page.dart';
 import 'home_page.dart';
@@ -20,7 +21,12 @@ class _MainPageState extends State<MainPage> {
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: const [HomePage(), BuildPage(), ComparePage(), LearnPage()],
+        children: const [
+          HomePage(),
+          BuildPage(),
+          ComparePage(),
+          LearnPage(resources: fakeResources),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,

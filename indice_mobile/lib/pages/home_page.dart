@@ -39,7 +39,7 @@ class HomePage extends StatelessWidget {
               title: resource.title,
               description: resource.description,
               duration: resource.duration,
-              isFavorite: false,
+              isFavorite: resource.isFavorite,
               onFavoriteTap: () {},
             ),
         ],
