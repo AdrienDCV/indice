@@ -6,7 +6,7 @@ import 'package:indice_mobile/models/resource.dart';
 import 'package:indice_mobile/models/resource_type.dart';
 import 'package:indice_mobile/pages/resource_detail_page.dart';
 import 'package:indice_mobile/widgets/resource_thumbnail.dart';
-import 'package:indice_mobile/widgets/resource_video_player.dart';
+import 'package:indice_mobile/widgets/video_player.dart';
 
 const article = Resource(
   title: 'Comprendre les frais',
@@ -98,7 +98,7 @@ void main() {
 
     await pumpDetailPage(tester, videoWithLink);
 
-    expect(find.byType(ResourceVideoPlayer), findsOneWidget);
+    expect(find.byType(VideoPlayer), findsOneWidget);
     expect(find.byType(ResourceThumbnail), findsNothing);
   });
 
@@ -120,9 +120,6 @@ void main() {
     await tester.drag(find.byType(Scrollable), const Offset(0, -3000));
     await tester.pump();
 
-    expect(
-      find.byType(ResourceVideoPlayer, skipOffstage: false),
-      findsOneWidget,
-    );
+    expect(find.byType(VideoPlayer, skipOffstage: false), findsOneWidget);
   });
 }

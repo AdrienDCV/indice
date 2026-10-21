@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../models/resource.dart';
+import '../widgets/info/info_item.dart';
 import '../widgets/resource_thumbnail.dart';
-import '../widgets/resource_video_player.dart';
+import '../widgets/video_player.dart';
 
 class ResourceDetailPage extends StatelessWidget {
   const ResourceDetailPage({super.key, required this.resource});
@@ -17,9 +18,10 @@ class ResourceDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final videoUrl = resource.videoUrl;
+
     return Scaffold(
       appBar: AppBar(title: Text(resource.type.label)),
-      // Pas de ListView : elle supprimerait le lecteur vidéo sorti de l'écran.
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -27,24 +29,33 @@ class ResourceDetailPage extends StatelessWidget {
           children: [
             AspectRatio(
               aspectRatio: 16 / 9,
-              child: resource.videoUrl == null
+              child: videoUrl == null
                   ? ResourceThumbnail(type: resource.type, iconSize: 64)
-                  : ResourceVideoPlayer(url: resource.videoUrl!),
+                  : VideoPlayer(url: videoUrl),
             ),
             const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _InfoItem(icon: Icons.schedule, text: resource.duration),
-                _InfoItem(
-                  icon: Icons.signal_cellular_alt,
-                  text: resource.level.label,
+                Flexible(
+                  child: InfoItem(
+                    icon: Icons.schedule,
+                    text: resource.duration,
+                  ),
                 ),
-                _InfoItem(
-                  icon: resource.isFavorite
-                      ? Icons.bookmark
-                      : Icons.bookmark_border,
-                  text: resource.isFavorite ? 'En favori' : 'Pas en favori',
+                Flexible(
+                  child: InfoItem(
+                    icon: Icons.signal_cellular_alt,
+                    text: resource.level.label,
+                  ),
+                ),
+                Flexible(
+                  child: InfoItem(
+                    icon: resource.isFavorite
+                        ? Icons.bookmark
+                        : Icons.bookmark_border,
+                    text: resource.isFavorite ? 'En favori' : 'Pas en favori',
+                  ),
                 ),
               ],
             ),
@@ -64,33 +75,6 @@ class ResourceDetailPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoItem extends StatelessWidget {
-  const _InfoItem({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Flexible(
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 4,
-        children: [
-          Icon(icon, size: 18, color: const Color(0xFF336C4C)),
-          Flexible(
-            child: Text(
-              text,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
-            ),
-          ),
-        ],
       ),
     );
   }

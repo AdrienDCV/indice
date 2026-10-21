@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart'
+    show VideoPlayerController, VideoPlayerValue;
 
 import '../pages/video_fullscreen_page.dart';
 import 'video_view.dart';
 
-class ResourceVideoPlayer extends StatefulWidget {
-  const ResourceVideoPlayer({super.key, required this.url});
+class VideoPlayer extends StatefulWidget {
+  const VideoPlayer({super.key, required this.url});
 
   final String url;
 
   @override
-  State<ResourceVideoPlayer> createState() => _ResourceVideoPlayerState();
+  State<VideoPlayer> createState() => _VideoPlayerState();
 }
 
-class _ResourceVideoPlayerState extends State<ResourceVideoPlayer> {
+class _VideoPlayerState extends State<VideoPlayer> {
   late final VideoPlayerController _controller =
       VideoPlayerController.networkUrl(Uri.parse(widget.url));
   bool _hasLoadingError = false;
