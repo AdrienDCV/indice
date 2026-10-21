@@ -120,7 +120,7 @@ com.fisa.indice
 - N'injecte **jamais** un repository.
 - Expose uniquement des DTOs : ne reçoit ni ne renvoie **jamais** une entité JPA ou un objet métier dans la requête ou la réponse HTTP.
 - Pas de `try/catch` : les erreurs sont gérées par le `@RestControllerAdvice` global.
-- Routes REST en kebab-case et au pluriel : `/etfs`, `/etfs/{ticker}`, `/etfs/compare?tickers=...`, `/resources`.
+- Routes REST en kebab-case et au pluriel : `/etfs`, `/etfs/{ticker}`, `/etfs/compare?etfA=...&etfB=...`, `/resources`.
 
 ### Pagination
 
