@@ -6,6 +6,7 @@ import '../utils/filter_resources.dart';
 import '../widgets/app_search_bar.dart';
 import '../widgets/filter_toggle.dart';
 import '../widgets/resource_card.dart';
+import 'resource_detail_page.dart';
 
 class LearnPage extends StatefulWidget {
   const LearnPage({super.key, required this.resources});
@@ -80,10 +81,10 @@ class _LearnPageState extends State<LearnPage> {
             ),
           for (final resource in resources)
             ResourceCard(
-              title: resource.title,
-              description: resource.description,
-              duration: resource.duration,
-              isFavorite: resource.isFavorite,
+              resource: resource,
+              onTap: () =>
+                  Navigator.of(context)
+                      .push(ResourceDetailPage.route(resource)),
               onFavoriteTap: () {},
             ),
         ],

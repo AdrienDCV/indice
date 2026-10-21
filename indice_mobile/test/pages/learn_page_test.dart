@@ -3,13 +3,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/models/level.dart';
 import 'package:indice_mobile/models/resource.dart';
+import 'package:indice_mobile/models/resource_type.dart';
 import 'package:indice_mobile/pages/learn_page.dart';
+import 'package:indice_mobile/pages/resource_detail_page.dart';
 import 'package:indice_mobile/widgets/filter_toggle.dart';
 
 const resources = [
   Resource(
     title: 'Formation favorite',
     description: '',
+    content: '',
+    type: ResourceType.video,
     duration: '1 min',
     level: Level.beginner,
     isFavorite: true,
@@ -17,6 +21,8 @@ const resources = [
   Resource(
     title: 'Formation intermédiaire',
     description: '',
+    content: '',
+    type: ResourceType.video,
     duration: '1 min',
     level: Level.intermediate,
     isFavorite: false,
@@ -94,5 +100,16 @@ void main() {
       find.text('Aucune formation ne correspond à ces filtres.'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('opens the detail page when a resource is tapped', (
+    WidgetTester tester,
+  ) async {
+    await pumpLearnPage(tester);
+
+    await tester.tap(find.text('Formation intermédiaire'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ResourceDetailPage), findsOneWidget);
   });
 }

@@ -2,11 +2,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/models/level.dart';
 import 'package:indice_mobile/models/resource.dart';
+import 'package:indice_mobile/models/resource_type.dart';
 import 'package:indice_mobile/utils/filter_resources.dart';
 
 const beginnerFavorite = Resource(
   title: 'Débutant favori',
   description: '',
+  content: '',
+  type: ResourceType.video,
   duration: '1 min',
   level: Level.beginner,
   isFavorite: true,
@@ -14,6 +17,8 @@ const beginnerFavorite = Resource(
 const beginner = Resource(
   title: 'Débutant',
   description: '',
+  content: '',
+  type: ResourceType.video,
   duration: '1 min',
   level: Level.beginner,
   isFavorite: false,
@@ -21,6 +26,8 @@ const beginner = Resource(
 const expertFavorite = Resource(
   title: 'Expérimenté favori',
   description: '',
+  content: '',
+  type: ResourceType.video,
   duration: '1 min',
   level: Level.experienced,
   isFavorite: true,
