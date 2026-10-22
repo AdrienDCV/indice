@@ -69,3 +69,7 @@ lib/firebase_options.dart
 # FVM
 .fvm/flutter_sdk
 .fvmrc.local
+
+# Generated code (freezed, json_serializable) : run build_runner after cloning
+*.freezed.dart
+*.g.dart

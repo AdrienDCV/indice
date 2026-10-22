@@ -20,7 +20,7 @@ indice/
 - Chaque projet a ses propres conventions, qui font foi dans son périmètre :
   - `indice-backend/CLAUDE.md` : architecture, règles de code, tests, migrations ;
   - `indice-backend/docs/` : glossaire (`glossaire.md`) et plans d'implémentation (`plans/`) ;
-  - `indice_mobile/CLAUDE.md` : à rédiger.
+  - `indice_mobile/CLAUDE.md` : architecture (stores, repositories, models freezed), règles d'affichage, navigation.
 - Ce fichier ne contient que les règles **communes** aux deux projets : Git, commits et pull requests.
 
 ## Façon de travailler
