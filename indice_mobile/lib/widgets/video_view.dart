@@ -60,8 +60,8 @@ class VideoView extends StatelessWidget {
                       controller,
                       allowScrubbing: true,
                       padding: const EdgeInsets.only(left: 12),
-                      colors: const VideoProgressColors(
-                        playedColor: Color(0xFF61B396),
+                      colors: VideoProgressColors(
+                        playedColor: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
                   ),

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-const _green = Color(0xFF336C4C);
-
 class FilterToggle extends StatelessWidget {
   const FilterToggle({
     super.key,
@@ -18,7 +16,10 @@ class FilterToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final contentColor = isSelected ? Colors.white : _green;
+    final colorScheme = Theme.of(context).colorScheme;
+    final contentColor = isSelected
+        ? colorScheme.onPrimary
+        : colorScheme.primary;
 
     return FilterChip(
       label: Text(label),
@@ -27,8 +28,10 @@ class FilterToggle extends StatelessWidget {
       onSelected: onSelected,
       showCheckmark: false,
       labelStyle: TextStyle(color: contentColor, fontWeight: FontWeight.w600),
-      color: WidgetStatePropertyAll(isSelected ? _green : Colors.transparent),
-      side: const BorderSide(color: _green, width: 1.5),
+      color: WidgetStatePropertyAll(
+        isSelected ? colorScheme.primary : Colors.transparent,
+      ),
+      side: BorderSide(color: colorScheme.primary, width: 1.5),
       shape: const StadiumBorder(),
     );
   }

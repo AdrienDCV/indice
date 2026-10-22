@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'pages/main_page.dart';
+import 'theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,17 +18,8 @@ class IndiceApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Indice',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF336C4C)),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          titleTextStyle: TextStyle(
-            color: Color(0xFF307A60),
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
       home: const MainPage(),
     );
   }

@@ -14,7 +14,7 @@ class ResourceThumbnail extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: ColoredBox(
-        color: const Color(0xFF61B396),
+        color: Theme.of(context).colorScheme.secondary,
         child: Center(
           child: Icon(
             type == ResourceType.video
