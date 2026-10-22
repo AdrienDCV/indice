@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/fake_resources.dart';
 import '../widgets/module_button.dart';
 import '../widgets/resource_card.dart';
+import 'resource_detail_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -36,10 +37,10 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 12),
           for (final resource in fakeResources)
             ResourceCard(
-              title: resource.title,
-              description: resource.description,
-              duration: resource.duration,
-              isFavorite: false,
+              resource: resource,
+              onTap: () =>
+                  Navigator.of(context)
+                      .push(ResourceDetailPage.route(resource)),
               onFavoriteTap: () {},
             ),
         ],
