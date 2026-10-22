@@ -44,4 +44,51 @@ void main() {
     expect(find.byType(HomePage), findsNothing);
     expect(find.byType(AppSearchBar), findsOneWidget);
   });
+
+  testWidgets('opens the learn tab from the home learn button', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const IndiceApp());
+
+    await tester.tap(find.byType(ModuleButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LearnPage), findsOneWidget);
+    expect(find.byType(HomePage), findsNothing);
+    expect(
+      tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
+      3,
+    );
+  });
+
+  testWidgets('fades the new tab in when switching tabs', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(const IndiceApp());
+
+    double tabsOpacity() => tester
+        .widget<FadeTransition>(
+          find
+              .ancestor(
+                of: find.byType(IndexedStack),
+                matching: find.byType(FadeTransition),
+              )
+              .first,
+        )
+        .opacity
+        .value;
+
+    expect(tabsOpacity(), 1);
+
+    await tester.tap(find.byIcon(Icons.school_outlined));
+    await tester.pump(); // démarre l'animation
+    await tester.pump(const Duration(milliseconds: 100));
+
+    expect(tabsOpacity(), allOf(greaterThan(0), lessThan(1)));
+
+    await tester.pumpAndSettle();
+
+    expect(tabsOpacity(), 1);
+    expect(find.byType(LearnPage), findsOneWidget);
+  });
 }

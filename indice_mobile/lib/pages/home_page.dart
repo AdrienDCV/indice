@@ -6,7 +6,9 @@ import '../widgets/resource_card.dart';
 import 'resource_detail_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, required this.onLearnTap});
+
+  final VoidCallback onLearnTap;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class HomePage extends StatelessWidget {
           ModuleButton(
             title: 'Apprendre',
             subtitle: 'Comprendre les bases des ETF et de la finance',
-            onTap: () {},
+            onTap: onLearnTap,
           ),
           const SizedBox(height: 32),
           Text('Nouveauté pédagogique :', style: textTheme.titleLarge),
