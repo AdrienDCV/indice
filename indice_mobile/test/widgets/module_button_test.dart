@@ -42,4 +42,43 @@ void main() {
     expect(buttonScale(tester), 1);
     expect(tapCount, 1);
   });
+
+  testWidgets('uses the given background color, or primary by default', (
+    WidgetTester tester,
+  ) async {
+    Color? backgroundOf(String title) => tester
+        .widget<Material>(
+          find
+              .descendant(
+                of: find.widgetWithText(ModuleButton, title),
+                matching: find.byType(Material),
+              )
+              .first,
+        )
+        .color;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              ModuleButton(title: 'Apprendre', subtitle: 'A', onTap: () {}),
+              ModuleButton(
+                title: 'Comparer',
+                subtitle: 'B',
+                color: const Color(0xFF458C64),
+                onTap: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      backgroundOf('Apprendre'),
+      Theme.of(tester.element(find.byType(Scaffold))).colorScheme.primary,
+    );
+    expect(backgroundOf('Comparer'), const Color(0xFF458C64));
+  });
 }

@@ -65,17 +65,17 @@ void main() {
 
     expect(find.text('SPDR S&P 500 ETF Trust'), findsOneWidget);
     expect(find.text('SPY · NYSE ARCA · USD'), findsOneWidget);
-    expect(find.text('766,48 USD au 19/10/2026'), findsOneWidget);
+    expect(find.text('766,48\u00A0USD au 19/10/2026'), findsOneWidget);
     expect(find.byType(PriceChart), findsOneWidget);
-    expect(find.text('+14,20 %'), findsOneWidget);
-    expect(find.text('+51,00 %'), findsOneWidget);
-    expect(find.text('+88,00 %'), findsOneWidget);
-    expect(find.text('+13,50 %'), findsOneWidget);
-    expect(find.text('16,10 %'), findsOneWidget);
-    expect(find.text('-24,50 %'), findsOneWidget);
+    expect(find.text('+14,20\u00A0%'), findsOneWidget);
+    expect(find.text('+51,00\u00A0%'), findsOneWidget);
+    expect(find.text('+88,00\u00A0%'), findsOneWidget);
+    expect(find.text('+13,50\u00A0%'), findsOneWidget);
+    expect(find.text('16,10\u00A0%'), findsOneWidget);
+    expect(find.text('-24,50\u00A0%'), findsOneWidget);
     expect(find.text('Du 03/01/2022 au 12/10/2022'), findsOneWidget);
     expect(find.byType(PriceRangeBar), findsOneWidget);
-    expect(find.text('Plus bas : 629,28 USD'), findsOneWidget);
+    expect(find.text('Plus bas : 629,28\u00A0USD'), findsOneWidget);
     expect(
       find.text(
         'Les performances passées ne préjugent pas des performances futures.',
@@ -175,5 +175,16 @@ void main() {
     expect(repository.retrievedTickers, ['SPY', 'SPY']);
     expect(find.text('Réessayer'), findsNothing);
     expect(find.byType(PriceChart), findsOneWidget);
+  });
+
+  testWidgets('offers to compare the etf, even without market data', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreenWith(tester, buildEtfDetail());
+
+    expect(
+      find.widgetWithText(FilledButton, 'Comparer cet ETF'),
+      findsOneWidget,
+    );
   });
 }

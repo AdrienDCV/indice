@@ -1,9 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:indice_mobile/models/common/paginated_data.dart';
+import 'package:indice_mobile/models/etf/compared_etf_data.dart';
+import 'package:indice_mobile/models/etf/date_range_data.dart';
 import 'package:indice_mobile/models/etf/etf_catalog_data.dart';
+import 'package:indice_mobile/models/etf/etf_comparison_data.dart';
 import 'package:indice_mobile/models/etf/etf_data.dart';
 import 'package:indice_mobile/models/etf/etf_detail_data.dart';
 import 'package:indice_mobile/models/etf/market_data.dart';
+import 'package:indice_mobile/models/etf/performance_data.dart';
 import 'package:indice_mobile/models/etf/max_drawdown_data.dart';
 import 'package:indice_mobile/models/etf/price_point_data.dart';
 import 'package:indice_mobile/models/etf/price_range_data.dart';
@@ -94,6 +98,70 @@ EtfDetailData buildEtfDetail({MarketData? marketData, bool stale = false}) {
   );
 }
 
+ComparedEtfData buildComparedEtf(
+  EtfData etf, {
+  double totalReturn = 0.8123,
+  double close = 450,
+  double changeSinceStart = 0.1387,
+  bool stale = false,
+  DateTime? fetchedAt,
+}) {
+  return ComparedEtfData(
+    ticker: etf.ticker,
+    exchange: etf.exchange,
+    name: etf.name,
+    currency: etf.currency,
+    fetchedAt: fetchedAt,
+    stale: stale,
+    performance: PerformanceData(
+      totalReturn: totalReturn,
+      annualizedReturn: 0.1263,
+      volatility: 0.1712,
+      returnToRiskRatio: 0.7377,
+      maxDrawdown: MaxDrawdownData(
+        value: -0.245,
+        peakDate: DateTime(2022, 1, 3),
+        troughDate: DateTime(2022, 10, 12),
+      ),
+    ),
+    pricePoints: [
+      PricePointData(
+        date: DateTime(2021, 10, 20),
+        close: close,
+        changeSinceStart: 0,
+      ),
+      PricePointData(
+        date: DateTime(2026, 10, 19),
+        close: close * (1 + changeSinceStart),
+        changeSinceStart: changeSinceStart,
+      ),
+    ],
+  );
+}
+
+EtfComparisonData buildComparison({
+  ComparedEtfData? etfA,
+  ComparedEtfData? etfB,
+  double? correlation = 0.9312,
+}) {
+  return EtfComparisonData(
+    commonPeriod: DateRangeData(
+      startDate: DateTime(2021, 10, 20),
+      endDate: DateTime(2026, 10, 19),
+    ),
+    correlation: correlation,
+    etfA: etfA ?? buildComparedEtf(spy),
+    etfB:
+        etfB ??
+        buildComparedEtf(
+          qqq,
+          totalReturn: -0.05,
+          close: 380,
+          changeSinceStart: 0.2105,
+        ),
+  );
+}
+
 DioException apiError(String errorKey) {
   final requestOptions = RequestOptions(path: '/etfs');
   return DioException.badResponse(
@@ -113,16 +181,23 @@ Future<EtfDetailData> _unexpectedRetrieveEtf(String ticker) {
   throw UnimplementedError('retrieveEtf($ticker) was not expected');
 }
 
+Future<EtfComparisonData> _unexpectedCompare(String etfA, String etfB) {
+  throw UnimplementedError('compare($etfA, $etfB) was not expected');
+}
+
 class FakeEtfRepository implements EtfRepository {
   FakeEtfRepository(
     this.onRetrieveEtfs, {
     this.onRetrieveEtf = _unexpectedRetrieveEtf,
+    this.onCompare = _unexpectedCompare,
   });
 
   Future<EtfCatalogData> Function() onRetrieveEtfs;
   Future<EtfDetailData> Function(String ticker) onRetrieveEtf;
+  Future<EtfComparisonData> Function(String etfA, String etfB) onCompare;
   int retrieveEtfsCalls = 0;
   final retrievedTickers = <String>[];
+  final comparedPairs = <(String, String)>[];
 
   @override
   Future<EtfCatalogData> retrieveEtfs() {
@@ -134,5 +209,11 @@ class FakeEtfRepository implements EtfRepository {
   Future<EtfDetailData> retrieveEtf(String ticker) {
     retrievedTickers.add(ticker);
     return onRetrieveEtf(ticker);
+  }
+
+  @override
+  Future<EtfComparisonData> compare(String etfA, String etfB) {
+    comparedPairs.add((etfA, etfB));
+    return onCompare(etfA, etfB);
   }
 }

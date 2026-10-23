@@ -48,6 +48,31 @@ const etfDetailJson = '''
 }
 ''';
 
+const comparisonJson = '''
+{
+  "commonPeriod": { "startDate": "2021-10-20", "endDate": "2026-10-19" },
+  "correlation": null,
+  "etfA": {
+    "ticker": "SPY", "exchange": "NYSE", "name": "SPDR S&P 500 ETF Trust", "currency": "USD",
+    "fetchedAt": "2026-10-20T08:00:00Z", "stale": false,
+    "performance": {
+      "totalReturn": 0.8123, "annualizedReturn": 0.1263, "volatility": 0.1712, "returnToRiskRatio": 0.7377,
+      "maxDrawdown": { "value": -0.245, "peakDate": "2022-01-03", "troughDate": "2022-10-12" }
+    },
+    "pricePoints": [{ "date": "2021-10-20", "close": 450.00, "changeSinceStart": 0.0 }]
+  },
+  "etfB": {
+    "ticker": "QQQ", "exchange": "NASDAQ", "name": "Invesco QQQ Trust", "currency": "USD",
+    "fetchedAt": null, "stale": true,
+    "performance": {
+      "totalReturn": 0.9402, "annualizedReturn": null, "volatility": null, "returnToRiskRatio": null,
+      "maxDrawdown": { "value": -0.3512, "peakDate": "2021-12-27", "troughDate": "2022-11-03" }
+    },
+    "pricePoints": [{ "date": "2021-10-20", "close": 380.00, "changeSinceStart": 0.0 }]
+  }
+}
+''';
+
 void respondWith(String json, int statusCode) {
   http.httpClientAdapter = FakeHttpClientAdapter(
     (_) async => jsonBody(json, statusCode),
@@ -194,5 +219,46 @@ void main() {
     );
 
     expect(EtfRepository().retrieveEtf('ARKK'), throwsA(isA<DioException>()));
+  });
+
+  test('requests the comparison of the two etfs', () async {
+    late Uri requestedUrl;
+    http.httpClientAdapter = FakeHttpClientAdapter((options) async {
+      requestedUrl = options.uri;
+      return jsonBody(comparisonJson, 200);
+    });
+
+    await EtfRepository().compare('SPY', 'QQQ');
+
+    expect(requestedUrl, Uri.parse('$baseUrl/etfs/compare?etfA=SPY&etfB=QQQ'));
+  });
+
+  test('returns the comparison sent by the api', () async {
+    respondWith(comparisonJson, 200);
+
+    final comparison = await EtfRepository().compare('SPY', 'QQQ');
+
+    expect(comparison.commonPeriod.startDate, DateTime(2021, 10, 20));
+    expect(comparison.commonPeriod.endDate, DateTime(2026, 10, 19));
+    expect(comparison.correlation, isNull);
+    expect(comparison.etfA.ticker, 'SPY');
+    expect(comparison.etfA.fetchedAt, DateTime.utc(2026, 10, 20, 8));
+    expect(comparison.etfA.performance.totalReturn, 0.8123);
+    expect(comparison.etfA.performance.returnToRiskRatio, 0.7377);
+    expect(comparison.etfA.performance.maxDrawdown.value, -0.245);
+    expect(comparison.etfA.pricePoints.single.close, 450);
+    expect(comparison.etfB.stale, isTrue);
+    expect(comparison.etfB.fetchedAt, isNull);
+    expect(comparison.etfB.performance.annualizedReturn, isNull);
+    expect(comparison.etfB.performance.volatility, isNull);
+  });
+
+  test('lets the dio error through when the data is insufficient', () {
+    respondWith(
+      '[{ "error": "Unprocessable Entity", "message": "error.etfs.etf-a-insufficient-data" }]',
+      422,
+    );
+
+    expect(EtfRepository().compare('SPY', 'QQQ'), throwsA(isA<DioException>()));
   });
 }
