@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../data/fake_resources.dart';
 import '../widgets/app_navigation_bar.dart';
-import 'build_page.dart';
-import 'compare_page.dart';
-import 'home_page.dart';
-import 'learn_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  const MainPage({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -16,10 +14,6 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage>
     with SingleTickerProviderStateMixin {
-  static const _learnIndex = 3;
-
-  int _selectedIndex = 0;
-
   /// Fait apparaître l'onglet choisi en fondu, en remontant légèrement.
   late final AnimationController _transitionController = AnimationController(
     vsync: this,
@@ -36,15 +30,23 @@ class _MainPageState extends State<MainPage>
   ).animate(_fade);
 
   @override
+  void didUpdateWidget(MainPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.navigationShell.currentIndex !=
+        oldWidget.navigationShell.currentIndex) {
+      _transitionController.forward(from: 0);
+    }
+  }
+
+  @override
   void dispose() {
     _transitionController.dispose();
     super.dispose();
   }
 
   void _selectTab(int index) {
-    if (index == _selectedIndex) return;
-    setState(() => _selectedIndex = index);
-    _transitionController.forward(from: 0);
+    if (index == widget.navigationShell.currentIndex) return;
+    widget.navigationShell.goBranch(index);
   }
 
   @override
@@ -52,21 +54,10 @@ class _MainPageState extends State<MainPage>
     return Scaffold(
       body: FadeTransition(
         opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: IndexedStack(
-            index: _selectedIndex,
-            children: [
-              HomePage(onLearnTap: () => _selectTab(_learnIndex)),
-              const BuildPage(),
-              const ComparePage(),
-              const LearnPage(resources: fakeResources),
-            ],
-          ),
-        ),
+        child: SlideTransition(position: _slide, child: widget.navigationShell),
       ),
       bottomNavigationBar: AppNavigationBar(
-        selectedIndex: _selectedIndex,
+        selectedIndex: widget.navigationShell.currentIndex,
         onDestinationSelected: _selectTab,
       ),
     );

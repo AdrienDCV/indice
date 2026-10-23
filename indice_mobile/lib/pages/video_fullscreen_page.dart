@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
 import '../widgets/video_view.dart';
@@ -10,13 +11,6 @@ class VideoFullscreenPage extends StatefulWidget {
   const VideoFullscreenPage({super.key, required this.controller});
 
   final VideoPlayerController controller;
-
-  static Route<void> route(VideoPlayerController controller) {
-    return MaterialPageRoute(
-      fullscreenDialog: true,
-      builder: (context) => VideoFullscreenPage(controller: controller),
-    );
-  }
 
   @override
   State<VideoFullscreenPage> createState() => _VideoFullscreenPageState();
@@ -49,7 +43,7 @@ class _VideoFullscreenPageState extends State<VideoFullscreenPage> {
           child: VideoView(
             controller: widget.controller,
             isFullscreen: true,
-            onFullscreenTap: () => Navigator.of(context).pop(),
+            onFullscreenTap: () => context.pop(),
           ),
         ),
       ),

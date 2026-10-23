@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../data/fake_resources.dart';
 import '../widgets/module_button.dart';
 import '../widgets/resource_card.dart';
-import 'resource_detail_page.dart';
 
 class HomePage extends StatelessWidget {
-  const HomePage({super.key, required this.onLearnTap});
-
-  final VoidCallback onLearnTap;
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +25,7 @@ class HomePage extends StatelessWidget {
           ModuleButton(
             title: 'Apprendre',
             subtitle: 'Comprendre les bases des ETF et de la finance',
-            onTap: onLearnTap,
+            onTap: () => context.go('/learn'),
           ),
           const SizedBox(height: 32),
           Text('Nouveauté pédagogique :', style: textTheme.titleLarge),
@@ -35,9 +33,7 @@ class HomePage extends StatelessWidget {
           for (final resource in fakeResources)
             ResourceCard(
               resource: resource,
-              onTap: () =>
-                  Navigator.of(context)
-                      .push(ResourceDetailPage.route(resource)),
+              onTap: () => context.push('/resource', extra: resource),
               onFavoriteTap: () {},
             ),
         ],
