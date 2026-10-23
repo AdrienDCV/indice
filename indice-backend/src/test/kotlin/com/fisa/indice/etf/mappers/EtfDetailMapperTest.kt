@@ -3,6 +3,7 @@ package com.fisa.indice.etf.mappers
 import com.fisa.indice.etf.dtos.responses.EtfDetailResponseDto
 import com.fisa.indice.etf.dtos.responses.MarketDataResponseDto
 import com.fisa.indice.etf.dtos.responses.MaxDrawdownResponseDto
+import com.fisa.indice.etf.dtos.responses.PricePointResponseDto
 import com.fisa.indice.etf.dtos.responses.PriceRangeResponseDto
 import com.fisa.indice.etf.dtos.responses.ReturnsResponseDto
 import com.fisa.indice.etf.models.ClosingPrice
@@ -10,6 +11,7 @@ import com.fisa.indice.etf.models.Drawdown
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.models.MarketData
+import com.fisa.indice.etf.models.PricePoint
 import com.fisa.indice.etf.models.PriceRange
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -37,6 +39,10 @@ class EtfDetailMapperTest {
             volatilityOneYear = BigDecimal("0.161"),
             maxDrawdownFiveYears = null,
             fiftyTwoWeekRange = PriceRange(BigDecimal("629.28"), BigDecimal("781.62"), BigDecimal("0.9")),
+            pricePoints = listOf(
+                PricePoint(startDate, BigDecimal("450.00"), BigDecimal("0.0000")),
+                PricePoint(lastCloseDate, BigDecimal("766.48"), BigDecimal("0.7033")),
+            ),
         )
 
         // When
@@ -57,6 +63,10 @@ class EtfDetailMapperTest {
                     volatilityOneYear = BigDecimal("0.161"),
                     maxDrawdown = null,
                     fiftyTwoWeekRange = PriceRangeResponseDto(BigDecimal("629.28"), BigDecimal("781.62"), BigDecimal("0.9")),
+                    pricePoints = listOf(
+                        PricePointResponseDto(startDate, BigDecimal("450.00"), BigDecimal("0.0000")),
+                        PricePointResponseDto(lastCloseDate, BigDecimal("766.48"), BigDecimal("0.7033")),
+                    ),
                 ),
                 fetchedAt = now,
                 stale = false,

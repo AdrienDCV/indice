@@ -7,6 +7,7 @@ import com.fisa.indice.etf.models.Drawdown
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.models.MarketData
+import com.fisa.indice.etf.models.PricePoint
 import com.fisa.indice.etf.models.PriceRange
 import com.fisa.indice.etf.models.RetrievedEtfCatalog
 import com.fisa.indice.etf.services.EtfDetailService
@@ -106,6 +107,7 @@ class EtfControllerTest(
             volatilityOneYear = BigDecimal("0.161"),
             maxDrawdownFiveYears = Drawdown(BigDecimal("-0.245"), LocalDate.parse("2022-01-03"), LocalDate.parse("2022-10-12")),
             fiftyTwoWeekRange = PriceRange(BigDecimal("629.28"), BigDecimal("781.62"), BigDecimal("0.9")),
+            pricePoints = listOf(PricePoint(LocalDate.parse("2021-10-13"), BigDecimal("450.00"), BigDecimal("0.0000"))),
         )
         every { etfDetailService.retrieveEtf("spy") } returns EtfDetail(etf, marketData, fetchedAt, stale = false)
 
@@ -124,6 +126,9 @@ class EtfControllerTest(
             jsonPath("$.marketData.maxDrawdown.value") { value(-0.245) }
             jsonPath("$.marketData.maxDrawdown.peakDate") { value("2022-01-03") }
             jsonPath("$.marketData.fiftyTwoWeekRange.position") { value(0.9) }
+            jsonPath("$.marketData.pricePoints[0].date") { value("2021-10-13") }
+            jsonPath("$.marketData.pricePoints[0].close") { value(450.00) }
+            jsonPath("$.marketData.pricePoints[0].changeSinceStart") { value(0.0) }
             jsonPath("$.fetchedAt") { value("2026-10-07T08:00:00Z") }
             jsonPath("$.stale") { value(false) }
         }

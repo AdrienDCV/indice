@@ -69,6 +69,17 @@ data class ClosingPriceHistory(val prices: List<ClosingPrice>) {
         return PriceRange(low.roundedPrice(), high.roundedPrice(), position.rounded())
     }
 
+    fun pricePoints(): List<PricePoint> {
+        val first = prices.first().adjustedClose
+        return prices.map {
+            PricePoint(
+                it.date,
+                it.adjustedClose.roundedPrice(),
+                (it.adjustedClose.divide(first, MATH_CONTEXT) - BigDecimal.ONE).rounded(),
+            )
+        }
+    }
+
     fun marketData(): MarketData = MarketData(
         lastClose = lastClose().let { it.copy(adjustedClose = it.adjustedClose.roundedPrice()) },
         historyStartDate = historyStartDate(),
@@ -79,6 +90,7 @@ data class ClosingPriceHistory(val prices: List<ClosingPrice>) {
         volatilityOneYear = volatilityOver(1),
         maxDrawdownFiveYears = maxDrawdownOver(5),
         fiftyTwoWeekRange = fiftyTwoWeekRange(),
+        pricePoints = pricePoints(),
     )
 
     /**

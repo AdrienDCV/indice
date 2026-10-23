@@ -197,6 +197,7 @@ class ClosingPriceHistoryTest {
         assertDecimal("0.3333", marketData.returnThreeYears)
         assertDecimal("1.0000", marketData.returnFiveYears)
         assertDecimal("0.1487", marketData.annualizedReturnFiveYears)
+        assertEquals(history.pricePoints(), marketData.pricePoints)
     }
 
     @Test
@@ -354,6 +355,40 @@ class ClosingPriceHistoryTest {
             ),
             history.rebased(),
         )
+    }
+
+    @Test
+    fun `should give every close with its change since the first close`() {
+        // Given
+        val history = history(
+            price("2021-10-12", "450"),
+            price("2022-10-12", "382.5"),
+            price("2024-03-12", "512.4"),
+            price("2026-10-19", "766.481234"),
+        )
+
+        // When / Then : clôtures arrondies à 2 décimales, variations à 4 décimales
+        assertEquals(
+            listOf(
+                PricePoint(LocalDate.parse("2021-10-12"), BigDecimal("450.00"), BigDecimal("0.0000")),
+                PricePoint(LocalDate.parse("2022-10-12"), BigDecimal("382.50"), BigDecimal("-0.1500")),
+                PricePoint(LocalDate.parse("2024-03-12"), BigDecimal("512.40"), BigDecimal("0.1387")),
+                PricePoint(LocalDate.parse("2026-10-19"), BigDecimal("766.48"), BigDecimal("0.7033")),
+            ),
+            history.pricePoints(),
+        )
+    }
+
+    @Test
+    fun `should show the max drawdown trough on the price points`() {
+        // Given
+        val history = history(price("2026-01-05", "100"), price("2026-01-07", "80"), price("2026-01-09", "95"))
+
+        // When
+        val lowestPoint = history.pricePoints().minBy { it.close }
+
+        // Then
+        assertEquals(history.maxDrawdown().troughDate, lowestPoint.date)
     }
 
     @Test
