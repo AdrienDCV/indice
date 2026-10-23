@@ -1,17 +1,28 @@
-# indice_mobile
+# Indice Mobile
 
-A new Flutter project.
+Application Flutter d'Indice. Elle affiche les données de l'API REST `../indice-backend`.
 
-## Getting Started
+## Démarrer
 
-This project is a starting point for a Flutter application.
+1. Lancer l'API backend (voir `../indice-backend`).
+2. Copier `.env.example` en `.env.local` et renseigner l'URL de l'API, context path `/api` compris :
+   - simulateur iOS : `API_BASE_URL=http://localhost:8080/api`
+   - émulateur Android : `API_BASE_URL=http://10.0.2.2:8080/api`
 
-A few resources to get you started if this is your first Flutter project:
+   Sans `.env.local`, l'application ne compile pas. Ce fichier est embarqué dans l'application : il ne contient jamais de secret.
+3. Installer les dépendances et générer le code :
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+   ```bash
+   flutter pub get
+   dart run build_runner build --delete-conflicting-outputs
+   ```
+4. Lancer l'application : `flutter run`.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Vérifier
+
+```bash
+flutter analyze
+flutter test
+```
+
+Conventions du projet : `CLAUDE.md`.

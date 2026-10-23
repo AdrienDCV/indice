@@ -5,12 +5,12 @@ import 'package:video_player/video_player.dart';
 import 'data/fake_resources.dart';
 import 'models/resource.dart';
 import 'pages/build_page.dart';
-import 'pages/compare_page.dart';
 import 'pages/home_page.dart';
 import 'pages/learn_page.dart';
 import 'pages/main_page.dart';
 import 'pages/resource_detail_page.dart';
 import 'pages/video_fullscreen_page.dart';
+import 'screens/compare/etf_catalog_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/',
@@ -29,7 +29,10 @@ GoRouter buildRouter() => GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(path: '/compare', builder: (_, _) => const ComparePage()),
+            GoRoute(
+              path: '/compare',
+              builder: (_, _) => const EtfCatalogScreen(),
+            ),
           ],
         ),
         StatefulShellBranch(

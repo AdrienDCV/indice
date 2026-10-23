@@ -13,7 +13,7 @@ Contraintes non négociables :
 
 Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format exact des réponses de l'API : les DTOs de `../indice-backend/src/main/kotlin/com/fisa/indice/<domaine>/dtos/responses/`.
 
-> **Migration en cours** : le code actuel (`lib/pages/`, `lib/models/`, couleurs en dur) ne suit pas encore ce document. Il sera aligné par un refactoring dédié ; tout nouveau code suit d'emblée les règles ci-dessous.
+> **Migration en cours** : le code actuel (`lib/pages/`, `lib/data/`, les fichiers à la racine de `lib/models/`, couleurs en dur) ne suit pas encore ce document. Il sera aligné par un refactoring dédié ; tout nouveau code suit d'emblée les règles ci-dessous.
 
 ## Stack
 
@@ -24,7 +24,7 @@ Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format
 | Models immuables et JSON | `freezed`, `json_serializable` (génération avec `build_runner`) |
 | Injection de dépendances | `get_it` |
 | Navigation | `go_router` |
-| Appels à l'API | `http` |
+| Appels à l'API | `dio` |
 | Variables d'environnement | `flutter_dotenv` |
 | Lecture vidéo | `video_player` |
 
@@ -70,18 +70,22 @@ Premier niveau : un dossier par **couche**. Second niveau : un dossier par **not
 ```
 lib/
 ├── main.dart
-├── injection.dart          # enregistrement get_it (client http, repositories)
+├── environment.dart        # lecture des variables du .env.local (Environment.apiUrl)
+├── http.dart               # client dio global, intercepteur de logs, extraction de la clé d'erreur
+├── injection.dart          # enregistrement get_it (repositories)
 ├── router.dart             # routes go_router
 ├── theme/                  # ThemeData : couleurs, TextTheme
 ├── errors/                 # traduction des clés d'erreur de l'API en messages français
-├── data/                   # models des données reçues de l'API, par notion
+├── models/                 # models des données reçues de l'API, par notion
+│   ├── common/             # paginated_data.dart
 │   ├── etf/                # etf_data.dart, etf_comparison_data.dart…
 │   └── resource/
 ├── repositories/           # appels à l'API, par notion : etf_repository.dart…
 ├── stores/                 # états de l'app (Cubit), par notion
 │   └── etf/                # etf_comparison_store.dart + etf_comparison_state.dart
 ├── screens/                # assemblages de widgets, par module : home/, compare/, learn/…
-└── widgets/                # composants réutilisables, par famille : button/, card/…
+├── widgets/                # composants réutilisables, par famille : button/, card/…
+└── utils/                  # fonctions sans état : formatage (dates, nombres)…
 ```
 
 - Ne créer un dossier que lorsqu'il a un premier fichier (pas de dossiers vides).
@@ -99,7 +103,7 @@ lib/
 | Screen | `Screen` | `compare_screen.dart` → `CompareScreen` |
 | Widget | sa nature | `resource_card.dart` → `ResourceCard`, `module_button.dart` → `ModuleButton` |
 
-## Models de données (`lib/data/`)
+## Models de données (`lib/models/`)
 
 - Reflet **fidèle** du JSON renvoyé par l'API : mêmes champs, même nullabilité. Un champ que l'API peut renvoyer à `null` est nullable en Dart, jamais remplacé par une valeur par défaut inventée.
 - Annotés `@freezed`, immuables, avec `fromJson`. Chaque fichier déclare ses deux `part`, en reprenant le nom du fichier :
@@ -123,14 +127,17 @@ lib/
   ```
 - `@JsonKey(name: ...)` uniquement si le nom JSON diffère du nom Dart.
 - **Aucune logique métier** : ni calcul, ni règle de décision.
-- Réponses paginées de l'API (`{ "content": [...], "page", "size", "totalElements", "totalPages" }`) : un model générique `PageData<T>` (`lib/data/common/`), avec `@Freezed(genericArgumentFactories: true)`.
+- Réponses paginées de l'API (`{ "content": [...], "page", "size", "totalElements", "totalPages" }`) : un model générique `PaginatedData<T>` (`lib/models/common/`), avec `@Freezed(genericArgumentFactories: true)`.
 - Si un changement du contrat d'API casse un model, le signaler (le backend fait foi).
 
 ## Repositories (`lib/repositories/`)
 
-- Seul endroit qui appelle l'API (paquet `http`). Un repository par notion.
-- Reçoivent le `http.Client` et l'URL de base par constructeur, et renvoient des models `Data` (`Future<EtfData>`, `Future<PageData<EtfData>>`). Jamais de `Map` JSON ni de `Response` en sortie.
-- Réponse en erreur : le corps de l'API est toujours une **liste** de `{ "error": "error.etfs.etf-not-found", "message": "..." }`. Le repository la convertit en `ApiException` portant les **clés** d'erreur ; une erreur réseau ou un corps illisible donne la clé `error.unexpected`.
+- Seul endroit qui appelle l'API. Un repository par notion.
+- Utilisent le client dio global `http` de `lib/http.dart`, configuré une seule fois par `setupHttpClient()` dans `main()` (URL de base, en-têtes, intercepteur de logs). Les chemins sont relatifs à l'URL de base (`http.get('/etfs')`).
+- Renvoient des models `Data` (`Future<EtfData>`, `Future<PaginatedData<EtfData>>`). Jamais de `Map` JSON ni de `Response` en sortie.
+- Ne traitent pas les erreurs : une `DioException` remonte telle quelle jusqu'au store.
+- Réponse en erreur : le corps de l'API est toujours une **liste** de `{ "error": "Not Found", "message": "error.etfs.etf-not-found" }` : `error` est le libellé HTTP, la **clé** d'erreur est dans `message`. `extractErrorMessage(error)` (`lib/http.dart`) renvoie la clé de la première erreur, ou `null` (erreur réseau, corps illisible, erreur hors dio).
+- Tests : remplacer `http.httpClientAdapter` par un faux adaptateur (`test/fakes/`).
 - Classe concrète par défaut (cf. YAGNI).
 
 ## Stores (`lib/stores/`)
@@ -163,14 +170,18 @@ lib/
       try {
         final comparison = await _etfRepository.compare(etfA, etfB);
         emit(state.copyWith(comparison: comparison, isLoading: false));
-      } on ApiException catch (exception) {
-        emit(state.copyWith(isLoading: false, errorKey: exception.errorKeys.first));
+      } catch (error) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
+        ));
       }
     }
   }
   ```
 - Chaque action utilisateur est une **méthode nommée** du store (`compare`, `toggleFavourite`…), qui fait un `emit(state.copyWith(...))`. `emit` n'est appelé que dans le store.
 - Chargement initial dans une méthode `init()`, appelée à la création du store.
+- Un store par notion, jamais de store global unique. Un store **partagé par plusieurs écrans** (ex. le catalogue d'ETF) est fourni au niveau de l'app, dans `IndiceApp` au-dessus du routeur, avec un `BlocProvider` paresseux (comportement par défaut) : il n'est créé, et `init()` appelé, qu'au premier écran qui le lit. Un store propre à un écran est créé par cet écran.
 - Le store reçoit ses repositories par constructeur (testable), sans lire get_it.
 - Getters dérivés (`visibleProducts`, `favouriteCount`) autorisés pour l'**état d'interface** (filtre, sélection, compteur d'affichage), jamais pour produire une donnée financière.
 - L'erreur est stockée sous forme de **clé** dans l'état ; le screen la traduit avec `lib/errors/`.
@@ -178,7 +189,7 @@ lib/
 ## Screens (`lib/screens/`)
 
 - Assemblent des widgets ; un dossier par module (`home/`, `compare/`, `learn/`, `build/`).
-- Créent le store avec `BlocProvider(create: (_) => XxxStore(getIt<XxxRepository>())..init())`, lisent l'état avec `BlocBuilder` / `context.watch`, et relient les callbacks des widgets aux méthodes du store.
+- Créent leur propre store avec `BlocProvider(create: (_) => XxxStore(getIt<XxxRepository>())..init())`, ou lisent un store partagé fourni par l'app. Lisent l'état avec `BlocBuilder` / `context.watch`, et relient les callbacks des widgets aux méthodes du store.
 - Gèrent les trois cas de l'état : chargement, erreur (message traduit), données.
 - Un morceau d'écran réutilisé ou qui a un sens propre est extrait en widget dans `lib/widgets/`.
 
@@ -204,17 +215,17 @@ lib/
 
 ## Injection (get_it)
 
-- Le client `http` et les repositories sont enregistrés dans `lib/injection.dart` (`registerLazySingleton`), appelé dans `main()` avant `runApp`.
-- `getIt<...>()` n'est lu que dans `injection.dart` et à la création des stores dans les screens.
+- Les repositories sont enregistrés dans `lib/injection.dart` (`registerLazySingleton`), appelé dans `main()` avant `runApp`. Le client dio n'y est pas : c'est la variable globale `http` de `lib/http.dart`.
+- `getIt<...>()` n'est lu que dans `injection.dart` et à la création des stores (dans les screens, ou dans `IndiceApp` pour les stores partagés).
 
 ## Erreurs de l'API
 
-- `lib/errors/` contient une table **clé → message français** (`'error.etfs.etf-not-found': 'Cet ETF est introuvable.'`), avec un message générique pour toute clé inconnue.
+- `lib/errors/` contient une table **clé → message français** (`'error.etfs.etf-not-found': 'Cet ETF est introuvable.'`), avec un message générique pour toute clé inconnue, et la constante `unexpectedErrorKey` (`error.unexpected`), utilisée par les stores quand `extractErrorMessage` ne trouve pas de clé.
 - Toute nouvelle clé d'erreur du backend y est ajoutée.
 
 ## Configuration (`.env`)
 
-- Les variables d'environnement (URL de l'API…) sont dans `.env.local`, ignoré par Git, déclaré comme asset dans `pubspec.yaml` et lu au démarrage avec `flutter_dotenv`. `.env.example`, versionné, liste toutes les clés sans valeur réelle : chaque développeur le copie en `.env.local`.
+- Les variables d'environnement (URL de l'API…) sont dans `.env.local`, ignoré par Git, déclaré comme asset dans `pubspec.yaml` et lu au démarrage avec `flutter_dotenv`, et exposé par `Environment` (`lib/environment.dart`). `.env.example`, versionné, liste toutes les clés sans valeur réelle : chaque développeur le copie en `.env.local`.
 - Le `.env.local` est embarqué dans l'application installée, donc lisible par n'importe qui : il ne contient **jamais de secret**.
 
 ## Tests
