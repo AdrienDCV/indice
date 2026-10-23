@@ -198,21 +198,6 @@ data class ClosingPriceHistory(val prices: List<ClosingPrice>) {
     )
 
     /**
-     * Courbe en **base 100** sur tout l'historique : chaque clôture est divisée par la première clôture
-     * (la **base**), puis multipliée par 100 : `clôture / première clôture × 100`.
-     * Les deux ETF d'une comparaison partent ainsi de 100, quel que soit le prix d'une part
-     * (700 $ pour l'un, 50 $ pour l'autre), et une valeur de 150 se lit « +50 % depuis le départ ».
-     *
-     * Un point par jour de bourse : la courbe montre donc les mêmes sommets et creux que la perte maximale.
-     */
-    fun rebased(): List<RebasedPrice> {
-        val base = prices.first().adjustedClose
-        return prices.map {
-            RebasedPrice(it.date, (it.adjustedClose.divide(base, MATH_CONTEXT) * BASE_100).roundedPrice())
-        }
-    }
-
-    /**
      * Corrélation entre deux ETF : mesure s'ils montent et baissent **les mêmes jours**.
      * C'est un nombre entre −1 et 1 :
      * - proche de 1 : ils bougent presque toujours dans le même sens le même jour, et se protègent peu
@@ -327,7 +312,6 @@ data class ClosingPriceHistory(val prices: List<ClosingPrice>) {
         // Nombre usuel de jours de bourse par an aux États-Unis (hors week-ends et jours fériés)
         private val TRADING_DAYS_PER_YEAR = BigDecimal(252)
         private val MIDDLE_POSITION = BigDecimal("0.5")
-        private val BASE_100 = BigDecimal(100)
         // Durée moyenne d'une année en jours, années bissextiles comprises
         private const val DAYS_PER_YEAR = 365.25
         private const val RATE_SCALE = 4

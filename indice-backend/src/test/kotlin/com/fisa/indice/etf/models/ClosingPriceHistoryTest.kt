@@ -336,28 +336,6 @@ class ClosingPriceHistoryTest {
     }
 
     @Test
-    fun `should rebase every close to 100 from the first close`() {
-        // Given
-        val history = history(
-            price("2026-01-05", "50"),
-            price("2026-01-06", "55"),
-            price("2026-01-07", "45"),
-            price("2026-01-08", "75.123"),
-        )
-
-        // When / Then : une valeur par jour de bourse, arrondie à 2 décimales
-        assertEquals(
-            listOf(
-                RebasedPrice(LocalDate.parse("2026-01-05"), BigDecimal("100.00")),
-                RebasedPrice(LocalDate.parse("2026-01-06"), BigDecimal("110.00")),
-                RebasedPrice(LocalDate.parse("2026-01-07"), BigDecimal("90.00")),
-                RebasedPrice(LocalDate.parse("2026-01-08"), BigDecimal("150.25")),
-            ),
-            history.rebased(),
-        )
-    }
-
-    @Test
     fun `should give every close with its change since the first close`() {
         // Given
         val history = history(
@@ -386,18 +364,6 @@ class ClosingPriceHistoryTest {
 
         // When
         val lowestPoint = history.pricePoints().minBy { it.close }
-
-        // Then
-        assertEquals(history.maxDrawdown().troughDate, lowestPoint.date)
-    }
-
-    @Test
-    fun `should show the max drawdown trough on the rebased curve`() {
-        // Given : le creux tombe un mercredi, au milieu de la semaine
-        val history = history(price("2026-01-05", "100"), price("2026-01-07", "80"), price("2026-01-09", "95"))
-
-        // When
-        val lowestPoint = history.rebased().minBy { it.value }
 
         // Then
         assertEquals(history.maxDrawdown().troughDate, lowestPoint.date)

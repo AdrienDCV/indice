@@ -10,5 +10,5 @@ data class ComparedEtfResponseDto(
     val fetchedAt: Instant?,
     val stale: Boolean,
     val performance: PerformanceResponseDto,
-    val rebasedPrices: List<RebasedPriceResponseDto>,
+    val pricePoints: List<PricePointResponseDto>,
 )

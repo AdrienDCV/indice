@@ -19,7 +19,7 @@ Exposer `GET /etfs/compare?etfA=SPY&etfB=QQQ` (URL complète `/api/etfs/compare?
 - leurs courbes de prix **ramenées à une base 100**, pour les superposer sur un graphique ;
 - la **corrélation** entre les deux ETF, pour la leçon de diversification.
 
-L'API **ne désigne aucun gagnant** : elle renvoie des valeurs brutes, et c'est l'utilisateur qui juge selon ses propres critères. Les symboles `<` et `>` et la mise en forme sont gérés par le mobile.
+L'API **ne désigne aucun gagnant** : elle renvoie des valeurs brutes, et c'est l'utilisateur qui juge selon ses propres critères.
 
 ## 2. Hors périmètre
 
@@ -387,7 +387,7 @@ Pour l'équipe Flutter (propositions, à ajuster) :
 
 | Situation | Signal | Affichage proposé |
 |---|---|---|
-| Comparaison | Réponse 200 | Les deux courbes base 100 superposées, puis un tableau des indicateurs côte à côte. Les `<` et `>` restent factuels (« plus volatil »), jamais « meilleur » |
+| Comparaison | Réponse 200 | Les deux courbes base 100 superposées, puis un tableau des indicateurs côte à côte. Aucun symbole ni libellé ne désigne un ETF « meilleur » |
 | Données anciennes pour un ETF | `stale = true` sur cet ETF | Bandeau *« Données de l'ETF A au 19/10/2026, mise à jour impossible »* |
 | Données insuffisantes | 422 et l'une des trois clés | *« Comparaison impossible : données insuffisantes pour l'ETF A »* (ou B, ou les deux) |
 | Même ETF des deux côtés | 400 `error.etfs.same-etf-comparison` | Idéalement évité en amont, en désactivant l'ETF déjà choisi dans le sélecteur |
@@ -477,3 +477,63 @@ Avant de lancer l'application, vérifier que le port 8080 est libre (l'applicati
 - [x] Aucun champ de « verdict » dans la réponse.
 - [x] Chaque fonction de calcul nouvelle ou modifiée a sa KDoc.
 - [ ] Quota consommé pendant le développement : 2 crédits au plus.
+
+---
+
+## 15. Ajustements : série de cours de la comparaison
+
+Changement demandé pendant le cadrage de l'écran mobile de comparaison (`indice_mobile/docs/plans/plan-implementation-etf-comparison.md`). Le reste de la comparaison est inchangé.
+
+### 15.1 Décisions
+
+| Sujet | Décision |
+|---|---|
+| Série de chaque ETF | `pricePoints` (date, clôture ajustée, variation depuis le début de la période commune), **à la place** de `rebasedPrices` |
+| Calcul | `ClosingPriceHistory.pricePoints()`, déjà utilisé par la fiche détail, appelé sur l'historique **réduit à la période commune** : la variation part donc de 0 au premier jour de la période commune, pour les deux ETF |
+| Base 100 | Supprimée : `rebased()`, `RebasedPrice` et `RebasedPriceResponseDto`. La variation porte la même information (`variation = base 100 / 100 − 1`) et la fiche détail et la comparaison partagent ainsi un seul calcul et un seul DTO |
+| Arrondis | Ceux de `pricePoints()` : clôture à 2 décimales, variation à 4 décimales |
+| Poids | Environ 1 260 points par ETF avec trois champs au lieu de deux, soit environ 150 Ko au lieu d'environ 90 Ko |
+
+### 15.2 Contrat d'API
+
+`GET /api/etfs/compare` : **changement cassant**, `etfA.rebasedPrices` et `etfB.rebasedPrices` sont remplacés par `etfA.pricePoints` et `etfB.pricePoints`. Aucun écran mobile ne les utilisait encore.
+
+```json
+"etfA": {
+  "ticker": "SPY",
+  "…": "…",
+  "pricePoints": [
+    { "date": "2021-10-20", "close": 450.00, "changeSinceStart": 0.0 },
+    { "date": "2021-10-21", "close": 453.92, "changeSinceStart": 0.0087 }
+  ]
+}
+```
+
+### 15.3 Code
+
+- `ComparedEtf` : `rebasedPrices: List<RebasedPrice>` devient `pricePoints: List<PricePoint>`.
+- `EtfComparison` : `commonHistory.rebased()` devient `commonHistory.pricePoints()`.
+- `ComparedEtfResponseDto` : `pricePoints: List<PricePointResponseDto>` (DTO de la fiche détail). Le mapper de la comparaison réutilise `PricePoint.toDto()` d'`EtfDetailMapper`.
+- Suppression de `ClosingPriceHistory.rebased()`, de la constante `BASE_100`, de `RebasedPrice`, de `RebasedPriceResponseDto` et de `RebasedPrice.toDto()`.
+
+### 15.4 Tests
+
+| Classe | Contenu |
+|---|---|
+| `ClosingPriceHistoryTest` | Suppression des deux tests de `rebased()` : `pricePoints()` est déjà couvert (valeurs, arrondis, creux de la perte maximale) |
+| `EtfComparisonTest` | La série de chaque ETF commence au premier jour de la période commune avec une variation de 0, et finit au dernier jour |
+| `EtfComparisonMapperTest` | Conversion de `pricePoints` |
+| `EtfComparisonControllerTest` | `$.etfA.pricePoints[0].date`, `.close`, `.changeSinceStart` dans le JSON |
+
+Vérification manuelle : `curl "http://localhost:8080/api/etfs/compare?etfA=spy&etfB=qqq"` renvoie `pricePoints` pour les deux ETF (0 à 2 crédits Twelve Data selon la fraîcheur des cours). Vérifier avant que le port 8080 est libre.
+
+### 15.5 Documentation
+
+- **Glossaire** : supprimer l'entrée « Base 100 » ; compléter « Point de cours » (la comparaison expose aussi ces points, calculés sur la période commune) et « Comparaison d'ETF » (« courbes en base 100 » devient « séries de cours »).
+- Plan de la fiche détail, §14.3 : la phrase « La comparaison n'est pas modifiée : elle garde `rebasedPrices` » renvoie à cette section.
+
+### 15.6 Commit
+
+Branche `feat/backend/etf-comparison-price-points`, depuis `main`, à merger en même temps que la PR mobile de la comparaison :
+
+- `✨ : backend - expose price points in the etf comparison` (et non ♻️ : le contrat d'API change)

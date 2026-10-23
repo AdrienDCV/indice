@@ -37,7 +37,7 @@ data class EtfComparison(
         }
 
         private fun compared(etf: Etf, commonHistory: ClosingPriceHistory, prices: EtfPrices) =
-            ComparedEtf(etf, commonHistory.performance(), commonHistory.rebased(), prices.fetchedAt, prices.stale)
+            ComparedEtf(etf, commonHistory.performance(), commonHistory.pricePoints(), prices.fetchedAt, prices.stale)
 
         private fun insufficientData(etfAMissing: Boolean, etfBMissing: Boolean) = InsufficientComparisonDataException(
             when {
