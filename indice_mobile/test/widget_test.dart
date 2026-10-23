@@ -5,12 +5,14 @@ import 'package:indice_mobile/data/fake_resources.dart';
 import 'package:indice_mobile/main.dart';
 import 'package:indice_mobile/pages/home_page.dart';
 import 'package:indice_mobile/pages/learn_page.dart';
+import 'package:indice_mobile/pages/resource_detail_page.dart';
+import 'package:indice_mobile/router.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
 void main() {
   testWidgets('displays the home page on startup', (WidgetTester tester) async {
-    await tester.pumpWidget(const IndiceApp());
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     expect(find.byType(HomePage), findsOneWidget);
     expect(find.widgetWithText(AppBar, 'Accueil'), findsOneWidget);
@@ -35,7 +37,7 @@ void main() {
   testWidgets('opens the learn page from the navigation bar', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const IndiceApp());
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.byIcon(Icons.school_outlined));
     await tester.pumpAndSettle();
@@ -48,7 +50,7 @@ void main() {
   testWidgets('opens the learn tab from the home learn button', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const IndiceApp());
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.byType(ModuleButton));
     await tester.pumpAndSettle();
@@ -64,7 +66,7 @@ void main() {
   testWidgets('fades the new tab in when switching tabs', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const IndiceApp());
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     double tabsOpacity() => tester
         .widget<FadeTransition>(
@@ -90,5 +92,19 @@ void main() {
 
     expect(tabsOpacity(), 1);
     expect(find.byType(LearnPage), findsOneWidget);
+  });
+
+  testWidgets('opens a resource detail above the navigation bar', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
+
+    await tester.tap(find.byIcon(Icons.school_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comprendre les frais'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ResourceDetailPage), findsOneWidget);
+    expect(find.byType(NavigationBar), findsNothing);
   });
 }

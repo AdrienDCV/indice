@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:indice_mobile/models/level.dart';
 import 'package:indice_mobile/models/resource.dart';
@@ -30,9 +31,20 @@ const resources = [
 ];
 
 Future<void> pumpLearnPage(WidgetTester tester) {
-  return tester.pumpWidget(
-    const MaterialApp(home: LearnPage(resources: resources)),
+  final router = GoRouter(
+    routes: [
+      GoRoute(
+        path: '/',
+        builder: (_, _) => const LearnPage(resources: resources),
+      ),
+      GoRoute(
+        path: '/resource',
+        builder: (_, state) =>
+            ResourceDetailPage(resource: state.extra! as Resource),
+      ),
+    ],
   );
+  return tester.pumpWidget(MaterialApp.router(routerConfig: router));
 }
 
 Finder filter(String label) => find.widgetWithText(FilterToggle, label);
@@ -111,5 +123,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(ResourceDetailPage), findsOneWidget);
+    expect(find.text('Formation intermédiaire'), findsOneWidget);
   });
 }

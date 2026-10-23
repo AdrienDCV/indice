@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart'
     show VideoPlayerController, VideoPlayerValue;
 
-import '../pages/video_fullscreen_page.dart';
 import 'video_view.dart';
 
 class VideoPlayer extends StatefulWidget {
@@ -63,9 +63,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
             return VideoView(
               controller: _controller,
               isFullscreen: false,
-              onFullscreenTap: () =>
-                  Navigator.of(context)
-                      .push(VideoFullscreenPage.route(_controller)),
+              onFullscreenTap: () => context.push('/video', extra: _controller),
             );
           },
         ),

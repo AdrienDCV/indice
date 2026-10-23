@@ -10,12 +10,6 @@ class ResourceDetailPage extends StatelessWidget {
 
   final Resource resource;
 
-  static Route<void> route(Resource resource) {
-    return MaterialPageRoute(
-      builder: (context) => ResourceDetailPage(resource: resource),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final videoUrl = resource.videoUrl;
