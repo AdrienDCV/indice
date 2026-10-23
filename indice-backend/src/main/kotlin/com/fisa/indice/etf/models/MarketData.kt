@@ -13,4 +13,5 @@ data class MarketData(
     val volatilityOneYear: BigDecimal?,
     val maxDrawdownFiveYears: Drawdown?,
     val fiftyTwoWeekRange: PriceRange?,
+    val pricePoints: List<PricePoint>,
 )

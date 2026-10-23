@@ -11,4 +11,5 @@ data class MarketDataResponseDto(
     val volatilityOneYear: BigDecimal?,
     val maxDrawdown: MaxDrawdownResponseDto?,
     val fiftyTwoWeekRange: PriceRangeResponseDto?,
+    val pricePoints: List<PricePointResponseDto>,
 )

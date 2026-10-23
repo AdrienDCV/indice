@@ -20,7 +20,7 @@ La fiche s'adresse à des débutants et sert de base à la future comparaison d'
 ## 2. Hors périmètre
 
 - Les fondamentaux (frais, encours, composition) : aucune source gratuite ne les fournit (voir le plan du catalogue Twelve Data).
-- La série de cours pour un graphique, la comparaison de plusieurs ETF et les simulations. L'historique stocké par ce plan leur servira plus tard.
+- La série de cours pour un graphique, la comparaison de plusieurs ETF et les simulations. L'historique stocké par ce plan leur servira plus tard. La série de cours a depuis été ajoutée pour l'écran mobile du détail (section 14).
 - Toute tâche planifiée.
 - Tout texte destiné à l'utilisateur : l'API ne renvoie que des données (les textes relèvent du mobile).
 
@@ -318,3 +318,69 @@ Aucun appel réel. Conventions du `CLAUDE.md`.
 - [ ] La synchronisation du catalogue reste fonctionnelle : un ETF retiré emporte ses cours.
 - [ ] Aucune règle de calcul dans le service ni dans le controller : tout est dans `ClosingPriceHistory`.
 - [ ] Quota consommé pendant le développement : 2 crédits.
+
+---
+
+## 14. Ajustements : série de cours pour la courbe du détail
+
+Ajout demandé pendant le cadrage de l'écran mobile du détail (`indice_mobile/docs/plans/plan-implementation-etf-detail.md`) : l'écran affiche une **courbe d'évolution** de l'ETF. Le reste de la fiche est inchangé.
+
+### 14.1 Décisions
+
+| Sujet | Décision |
+|---|---|
+| Valeur tracée | La **clôture ajustée** en devise de l'ETF (dollars), et non la base 100 : avec le défilement horizontal prévu côté mobile, la valeur d'un jour ne dépend pas de la fenêtre affichée |
+| Variation | Chaque point porte aussi sa **variation depuis le début de l'historique** : `clôture / première clôture − 1`. Calculée par le backend, le mobile ne fait que l'afficher (« 512,40 USD · +13,87 % depuis le 12/10/2021 ») |
+| Étendue | Tout l'historique stocké, **un point par jour de bourse**, comme la courbe de la comparaison. Il couvre au plus 5 ans (et 7 jours, section 4) : un ETF plus ancien n'est pas affiché depuis sa création, pour garder la même période que les indicateurs et une réponse légère. Un ETF plus récent a un historique plus court, sans traitement particulier |
+| Emplacement | Dans `marketData` : la série vaut `null` en même temps que lui, quand aucun cours n'a jamais été récupéré |
+| Arrondis | Clôture à 2 décimales, variation à 4 décimales (règles de la section 5.3) |
+| Poids | Environ 1 260 points, soit environ 75 Ko de JSON par fiche |
+
+### 14.2 Objet métier
+
+```kotlin
+data class PricePoint(val date: LocalDate, val close: BigDecimal, val changeSinceStart: BigDecimal)
+```
+
+- Nouvelle méthode `ClosingPriceHistory.pricePoints(): List<PricePoint>`. Exemple : de 450 à 512,40, la variation vaut 0,1387, soit +13,87 %. Le premier point a une variation de 0.
+- `MarketData` reçoit le champ `pricePoints: List<PricePoint>`, rempli par `marketData()`.
+- Nommage : `PricePoint` plutôt que `ClosingPrice`, qui existe déjà avec une autre forme (`date`, `adjustedClose`, sans arrondi ni variation).
+
+### 14.3 Réponse
+
+`GET /api/etfs/{ticker}` : un champ ajouté dans `marketData`, **aucun changement cassant**.
+
+```json
+"marketData": {
+  "lastClose": 766.48,
+  "…": "…",
+  "pricePoints": [
+    { "date": "2021-10-12", "close": 450.00, "changeSinceStart": 0.0 },
+    { "date": "2024-03-12", "close": 512.40, "changeSinceStart": 0.1387 }
+  ]
+}
+```
+
+- DTO `PricePointResponseDto(date, close, changeSinceStart)` dans `dtos/responses`, et le champ `pricePoints: List<PricePointResponseDto>` dans `MarketDataResponseDto`.
+- Mapper `PricePoint.toDto()` dans `EtfDetailMapper`.
+- La comparaison n'est pas modifiée : elle garde `rebasedPrices`.
+
+### 14.4 Tests
+
+| Classe | Contenu |
+|---|---|
+| `ClosingPriceHistoryTest` | `pricePoints` : un point par clôture, dans l'ordre ; premier point à 0 ; variation et arrondis sur un cas vérifiable de tête ; le creux de la perte maximale est le point de plus forte baisse ; `marketData()` contient la série |
+| `EtfDetailMapperTest` | Conversion de la série |
+| `EtfControllerTest` | `$.marketData.pricePoints[0].date`, `.close`, `.changeSinceStart` dans le JSON |
+
+Tous les tests existants restent verts. Vérification manuelle : `curl http://localhost:8080/api/etfs/spy` renvoie la série (0 ou 1 crédit Twelve Data selon la fraîcheur des cours). Vérifier avant que le port 8080 est libre.
+
+### 14.5 Documentation
+
+- **Glossaire**, section Finance : entrée « Point de cours » (`PricePoint`) avec la variation depuis le début de l'historique ; compléter « Historique des clôtures » pour mentionner la courbe du détail.
+
+### 14.6 Commit
+
+Branche `feat/backend/etf-detail-chart`, à merger en même temps que la PR mobile du détail :
+
+- `✨ : backend - add price history to the etf detail`
