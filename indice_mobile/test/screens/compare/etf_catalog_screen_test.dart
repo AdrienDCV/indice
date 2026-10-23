@@ -116,4 +116,13 @@ void main() {
     expect(find.text('Réessayer'), findsNothing);
     expect(find.byType(EtfCard), findsNWidgets(2));
   });
+
+  testWidgets('offers to compare two etfs', (WidgetTester tester) async {
+    await pumpScreenWith(tester, buildCatalog());
+
+    expect(
+      find.widgetWithText(FilledButton, 'Comparer deux ETFs'),
+      findsOneWidget,
+    );
+  });
 }

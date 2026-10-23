@@ -10,8 +10,10 @@ import 'package:indice_mobile/pages/resource_detail_page.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/router.dart';
 import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
+import 'package:indice_mobile/screens/compare/etf_comparison_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
+import 'package:indice_mobile/widgets/field/select_field.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
 import 'fakes/fake_etf_repository.dart';
@@ -165,5 +167,54 @@ void main() {
 
     expect(find.byType(EtfDetailScreen), findsNothing);
     expect(find.byType(EtfCatalogScreen), findsOneWidget);
+  });
+
+  testWidgets('opens an empty comparison from the catalog', (
+    WidgetTester tester,
+  ) async {
+    getIt.registerSingleton<EtfRepository>(
+      FakeEtfRepository(() async => buildCatalog()),
+    );
+    addTearDown(getIt.reset);
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
+
+    await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comparer deux ETFs'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfComparisonScreen), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    final selectors = tester.widgetList<SelectField<String>>(
+      find.byType(SelectField<String>),
+    );
+    expect(selectors.map((selector) => selector.value), [null, null]);
+  });
+
+  testWidgets('compares an etf from its detail with the etf locked', (
+    WidgetTester tester,
+  ) async {
+    getIt.registerSingleton<EtfRepository>(
+      FakeEtfRepository(
+        () async => buildCatalog(),
+        onRetrieveEtf: (_) async => buildEtfDetail(marketData: spyMarketData),
+      ),
+    );
+    addTearDown(getIt.reset);
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
+
+    await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SPDR S&P 500 ETF Trust'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comparer cet ETF'));
+    await tester.pumpAndSettle();
+
+    final firstSelector = tester
+        .widgetList<SelectField<String>>(find.byType(SelectField<String>))
+        .first;
+    expect(find.byType(EtfComparisonScreen), findsOneWidget);
+    expect(firstSelector.value, 'SPY');
+    expect(firstSelector.onChanged, isNull);
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../errors/error_messages.dart';
 import '../../injection.dart';
@@ -94,11 +95,18 @@ class _DetailView extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 16),
+        FilledButton(
+          onPressed: () =>
+              context.push('/compare/comparison?etfA=${etf.ticker}'),
+          child: const Text('Comparer cet ETF'),
+        ),
+        const SizedBox(height: 16),
         if (marketData == null)
           const Text(_noHistoryMessage)
         else
           _MarketDataView(
             marketData: marketData,
+            ticker: etf.ticker,
             currency: etf.currency,
             stale: etf.stale,
           ),
@@ -117,11 +125,13 @@ class _DetailView extends StatelessWidget {
 class _MarketDataView extends StatelessWidget {
   const _MarketDataView({
     required this.marketData,
+    required this.ticker,
     required this.currency,
     required this.stale,
   });
 
   final MarketData marketData;
+  final String ticker;
   final String currency;
   final bool stale;
 
@@ -163,10 +173,17 @@ class _MarketDataView extends StatelessWidget {
           const Text(_noHistoryMessage)
         else
           PriceChart(
-            points: [
-              for (final point in marketData.pricePoints)
-                (date: point.date, value: point.close),
+            series: [
+              (
+                label: ticker,
+                color: Theme.of(context).colorScheme.primary,
+                points: [
+                  for (final point in marketData.pricePoints)
+                    (date: point.date, value: point.close),
+                ],
+              ),
             ],
+            axisLabel: (value) => value.toStringAsFixed(0),
             tooltipLabel: (index) {
               final point = marketData.pricePoints[index];
               return '${point.date.toFrenchDate()}\n'

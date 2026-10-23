@@ -18,8 +18,9 @@ Future<void> pumpChart(
     MaterialApp(
       home: Scaffold(
         body: PriceChart(
-          points: points,
+          series: [(label: 'SPY', color: Colors.green, points: points)],
           tooltipLabel: tooltipLabel ?? (index) => 'Point $index',
+          axisLabel: (value) => value.toStringAsFixed(0),
         ),
       ),
     ),
@@ -81,5 +82,40 @@ void main() {
     expect(requestedIndexes.last, inInclusiveRange(0, 99));
 
     await gesture.up();
+  });
+
+  testWidgets('hides the legend for a single series', (
+    WidgetTester tester,
+  ) async {
+    await pumpChart(tester, dailyPoints(100));
+
+    expect(find.text('SPY'), findsNothing);
+  });
+
+  testWidgets('draws one line per series with a legend', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: PriceChart(
+            series: [
+              (label: 'SPY', color: Colors.green, points: dailyPoints(100)),
+              (label: 'QQQ', color: Colors.teal, points: dailyPoints(100)),
+            ],
+            tooltipLabel: (index) => 'Point $index',
+            axisLabel: (value) => '$value %',
+          ),
+        ),
+      ),
+    );
+
+    final chart = tester.widget<LineChart>(find.byType(LineChart));
+    final colors = chart.data.lineBarsData.map((bar) => bar.color).toList();
+
+    expect(chart.data.lineBarsData, hasLength(2));
+    expect(colors.toSet(), hasLength(2));
+    expect(find.text('SPY'), findsOneWidget);
+    expect(find.text('QQQ'), findsOneWidget);
   });
 }

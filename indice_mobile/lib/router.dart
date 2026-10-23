@@ -11,6 +11,7 @@ import 'pages/main_page.dart';
 import 'pages/resource_detail_page.dart';
 import 'pages/video_fullscreen_page.dart';
 import 'screens/compare/etf_catalog_screen.dart';
+import 'screens/compare/etf_comparison_screen.dart';
 import 'screens/compare/etf_detail_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
@@ -34,6 +35,12 @@ GoRouter buildRouter() => GoRouter(
               path: '/compare',
               builder: (_, _) => const EtfCatalogScreen(),
               routes: [
+                GoRoute(
+                  path: 'comparison',
+                  builder: (_, state) => EtfComparisonScreen(
+                    etfA: state.uri.queryParameters['etfA'],
+                  ),
+                ),
                 GoRoute(
                   path: 'etf/:ticker',
                   builder: (_, state) =>
