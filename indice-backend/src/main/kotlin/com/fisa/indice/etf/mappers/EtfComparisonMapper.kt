@@ -4,12 +4,10 @@ import com.fisa.indice.etf.dtos.responses.ComparedEtfResponseDto
 import com.fisa.indice.etf.dtos.responses.DateRangeResponseDto
 import com.fisa.indice.etf.dtos.responses.EtfComparisonResponseDto
 import com.fisa.indice.etf.dtos.responses.PerformanceResponseDto
-import com.fisa.indice.etf.dtos.responses.RebasedPriceResponseDto
 import com.fisa.indice.etf.models.ComparedEtf
 import com.fisa.indice.etf.models.DateRange
 import com.fisa.indice.etf.models.EtfComparison
 import com.fisa.indice.etf.models.Performance
-import com.fisa.indice.etf.models.RebasedPrice
 
 fun EtfComparison.toDto(): EtfComparisonResponseDto = EtfComparisonResponseDto(
     commonPeriod = commonPeriod.toDto(),
@@ -26,7 +24,7 @@ fun ComparedEtf.toDto(): ComparedEtfResponseDto = ComparedEtfResponseDto(
     fetchedAt = fetchedAt,
     stale = stale,
     performance = performance.toDto(),
-    rebasedPrices = rebasedPrices.map { it.toDto() },
+    pricePoints = pricePoints.map { it.toDto() },
 )
 
 fun Performance.toDto(): PerformanceResponseDto = PerformanceResponseDto(
@@ -35,11 +33,6 @@ fun Performance.toDto(): PerformanceResponseDto = PerformanceResponseDto(
     volatility = volatility,
     returnToRiskRatio = returnToRiskRatio,
     maxDrawdown = maxDrawdown.toDto(),
-)
-
-fun RebasedPrice.toDto(): RebasedPriceResponseDto = RebasedPriceResponseDto(
-    date = date,
-    value = value,
 )
 
 fun DateRange.toDto(): DateRangeResponseDto = DateRangeResponseDto(

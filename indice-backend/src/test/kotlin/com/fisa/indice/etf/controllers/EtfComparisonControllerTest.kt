@@ -10,7 +10,7 @@ import com.fisa.indice.etf.models.Drawdown
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfComparison
 import com.fisa.indice.etf.models.Performance
-import com.fisa.indice.etf.models.RebasedPrice
+import com.fisa.indice.etf.models.PricePoint
 import com.fisa.indice.etf.services.EtfComparisonService
 import io.mockk.every
 import io.mockk.mockk
@@ -50,7 +50,7 @@ class EtfComparisonControllerTest(
             returnToRiskRatio = BigDecimal("0.7377"),
             maxDrawdown = Drawdown(BigDecimal("-0.2450"), LocalDate.parse("2022-01-03"), LocalDate.parse("2022-10-12")),
         ),
-        rebasedPrices = listOf(RebasedPrice(start, BigDecimal("100.00")), RebasedPrice(end, BigDecimal("181.23"))),
+        pricePoints = listOf(PricePoint(start, BigDecimal("450.00"), BigDecimal("0.0000")), PricePoint(end, BigDecimal("815.54"), BigDecimal("0.8123"))),
         fetchedAt = fetchedAt,
         stale = stale,
     )
@@ -84,9 +84,11 @@ class EtfComparisonControllerTest(
             jsonPath("$.etfA.performance.maxDrawdown.value") { value(-0.245) }
             jsonPath("$.etfA.performance.maxDrawdown.peakDate") { value("2022-01-03") }
             jsonPath("$.etfA.performance.maxDrawdown.troughDate") { value("2022-10-12") }
-            jsonPath("$.etfA.rebasedPrices[0].date") { value("2021-10-20") }
-            jsonPath("$.etfA.rebasedPrices[0].value") { value(100.0) }
-            jsonPath("$.etfA.rebasedPrices[1].value") { value(181.23) }
+            jsonPath("$.etfA.pricePoints[0].date") { value("2021-10-20") }
+            jsonPath("$.etfA.pricePoints[0].close") { value(450.0) }
+            jsonPath("$.etfA.pricePoints[0].changeSinceStart") { value(0.0) }
+            jsonPath("$.etfA.pricePoints[1].close") { value(815.54) }
+            jsonPath("$.etfA.pricePoints[1].changeSinceStart") { value(0.8123) }
             jsonPath("$.etfB.ticker") { value("QQQ") }
             jsonPath("$.etfB.stale") { value(true) }
             jsonPath("$.winner") { doesNotExist() }

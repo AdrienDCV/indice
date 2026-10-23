@@ -5,14 +5,14 @@ import com.fisa.indice.etf.dtos.responses.DateRangeResponseDto
 import com.fisa.indice.etf.dtos.responses.EtfComparisonResponseDto
 import com.fisa.indice.etf.dtos.responses.MaxDrawdownResponseDto
 import com.fisa.indice.etf.dtos.responses.PerformanceResponseDto
-import com.fisa.indice.etf.dtos.responses.RebasedPriceResponseDto
+import com.fisa.indice.etf.dtos.responses.PricePointResponseDto
 import com.fisa.indice.etf.models.ComparedEtf
 import com.fisa.indice.etf.models.DateRange
 import com.fisa.indice.etf.models.Drawdown
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfComparison
 import com.fisa.indice.etf.models.Performance
-import com.fisa.indice.etf.models.RebasedPrice
+import com.fisa.indice.etf.models.PricePoint
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.time.Instant
@@ -36,7 +36,7 @@ class EtfComparisonMapperTest {
             returnToRiskRatio = null,
             maxDrawdown = Drawdown(BigDecimal("-0.2450"), peak, trough),
         ),
-        rebasedPrices = listOf(RebasedPrice(start, BigDecimal("100.00")), RebasedPrice(end, BigDecimal("181.23"))),
+        pricePoints = listOf(PricePoint(start, BigDecimal("450.00"), BigDecimal("0.0000")), PricePoint(end, BigDecimal("815.54"), BigDecimal("0.8123"))),
         fetchedAt = fetchedAt,
         stale = stale,
     )
@@ -55,7 +55,7 @@ class EtfComparisonMapperTest {
             returnToRiskRatio = null,
             maxDrawdown = MaxDrawdownResponseDto(BigDecimal("-0.2450"), peak, trough),
         ),
-        rebasedPrices = listOf(RebasedPriceResponseDto(start, BigDecimal("100.00")), RebasedPriceResponseDto(end, BigDecimal("181.23"))),
+        pricePoints = listOf(PricePointResponseDto(start, BigDecimal("450.00"), BigDecimal("0.0000")), PricePointResponseDto(end, BigDecimal("815.54"), BigDecimal("0.8123"))),
     )
 
     @Test

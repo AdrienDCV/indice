@@ -363,7 +363,7 @@ data class PricePoint(val date: LocalDate, val close: BigDecimal, val changeSinc
 
 - DTO `PricePointResponseDto(date, close, changeSinceStart)` dans `dtos/responses`, et le champ `pricePoints: List<PricePointResponseDto>` dans `MarketDataResponseDto`.
 - Mapper `PricePoint.toDto()` dans `EtfDetailMapper`.
-- La comparaison n'est pas modifiée : elle garde `rebasedPrices`.
+- La comparaison n'est pas modifiée : elle garde `rebasedPrices`. Elle a depuis été alignée sur la fiche détail : voir la section 15 du plan de la comparaison, qui remplace `rebasedPrices` par `pricePoints`.
 
 ### 14.4 Tests
 

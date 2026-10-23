@@ -48,9 +48,14 @@ class EtfComparisonTest {
         assertEquals(DateRange(LocalDate.parse("2025-10-17"), LocalDate.parse("2026-10-19")), comparison.commonPeriod)
         assertEquals(BigDecimal("0.1000"), comparison.etfA.performance.totalReturn)
         assertEquals(BigDecimal("0.2000"), comparison.etfB.performance.totalReturn)
-        assertEquals(LocalDate.parse("2025-10-17"), comparison.etfA.rebasedPrices.first().date)
-        assertEquals(BigDecimal("100.00"), comparison.etfA.rebasedPrices.first().value)
-        assertEquals(LocalDate.parse("2026-10-19"), comparison.etfB.rebasedPrices.last().date)
+        assertEquals(
+            PricePoint(LocalDate.parse("2025-10-17"), BigDecimal("110.00"), BigDecimal("0.0000")),
+            comparison.etfA.pricePoints.first(),
+        )
+        assertEquals(
+            PricePoint(LocalDate.parse("2026-10-19"), BigDecimal("60.00"), BigDecimal("0.2000")),
+            comparison.etfB.pricePoints.last(),
+        )
     }
 
     @Test
