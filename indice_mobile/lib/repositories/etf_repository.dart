@@ -1,5 +1,6 @@
 import '../http.dart';
 import '../models/etf/etf_catalog_data.dart';
+import '../models/etf/etf_detail_data.dart';
 
 class EtfRepository {
   Future<EtfCatalogData> retrieveEtfs() async {
@@ -8,5 +9,12 @@ class EtfRepository {
       queryParameters: {'size': 100},
     );
     return EtfCatalogData.fromJson(response.data!);
+  }
+
+  Future<EtfDetailData> retrieveEtf(String ticker) async {
+    final response = await http.get<Map<String, dynamic>>(
+      '/etfs/${Uri.encodeComponent(ticker)}',
+    );
+    return EtfDetailData.fromJson(response.data!);
   }
 }

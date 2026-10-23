@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'gain_loss_colors.dart';
+
 const _primaryColor = Color(0xFF336C4C);
 const _accentColor = Color(0xFF61B396);
 const _headingColor = Color(0xFF307A60);
 const _backgroundColor = Color(0xFFF6F6F3);
+const _gainColor = Color(0xFF2E7D32);
 
 const _titleStyle = TextStyle(
   color: _headingColor,
@@ -12,16 +15,19 @@ const _titleStyle = TextStyle(
 );
 
 ThemeData buildAppTheme() {
+  // primary : boutons, icônes, filtres. secondary : miniatures, vidéo.
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: _primaryColor,
+    primary: _primaryColor,
+    onPrimary: Colors.white,
+    secondary: _accentColor,
+    onSecondary: Colors.white,
+  );
+
   return ThemeData(
     useMaterial3: true,
-    // primary : boutons, icônes, filtres. secondary : miniatures, vidéo.
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: _primaryColor,
-      primary: _primaryColor,
-      onPrimary: Colors.white,
-      secondary: _accentColor,
-      onSecondary: Colors.white,
-    ),
+    colorScheme: colorScheme,
+    extensions: [GainLossColors(gain: _gainColor, loss: colorScheme.error)],
     scaffoldBackgroundColor: _backgroundColor,
     textTheme: const TextTheme(
       // Texte d'accroche de la home.

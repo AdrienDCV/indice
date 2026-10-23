@@ -10,6 +10,7 @@ import 'package:indice_mobile/pages/resource_detail_page.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/router.dart';
 import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
+import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
@@ -136,5 +137,33 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.retrieveEtfsCalls, 1);
+  });
+
+  testWidgets('opens the detail of an etf from the catalog and comes back', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onRetrieveEtf: (_) async => buildEtfDetail(marketData: spyMarketData),
+    );
+    getIt.registerSingleton<EtfRepository>(repository);
+    addTearDown(getIt.reset);
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
+
+    await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('SPDR S&P 500 ETF Trust'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfDetailScreen), findsOneWidget);
+    expect(find.widgetWithText(AppBar, 'SPY'), findsOneWidget);
+    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(repository.retrievedTickers, ['SPY']);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfDetailScreen), findsNothing);
+    expect(find.byType(EtfCatalogScreen), findsOneWidget);
   });
 }

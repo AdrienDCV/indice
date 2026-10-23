@@ -27,6 +27,7 @@ Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format
 | Appels à l'API | `dio` |
 | Variables d'environnement | `flutter_dotenv` |
 | Lecture vidéo | `video_player` |
+| Graphiques | `fl_chart` |
 
 ## Commandes
 
