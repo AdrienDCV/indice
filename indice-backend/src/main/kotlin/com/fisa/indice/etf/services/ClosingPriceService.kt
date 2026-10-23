@@ -31,8 +31,9 @@ class ClosingPriceService(
         if (!ClosingPriceHistory.isStale(fetchedAt, now)) return retrieveStoredPrices(etf, fetchedAt, stale = false)
 
         val prices = fetchClosingPrices(etf, now) ?: return retrieveStoredPrices(etf, fetchedAt, stale = true)
-        replaceClosingPrices(etf, prices, now)
-        return EtfPrices(ClosingPriceHistory.fromUnsorted(prices), now, stale = false)
+        val history = ClosingPriceHistory.fromUnsorted(prices)
+        replaceClosingPrices(etf, history.prices, now)
+        return EtfPrices(history, now, stale = false)
     }
 
     private fun retrieveStoredPrices(etf: Etf, fetchedAt: Instant?, stale: Boolean): EtfPrices {

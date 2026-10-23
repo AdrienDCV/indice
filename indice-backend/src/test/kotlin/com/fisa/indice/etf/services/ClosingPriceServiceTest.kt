@@ -69,6 +69,27 @@ class ClosingPriceServiceTest {
     }
 
     @Test
+    fun `should store a single price per date when twelve data sends a date twice`() {
+        // Given
+        givenStoredPrices()
+        every { twelveDataClient.fetchDailyClosingPrices("SPY", LocalDate.parse("2021-10-13")) } returns listOf(
+            TwelveDataPriceDto(LocalDate.parse("2021-10-18"), BigDecimal("46.13")),
+            TwelveDataPriceDto(LocalDate.parse("2021-10-18"), BigDecimal("46.13")),
+            TwelveDataPriceDto(LocalDate.parse("2026-10-19"), BigDecimal("55")),
+        )
+        val saved = givenReplacementSucceeds()
+
+        // When
+        closingPriceService.retrievePrices(etf)
+
+        // Then
+        assertEquals(
+            listOf(LocalDate.parse("2021-10-18"), LocalDate.parse("2026-10-19")),
+            saved.captured.map { it.tradingDate },
+        )
+    }
+
+    @Test
     fun `should fetch, replace and use new prices when stored prices are stale`() {
         // Given
         val lastWeek = now.minus(Duration.ofDays(7))

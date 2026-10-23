@@ -263,7 +263,7 @@ Un **nouveau service**, pour ne pas mélanger le catalogue et la fiche dans `Etf
 3. `fetchedAt = findFirstByEtfIdOrderByFetchedAtDesc(etf.id)?.fetchedAt`.
 4. **Si les cours ne sont pas périmés** (`ClosingPriceHistory.isStale(fetchedAt, now)` est faux) : charger les cours en base, construire l'historique, renvoyer `EtfDetail(etf, history.marketData(), fetchedAt, stale = false)`.
 5. **Sinon**, appeler `fetchDailyClosingPrices(ticker, now − 5 ans − 7 jours)` :
-   - **succès** : supprimer les anciens cours de l'ETF (`deleteAllByEtfId`), insérer les nouveaux en lot avec `fetchedAt = now`, puis construire l'historique **à partir des cours reçus**, sans relire la base. Renvoyer `stale = false` ;
+   - **succès** : construire l'historique **à partir des cours reçus**, sans relire la base, puis supprimer les anciens cours de l'ETF (`deleteAllByEtfId`) et insérer en lot ceux de l'historique avec `fetchedAt = now`. Ce sont donc les cours triés et **dédoublonnés par date** (`ClosingPriceHistory.fromUnsorted`) : Twelve Data peut renvoyer une même date deux fois, ce que la contrainte d'unicité `(etf_id, trading_date)` refuserait. Renvoyer `stale = false` ;
    - **`TwelveDataUnavailableException`** : journaliser un `warn` sans la cause, ne rien écrire, charger les cours en base et renvoyer `stale = true`. Si la base n'a aucun cours, `marketData = null`.
 
 Les méthodes privées suivent le découpage de `EtfService` (une méthode par étape).
