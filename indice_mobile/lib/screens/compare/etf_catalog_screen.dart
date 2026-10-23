@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../errors/error_messages.dart';
 import '../../models/etf/etf_catalog_data.dart';
@@ -8,6 +9,7 @@ import '../../stores/etf/etf_catalog_store.dart';
 import '../../utils/date_formatting.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/card/etf_card.dart';
+import '../../widgets/error/error_view.dart';
 
 class EtfCatalogScreen extends StatelessWidget {
   const EtfCatalogScreen({super.key});
@@ -21,7 +23,7 @@ class EtfCatalogScreen extends StatelessWidget {
           final errorKey = state.errorKey;
           final catalog = state.catalog;
           if (errorKey != null) {
-            return _ErrorView(
+            return ErrorView(
               message: errorMessage(errorKey),
               onRetry: context.read<EtfCatalogStore>().init,
             );
@@ -73,32 +75,9 @@ class _CatalogView extends StatelessWidget {
             ticker: etf.ticker,
             exchange: etf.exchange,
             currency: etf.currency,
+            onTap: () => context.push('/compare/etf/${etf.ticker}'),
           ),
       ],
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  const _ErrorView({required this.message, required this.onRetry});
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 16,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            FilledButton(onPressed: onRetry, child: const Text('Réessayer')),
-          ],
-        ),
-      ),
     );
   }
 }
