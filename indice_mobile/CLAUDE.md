@@ -24,7 +24,7 @@ Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format
 | Models immuables et JSON | `freezed`, `json_serializable` (génération avec `build_runner`) |
 | Injection de dépendances | `get_it` |
 | Navigation | `go_router` |
-| Appels à l'API | `http` |
+| Appels à l'API | `dio` |
 | Variables d'environnement | `flutter_dotenv` |
 | Lecture vidéo | `video_player` |
 
@@ -70,7 +70,9 @@ Premier niveau : un dossier par **couche**. Second niveau : un dossier par **not
 ```
 lib/
 ├── main.dart
-├── injection.dart          # enregistrement get_it (client http, repositories)
+├── environment.dart        # lecture des variables du .env.local (Environment.apiUrl)
+├── http.dart               # client dio global, intercepteur de logs, extraction de la clé d'erreur
+├── injection.dart          # enregistrement get_it (repositories)
 ├── router.dart             # routes go_router
 ├── theme/                  # ThemeData : couleurs, TextTheme
 ├── errors/                 # traduction des clés d'erreur de l'API en messages français
@@ -130,9 +132,12 @@ lib/
 
 ## Repositories (`lib/repositories/`)
 
-- Seul endroit qui appelle l'API (paquet `http`). Un repository par notion.
-- Reçoivent le `http.Client` et l'URL de base par constructeur, et renvoient des models `Data` (`Future<EtfData>`, `Future<PaginatedData<EtfData>>`). Jamais de `Map` JSON ni de `Response` en sortie.
-- Réponse en erreur : le corps de l'API est toujours une **liste** de `{ "error": "Not Found", "message": "error.etfs.etf-not-found" }` : `error` est le libellé HTTP, la **clé** d'erreur est dans `message`. Le repository la convertit en `ApiException` portant les clés d'erreur ; une erreur réseau ou un corps illisible donne la clé `error.unexpected`.
+- Seul endroit qui appelle l'API. Un repository par notion.
+- Utilisent le client dio global `http` de `lib/http.dart`, configuré une seule fois par `setupHttpClient()` dans `main()` (URL de base, en-têtes, intercepteur de logs). Les chemins sont relatifs à l'URL de base (`http.get('/etfs')`).
+- Renvoient des models `Data` (`Future<EtfData>`, `Future<PaginatedData<EtfData>>`). Jamais de `Map` JSON ni de `Response` en sortie.
+- Ne traitent pas les erreurs : une `DioException` remonte telle quelle jusqu'au store.
+- Réponse en erreur : le corps de l'API est toujours une **liste** de `{ "error": "Not Found", "message": "error.etfs.etf-not-found" }` : `error` est le libellé HTTP, la **clé** d'erreur est dans `message`. `extractErrorMessage(error)` (`lib/http.dart`) renvoie la clé de la première erreur, ou `null` (erreur réseau, corps illisible, erreur hors dio).
+- Tests : remplacer `http.httpClientAdapter` par un faux adaptateur (`test/fakes/`).
 - Classe concrète par défaut (cf. YAGNI).
 
 ## Stores (`lib/stores/`)
@@ -165,8 +170,11 @@ lib/
       try {
         final comparison = await _etfRepository.compare(etfA, etfB);
         emit(state.copyWith(comparison: comparison, isLoading: false));
-      } on ApiException catch (exception) {
-        emit(state.copyWith(isLoading: false, errorKey: exception.errorKeys.first));
+      } catch (error) {
+        emit(state.copyWith(
+          isLoading: false,
+          errorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
+        ));
       }
     }
   }
@@ -207,17 +215,17 @@ lib/
 
 ## Injection (get_it)
 
-- Le client `http` et les repositories sont enregistrés dans `lib/injection.dart` (`registerLazySingleton`), appelé dans `main()` avant `runApp`.
+- Les repositories sont enregistrés dans `lib/injection.dart` (`registerLazySingleton`), appelé dans `main()` avant `runApp`. Le client dio n'y est pas : c'est la variable globale `http` de `lib/http.dart`.
 - `getIt<...>()` n'est lu que dans `injection.dart` et à la création des stores (dans les screens, ou dans `IndiceApp` pour les stores partagés).
 
 ## Erreurs de l'API
 
-- `lib/errors/` contient une table **clé → message français** (`'error.etfs.etf-not-found': 'Cet ETF est introuvable.'`), avec un message générique pour toute clé inconnue.
+- `lib/errors/` contient une table **clé → message français** (`'error.etfs.etf-not-found': 'Cet ETF est introuvable.'`), avec un message générique pour toute clé inconnue, et la constante `unexpectedErrorKey` (`error.unexpected`), utilisée par les stores quand `extractErrorMessage` ne trouve pas de clé.
 - Toute nouvelle clé d'erreur du backend y est ajoutée.
 
 ## Configuration (`.env`)
 
-- Les variables d'environnement (URL de l'API…) sont dans `.env.local`, ignoré par Git, déclaré comme asset dans `pubspec.yaml` et lu au démarrage avec `flutter_dotenv`. `.env.example`, versionné, liste toutes les clés sans valeur réelle : chaque développeur le copie en `.env.local`.
+- Les variables d'environnement (URL de l'API…) sont dans `.env.local`, ignoré par Git, déclaré comme asset dans `pubspec.yaml` et lu au démarrage avec `flutter_dotenv`, et exposé par `Environment` (`lib/environment.dart`). `.env.example`, versionné, liste toutes les clés sans valeur réelle : chaque développeur le copie en `.env.local`.
 - Le `.env.local` est embarqué dans l'application installée, donc lisible par n'importe qui : il ne contient **jamais de secret**.
 
 ## Tests

@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/data/fake_resources.dart';
+import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/main.dart';
 import 'package:indice_mobile/pages/home_page.dart';
 import 'package:indice_mobile/pages/learn_page.dart';
 import 'package:indice_mobile/pages/resource_detail_page.dart';
+import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/router.dart';
+import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
+
+import 'fakes/fake_etf_repository.dart';
 
 void main() {
   testWidgets('displays the home page on startup', (WidgetTester tester) async {
@@ -106,5 +111,30 @@ void main() {
 
     expect(find.byType(ResourceDetailPage), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
+  });
+
+  testWidgets('loads the etf catalog once, when the compare tab is opened', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    getIt.registerSingleton<EtfRepository>(repository);
+    addTearDown(getIt.reset);
+    await tester.pumpWidget(IndiceApp(router: buildRouter()));
+
+    expect(repository.retrieveEtfsCalls, 0);
+
+    await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfCatalogScreen), findsOneWidget);
+    expect(find.text('SPDR S&P 500 ETF Trust'), findsOneWidget);
+    expect(repository.retrieveEtfsCalls, 1);
+
+    await tester.tap(find.byIcon(Icons.school_outlined));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
+    await tester.pumpAndSettle();
+
+    expect(repository.retrieveEtfsCalls, 1);
   });
 }

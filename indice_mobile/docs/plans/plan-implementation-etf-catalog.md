@@ -30,16 +30,16 @@ Ce plan pose aussi le **socle commun** aux trois écrans du module (injection, c
 
 | Sujet | Décision |
 |---|---|
-| Socle | get_it, `.env.local` / `.env.example`, `ApiException`, `lib/errors/`, `PaginatedData<T>`, client `http`. **Aucune nouvelle dépendance** : tous les paquets sont déjà dans `pubspec.yaml` |
+| Socle | get_it, `.env.local` / `.env.example`, `lib/environment.dart`, `lib/http.dart` (client **dio** global, sur le modèle habituel de l'auteur), `lib/errors/`, `PaginatedData<T>`. Dépendance ajoutée : `dio` ; `http` retiré |
 | Navigation | Déjà en place (PR #14). La branche `/compare` affiche `EtfCatalogScreen` à la place de `ComparePage` |
 | Store | `EtfCatalogStore`, un store par notion, **fourni au niveau de l'app** et créé paresseusement : partagé par le catalogue et, au plan 3, par le choix des ETF à comparer. Pas d'`AppStore` global unique (il grossirait à chaque fonctionnalité) |
 | Chargement | Un seul appel `GET /etfs?size=100`, le maximum accepté par le backend. Le catalogue compte 10 ETF |
 | Carte | `EtfCard` : nom, ticker, place de cotation · devise. Ni prix ni performance (le catalogue ne les renvoie pas) |
 | Catalogue périmé | Bandeau affiché seulement si `stale` vaut `true`, avec la date de `fetchedAt` si elle n'est pas `null` |
-| Erreurs | La clé est lue dans le champ **`message`** de la réponse d'erreur. Bouton « Réessayer » qui rappelle `init()` |
+| Erreurs | Le repository laisse remonter la `DioException`. Le store en extrait la clé (champ **`message`**) avec `extractErrorMessage`, ou `error.unexpected` à défaut. Bouton « Réessayer » qui rappelle `init()` |
 | Réseau | Aucune configuration Android ni iOS pour le HTTP en clair (voir 4.3), vérifiée au premier lancement |
 | Formatage de date | Extension maison dans `lib/utils/`, sans `intl` |
-| Tests | Repository (`MockClient`), store (faux repository écrit à la main), widgets, screen, extension de date. Ni mocktail ni bloc_test |
+| Tests | Repository (faux `HttpClientAdapter` dio), `extractErrorMessage`, store (faux repository écrit à la main), widgets, screen, extension de date. Ni mocktail ni bloc_test |
 
 ---
 
@@ -84,7 +84,7 @@ Seule clé atteignable depuis cet écran : `error.unexpected`. Les plans 2 et 3 
 
 ### 4.3 HTTP en clair
 
-Android bloque le HTTP en clair par défaut depuis Android 9, mais cette règle ne vise que les sockets natifs de la plateforme. Le paquet `http` passe par `dart:io`, dont les sockets appartiennent à Dart :
+Android bloque le HTTP en clair par défaut depuis Android 9, mais cette règle ne vise que les sockets natifs de la plateforme. Dio passe par `dart:io` sur mobile, dont les sockets appartiennent à Dart :
 
 - [doc Android](https://developer.android.com/privacy-and-security/security-config) : « Starting with Android 9 (API level 28), cleartext support is disabled by default. »
 - [doc Flutter](https://docs.flutter.dev/release/breaking-changes/network-policy-ios-android) : « If the socket is owned by Dart/Flutter, no policy will be enforced. »
@@ -118,8 +118,7 @@ Une branche n'est construite qu'à sa première visite (`preload` vaut `false` p
 
 ### 7.1 Erreurs (`lib/errors/`)
 
-- `api_exception.dart` : `ApiException implements Exception`, avec `final List<String> errorKeys`.
-- `error_messages.dart` : table clé → message français, et une fonction `String errorMessage(String key)` qui renvoie le message générique pour une clé inconnue.
+- `error_messages.dart` : constante `unexpectedErrorKey` (`error.unexpected`), table clé → message français, et une fonction `String errorMessage(String key)` qui renvoie le message générique pour une clé inconnue.
 
   | Clé | Message |
   |---|---|
@@ -137,20 +136,25 @@ factory PaginatedData.fromJson(Map<String, dynamic> json, T Function(Object?) fr
     _$PaginatedDataFromJson(json, fromJsonT);
 ```
 
-### 7.3 Injection (`lib/injection.dart`)
+### 7.3 Client HTTP (`lib/environment.dart`, `lib/http.dart`)
+
+Sur le modèle habituel de l'auteur :
+
+- `Environment.apiUrl` lit `API_BASE_URL` avec `dotenv.get`, qui lève une erreur si la clé est absente.
+- `lib/http.dart` expose un client dio global, `final http = Dio()`, configuré une seule fois par `setupHttpClient()` : URL de base, en-tête `Content-Type: application/json` et `LoggingInterceptor` (requête, réponse et erreur affichées avec `debugPrint`).
+- `extractErrorMessage(Object error)` renvoie le `message` de la première erreur du corps (la clé), ou `null` : erreur hors dio, erreur réseau, corps illisible ou liste vide.
+
+### 7.4 Injection (`lib/injection.dart`)
 
 ```dart
 final getIt = GetIt.instance;
 
 void configureDependencies() {
-  final apiBaseUrl = dotenv.get('API_BASE_URL');
-  getIt
-    ..registerLazySingleton<http.Client>(http.Client.new)
-    ..registerLazySingleton(() => EtfRepository(getIt(), apiBaseUrl));
+  getIt.registerLazySingleton(EtfRepository.new);
 }
 ```
 
-Appelée dans `main()` après `dotenv.load`, avant `runApp`. `dotenv.get` lève une erreur si la clé est absente : l'app échoue au démarrage avec un message clair, plutôt qu'à la première requête.
+`main()` appelle, dans l'ordre : `dotenv.load`, `setupHttpClient()`, `configureDependencies()`, puis `runApp`.
 
 ---
 
@@ -196,31 +200,18 @@ abstract class EtfCatalogData with _$EtfCatalogData {
 
 ```dart
 class EtfRepository {
-  EtfRepository(this._client, this._baseUrl);
-
-  final http.Client _client;
-  final String _baseUrl;
-
   Future<EtfCatalogData> retrieveEtfs() async {
-    final json = await _get('/etfs?size=100');
-    return EtfCatalogData.fromJson(json as Map<String, dynamic>);
+    final response = await http.get<Map<String, dynamic>>(
+      '/etfs',
+      queryParameters: {'size': 100},
+    );
+    return EtfCatalogData.fromJson(response.data!);
   }
-
-  Future<Object?> _get(String path) async {...}
 }
 ```
 
-`_get` centralise les appels, et les plans 2 et 3 le réutilisent dans la même classe :
-
-| Cas | Résultat |
-|---|---|
-| 2xx | `jsonDecode(utf8.decode(response.bodyBytes))` |
-| Autre statut, corps = liste de `{ error, message }` | `ApiException` avec les `message` |
-| Autre statut, corps illisible ou liste vide | `ApiException(['error.unexpected'])` |
-| Erreur réseau (`ClientException`, `SocketException`) | `ApiException(['error.unexpected'])` |
-| Réponse 2xx mais JSON inattendu (`fromJson` qui lève) | `ApiException(['error.unexpected'])` |
-
-- **`utf8.decode(bodyBytes)` plutôt que `response.body`** : sans `charset` dans l'en-tête `Content-Type`, `response.body` décode en latin-1, ce qui abîmerait les accents.
+- Le chemin est relatif à l'URL de base : dio les concatène (`http://localhost:8080/api` + `/etfs`).
+- Dio décode le JSON en UTF-8 et lève une `DioException` pour tout statut hors 2xx et pour une erreur réseau. Le repository ne traite aucune erreur : elles remontent au store.
 - Pas de timeout explicite (KISS). Le backend peut mettre quelques secondes à répondre s'il synchronise le catalogue avec Twelve Data (timeout de lecture de 10 s côté backend).
 
 ---
@@ -242,7 +233,7 @@ abstract class EtfCatalogState with _$EtfCatalogState {
 
 ### 10.2 `lib/stores/etf/etf_catalog_store.dart`
 
-`EtfCatalogStore extends Cubit<EtfCatalogState>`, avec une seule méthode `init()` : `isLoading: true, errorKey: null`, appel de `retrieveEtfs()`, puis `catalog` ou `errorKey` (première clé de l'`ApiException`). Le bouton « Réessayer » rappelle `init()`.
+`EtfCatalogStore extends Cubit<EtfCatalogState>`, avec une seule méthode `init()` : `isLoading: true, errorKey: null`, appel de `retrieveEtfs()`, puis `catalog`, ou en cas d'erreur `errorKey: extractErrorMessage(error) ?? unexpectedErrorKey`. Le bouton « Réessayer » rappelle `init()`.
 
 ### 10.3 Fourniture au niveau de l'app
 
@@ -297,19 +288,21 @@ Les textes sont à relire ensemble.
   - section *Repositories* : la clé d'erreur est dans `message`, et non dans `error` ;
   - section *Architecture* : ajouter `utils/` (fonctions de formatage et utilitaires sans état) ;
   - section *Stores* : un store par notion, fourni au niveau de l'app (dans `IndiceApp`, au-dessus du routeur) s'il est partagé entre plusieurs écrans, sinon créé par l'écran ;
-  - sections *Screens* et *Injection* : `getIt` est aussi lu à la création des stores fournis au niveau de l'app.
+  - sections *Screens* et *Injection* : `getIt` est aussi lu à la création des stores fournis au niveau de l'app ;
+  - stack, *Repositories*, *Stores*, *Injection* et *Erreurs* : client dio global de `lib/http.dart`, erreurs extraites dans le store avec `extractErrorMessage` (commit ♻️).
 - **`README.md`** : remplacer le texte généré par Flutter par les étapes de démarrage (copier `.env.example` en `.env.local`, `build_runner`, lancer le backend).
 
 ---
 
 ## 12. Tests
 
-Arborescence miroir de `lib/`. Aucun appel réel à l'API. Le faux repository et un constructeur de catalogue de test sont partagés dans `test/fakes/fake_etf_repository.dart` (utilisés par trois fichiers de test).
+Arborescence miroir de `lib/`. Aucun appel réel à l'API. Doublures partagées dans `test/fakes/` : `fake_etf_repository.dart` (faux repository, catalogue de test, `DioException` d'API) et `fake_http_client_adapter.dart` (faux adaptateur dio, branché sur le client global).
 
 | Fichier | Contenu |
 |---|---|
-| `test/repositories/etf_repository_test.dart` | Avec `MockClient` (`package:http/testing.dart`) : URL appelée (`/etfs?size=100`) ; succès avec `fetchedAt` présent et `null` ; caractères accentués ; erreur 500 avec clé ; plusieurs erreurs ; corps illisible ; erreur réseau ; JSON 200 inattendu |
-| `test/stores/etf/etf_catalog_store_test.dart` | Faux `EtfRepository` (`implements`) : `init()` passe par `isLoading` puis donne le catalogue ; erreur → `errorKey` ; un second `init()` après une erreur efface `errorKey` |
+| `test/repositories/etf_repository_test.dart` | Faux `HttpClientAdapter` : URL appelée (`/etfs?size=100`) ; succès avec `fetchedAt` présent et `null` ; caractères accentués ; une erreur de l'API remonte en `DioException` |
+| `test/http_test.dart` | `extractErrorMessage` : première clé d'une liste d'erreurs ; `null` pour une liste vide, un corps illisible, une erreur réseau, une erreur hors dio |
+| `test/stores/etf/etf_catalog_store_test.dart` | Faux `EtfRepository` (`implements`) : `init()` passe par `isLoading` puis donne le catalogue ; erreur de l'API → sa clé ; toute autre erreur → `error.unexpected` ; un second `init()` après une erreur efface `errorKey` |
 | `test/widgets/card/etf_card_test.dart` | Nom, ticker, `exchange · currency` ; `onTap` appelé |
 | `test/widgets/banner/stale_data_banner_test.dart` | Affiche le message |
 | `test/utils/date_formatting_test.dart` | Zéros à gauche ; conversion UTC → heure locale |
@@ -324,8 +317,9 @@ Rappel : `flutter test` compile les shaders avec `impellerc`, ce qui peut décle
 
 Branche `feat/mobile/etf-catalog` :
 
-1. `🔧 : mobile - document api error keys, shared stores and utils folder` (section 11, `CLAUDE.md`, et ce plan)
+1. `🔧 : mobile - document api error keys and shared stores` (section 11, `CLAUDE.md`, et ce plan)
 2. `✨ : mobile - list etfs in the compare tab` (sections 5 à 10, 12, README)
+3. `♻️ : mobile - share a global dio client between repositories` (section 7.3, `CLAUDE.md`, ce plan, tests)
 
 ---
 
