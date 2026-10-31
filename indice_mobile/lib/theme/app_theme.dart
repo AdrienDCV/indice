@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'gain_loss_colors.dart';
+import 'module_colors.dart';
 
 const _primaryColor = Color(0xFF336C4C);
 const _accentColor = Color(0xFF61B396);
 const _headingColor = Color(0xFF307A60);
 const _backgroundColor = Color(0xFFF6F6F3);
 const _gainColor = Color(0xFF2E7D32);
+const _compareModuleColor = Color(0xFF458C64);
 
 const _titleStyle = TextStyle(
   color: _headingColor,
@@ -27,7 +29,10 @@ ThemeData buildAppTheme() {
   return ThemeData(
     useMaterial3: true,
     colorScheme: colorScheme,
-    extensions: [GainLossColors(gain: _gainColor, loss: colorScheme.error)],
+    extensions: [
+      GainLossColors(gain: _gainColor, loss: colorScheme.error),
+      const ModuleColors(compare: _compareModuleColor),
+    ],
     scaffoldBackgroundColor: _backgroundColor,
     textTheme: const TextTheme(
       // Texte d'accroche de la home.

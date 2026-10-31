@@ -6,11 +6,13 @@ class ModuleButton extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.color,
   });
 
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Color? color;
 
   @override
   State<ModuleButton> createState() => _ModuleButtonState();
@@ -46,7 +48,7 @@ class _ModuleButtonState extends State<ModuleButton>
     return ScaleTransition(
       scale: _scale,
       child: Material(
-        color: Theme.of(context).colorScheme.primary,
+        color: widget.color ?? Theme.of(context).colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/fake_resources.dart';
+import '../theme/module_colors.dart';
 import '../widgets/module_button.dart';
 import '../widgets/resource_card.dart';
 
@@ -26,6 +27,13 @@ class HomePage extends StatelessWidget {
             title: 'Apprendre',
             subtitle: 'Comprendre les bases des ETF et de la finance',
             onTap: () => context.go('/learn'),
+          ),
+          const SizedBox(height: 16),
+          ModuleButton(
+            title: 'Comparer',
+            subtitle: 'Apprendre à lire et comparer les indicateurs des ETF',
+            color: Theme.of(context).extension<ModuleColors>()?.compare,
+            onTap: () => context.go('/compare'),
           ),
           const SizedBox(height: 32),
           Text('Nouveauté pédagogique :', style: textTheme.titleLarge),

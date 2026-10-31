@@ -51,6 +51,13 @@ class _CatalogView extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: FilledButton(
+            onPressed: () => context.push('/compare/comparison'),
+            child: const Text('Comparer deux ETFs'),
+          ),
+        ),
         if (catalog.stale)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
