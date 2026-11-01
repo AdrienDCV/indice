@@ -11,4 +11,5 @@ data class EtfDetailResponseDto(
     val fetchedAt: Instant?,
     val stale: Boolean,
     val favourite: Boolean,
+    val leveragedOrInverse: Boolean,
 )

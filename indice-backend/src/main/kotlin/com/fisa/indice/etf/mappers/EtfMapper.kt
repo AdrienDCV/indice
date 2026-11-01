@@ -34,6 +34,7 @@ fun Etf.toDto(): EtfResponseDto = EtfResponseDto(
     name = name,
     currency = currency,
     favourite = favourite,
+    leveragedOrInverse = isLeveragedOrInverse(),
 )
 
 fun RetrievedEtfCatalog.toDto(): EtfCatalogResponseDto = EtfCatalogResponseDto(

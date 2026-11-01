@@ -76,6 +76,7 @@ class EtfControllerTest(
             jsonPath("$.etfs.content[0].isin") { doesNotExist() }
             jsonPath("$.etfs.content[0].currency") { value("USD") }
             jsonPath("$.etfs.content[0].favourite") { value(false) }
+            jsonPath("$.etfs.content[0].leveragedOrInverse") { value(false) }
             jsonPath("$.etfs.page") { value(1) }
             jsonPath("$.etfs.size") { value(5) }
             jsonPath("$.etfs.totalElements") { value(12) }
@@ -137,6 +138,7 @@ class EtfControllerTest(
             jsonPath("$.fetchedAt") { value("2026-10-07T08:00:00Z") }
             jsonPath("$.stale") { value(false) }
             jsonPath("$.favourite") { value(false) }
+            jsonPath("$.leveragedOrInverse") { value(false) }
         }
     }
 

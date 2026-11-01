@@ -216,3 +216,4 @@ Branche `feat/backend/catalog-search-favourites`, depuis `main` :
 | Sujet | Plan | Code livré | Raison |
 |---|---|---|---|
 | `CLAUDE.md` backend | Rien à changer | Une phrase renvoie vers `docs/adr/README.md`, à côté du glossaire et des plans | Premier dossier d'ADR du backend : sans ce renvoi, il passerait inaperçu |
+| ETF à effet de levier ou inverses | Hors périmètre (pas de donnée fiable) | `Etf.isLeveragedOrInverse()` (règle stricte sur le nom), champ `leveragedOrInverse` dans le catalogue et la fiche. ADR-0003 | Demande après les essais : le rappel général ne permet pas de reconnaître ces ETF. Règle mesurée sur le catalogue local : 782 ETF repérés sur 11 422, échantillon de 30 entièrement correct |

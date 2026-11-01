@@ -71,6 +71,7 @@ class EtfDetailMapperTest {
                 fetchedAt = now,
                 stale = false,
                 favourite = false,
+                leveragedOrInverse = false,
             ),
             dto,
         )

@@ -52,4 +52,11 @@ class EtfMapperTest {
         // Then
         assertTrue(dto.favourite)
     }
+
+    @Test
+    fun `should tell whether the etf is leveraged or inverse`() {
+        val dto = etf.copy(name = "Direxion Daily S&P 500 Bull 3X Shares").toDto()
+
+        assertTrue(dto.leveragedOrInverse)
+    }
 }

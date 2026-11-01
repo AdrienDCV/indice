@@ -39,3 +39,4 @@ Chaque dossier a sa propre numérotation. Pour citer une ADR hors de son dossier
 |---|---|---|
 | [0001](0001-catalogue-complet-des-etf-americains.md) | Catalogue complet des ETF américains | Acceptée |
 | [0002](0002-favoris-cote-backend-utilisateur-unique.md) | Favoris stockés côté backend, application à utilisateur unique | Acceptée |
+| [0003](0003-signaler-les-etf-a-effet-de-levier-d-apres-leur-nom.md) | Signaler les ETF à effet de levier ou inverses d'après leur nom | Acceptée |
