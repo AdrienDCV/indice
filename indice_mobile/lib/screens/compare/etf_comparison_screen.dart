@@ -5,17 +5,15 @@ import '../../errors/error_messages.dart';
 import '../../injection.dart';
 import '../../models/etf/compared_etf_data.dart';
 import '../../models/etf/etf_comparison_data.dart';
+import '../../models/etf/etf_data.dart';
 import '../../repositories/etf_repository.dart';
-import '../../stores/etf/etf_catalog_state.dart';
-import '../../stores/etf/etf_catalog_store.dart';
 import '../../stores/etf/etf_comparison_state.dart';
 import '../../stores/etf/etf_comparison_store.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
+import '../../utils/page_padding.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/chart/price_chart.dart';
-import '../../widgets/error/error_view.dart';
-import '../../widgets/field/select_field.dart';
 import '../../widgets/indicator/comparison_table.dart';
 import '../../widgets/indicator/correlation_gauge.dart';
 import '../../widgets/info/info_tooltip_button.dart';
@@ -67,7 +65,7 @@ class EtfComparisonScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Comparer deux ETFs')),
         body: BlocBuilder<EtfComparisonStore, EtfComparisonState>(
           builder: (context, state) => ListView(
-            padding: const EdgeInsets.all(16),
+            padding: pagePadding(context),
             children: [
               _EtfSelectors(state: state, isEtfALocked: etfA != null),
               const SizedBox(height: 16),
@@ -91,48 +89,94 @@ class _EtfSelectors extends StatelessWidget {
     final store = context.read<EtfComparisonStore>();
     final colors = _etfColors(context);
 
-    return BlocBuilder<EtfCatalogStore, EtfCatalogState>(
-      builder: (context, catalogState) {
-        final errorKey = catalogState.errorKey;
-        if (errorKey != null) {
-          return ErrorView(
-            message: errorMessage(errorKey),
-            onRetry: context.read<EtfCatalogStore>().init,
-          );
-        }
-        final etfs = catalogState.catalog?.etfs.content;
-        final isReady = etfs != null && !catalogState.isLoading;
+    Future<List<EtfData>> suggestionsWithout(
+      String? ticker,
+      String search,
+    ) async => [
+      for (final etf in await store.suggestEtfs(search))
+        if (etf.ticker != ticker) etf,
+    ];
 
-        List<({String value, String label})> optionsWithout(String? ticker) => [
-          for (final etf in etfs ?? const [])
-            if (etf.ticker != ticker)
-              (value: etf.ticker, label: '${etf.ticker} · ${etf.name}'),
-        ];
-
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                SelectField<String>(
-                  label: 'Premier ETF',
-                  leading: _ColorDot(color: colors[0]),
-                  options: optionsWithout(state.etfB),
-                  value: state.etfA,
-                  onChanged: isReady && !isEtfALocked ? store.selectEtfA : null,
-                ),
-                const _VersusDivider(),
-                SelectField<String>(
-                  label: 'Second ETF',
-                  leading: _ColorDot(color: colors[1]),
-                  options: optionsWithout(state.etfA),
-                  value: state.etfB,
-                  onChanged: isReady ? store.selectEtfB : null,
-                ),
-              ],
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _EtfSearchField(
+              label: 'Premier ETF',
+              leading: _ColorDot(color: colors[0]),
+              ticker: state.etfA,
+              suggestions: (search) => suggestionsWithout(state.etfB, search),
+              onSelected: isEtfALocked ? null : store.selectEtfA,
             ),
+            const _VersusDivider(),
+            _EtfSearchField(
+              label: 'Second ETF',
+              leading: _ColorDot(color: colors[1]),
+              ticker: state.etfB,
+              suggestions: (search) => suggestionsWithout(state.etfA, search),
+              onSelected: store.selectEtfB,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EtfSearchField extends StatelessWidget {
+  const _EtfSearchField({
+    required this.label,
+    required this.leading,
+    required this.ticker,
+    required this.suggestions,
+    required this.onSelected,
+  });
+
+  final String label;
+  final Widget leading;
+  final String? ticker;
+  final Future<List<EtfData>> Function(String search) suggestions;
+  final ValueChanged<String>? onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final onSelected = this.onSelected;
+    final ticker = this.ticker;
+
+    return SearchAnchor(
+      enabled: onSelected != null,
+      viewHintText: 'Rechercher un ETF par nom ou ticker',
+      builder: (context, controller) => InkWell(
+        onTap: controller.openView,
+        child: InputDecorator(
+          isEmpty: ticker == null,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: leading,
+            suffixIcon: const Icon(Icons.search),
+            enabled: onSelected != null,
           ),
-        );
+          child: Text(ticker ?? ''),
+        ),
+      ),
+      suggestionsBuilder: (context, controller) async {
+        final search = controller.text.trim();
+        if (search.isEmpty || onSelected == null) return const [];
+        final etfs = await suggestions(search);
+        return [
+          for (final etf in etfs)
+            ListTile(
+              title: Text(
+                '${etf.ticker} · ${etf.name}',
+                overflow: TextOverflow.ellipsis,
+              ),
+              onTap: () {
+                controller.closeView(etf.ticker);
+                onSelected(etf.ticker);
+              },
+            ),
+        ];
       },
     );
   }

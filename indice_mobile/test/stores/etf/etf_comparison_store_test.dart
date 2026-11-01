@@ -135,4 +135,27 @@ void main() {
     expect(store.state.comparison, comparison);
     expect(store.state.errorKey, isNull);
   });
+
+  test('suggests the etfs matching a search', () async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    final store = EtfComparisonStore(repository);
+
+    final suggestions = await store.suggestEtfs('sp');
+
+    expect(suggestions, [spy, qqq]);
+    expect(repository.catalogRequests.single, (
+      page: 0,
+      size: EtfComparisonStore.suggestionCount,
+      search: 'sp',
+      favouritesOnly: false,
+    ));
+  });
+
+  test('suggests nothing when the search fails', () async {
+    final store = EtfComparisonStore(
+      FakeEtfRepository(() async => throw apiError('error.unexpected')),
+    );
+
+    expect(await store.suggestEtfs('sp'), isEmpty);
+  });
 }

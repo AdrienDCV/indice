@@ -10,5 +10,6 @@ abstract class EtfDetailState with _$EtfDetailState {
     EtfDetailData? etf,
     @Default(false) bool isLoading,
     String? errorKey,
+    String? favouriteErrorKey,
   }) = _EtfDetailState;
 }

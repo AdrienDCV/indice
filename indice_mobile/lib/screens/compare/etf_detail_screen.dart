@@ -7,10 +7,13 @@ import '../../injection.dart';
 import '../../models/etf/etf_detail_data.dart';
 import '../../models/etf/market_data.dart';
 import '../../repositories/etf_repository.dart';
+import '../../stores/etf/etf_catalog_store.dart';
 import '../../stores/etf/etf_detail_state.dart';
 import '../../stores/etf/etf_detail_store.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
+import '../../utils/page_padding.dart';
+import '../../widgets/badge/leverage_badge.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/chart/price_chart.dart';
 import '../../widgets/error/error_view.dart';
@@ -19,6 +22,12 @@ import '../../widgets/indicator/price_range_bar.dart';
 import '../../widgets/indicator/returns_table.dart';
 import '../../widgets/info/info_tooltip_button.dart';
 
+const _leverageInfo =
+    'D’après son nom, cet ETF amplifie (effet de levier) ou inverse les '
+    'variations d’un indice, chaque jour. Sur plusieurs jours, sa performance '
+    'peut fortement s’écarter de celle de l’indice. Il est conçu pour des '
+    'opérations de très court terme.';
+const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
 const _noHistoryMessage =
     'Aucun historique de cours disponible pour le moment.';
 const _returnInfo = 'Gain ou perte sur la période, dividendes réinvestis.';
@@ -52,24 +61,62 @@ class EtfDetailScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) => EtfDetailStore(getIt<EtfRepository>(), ticker)..init(),
       child: Scaffold(
-        appBar: AppBar(title: Text(ticker)),
-        body: BlocBuilder<EtfDetailStore, EtfDetailState>(
-          builder: (context, state) {
-            final errorKey = state.errorKey;
-            final etf = state.etf;
-            if (errorKey != null) {
-              return ErrorView(
-                message: errorMessage(errorKey),
-                onRetry: context.read<EtfDetailStore>().init,
+        appBar: AppBar(
+          title: Text(ticker),
+          actions: const [_FavouriteButton()],
+        ),
+        body: BlocListener<EtfDetailStore, EtfDetailState>(
+          listenWhen: (previous, current) =>
+              current.favouriteErrorKey != null &&
+              previous.favouriteErrorKey != current.favouriteErrorKey,
+          listener: (context, _) => ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
+          child: BlocBuilder<EtfDetailStore, EtfDetailState>(
+            builder: (context, state) {
+              final errorKey = state.errorKey;
+              final etf = state.etf;
+              if (errorKey != null) {
+                return ErrorView(
+                  message: errorMessage(errorKey),
+                  onRetry: context.read<EtfDetailStore>().init,
+                );
+              }
+              if (state.isLoading || etf == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return RefreshIndicator(
+                onRefresh: context.read<EtfDetailStore>().refresh,
+                child: _DetailView(etf: etf),
               );
-            }
-            if (state.isLoading || etf == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return _DetailView(etf: etf);
-          },
+            },
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _FavouriteButton extends StatelessWidget {
+  const _FavouriteButton();
+
+  Future<void> _toggle(BuildContext context, String ticker) async {
+    final catalogStore = context.read<EtfCatalogStore>();
+    final favourite = await context.read<EtfDetailStore>().toggleFavourite();
+    if (favourite != null) catalogStore.favouriteChanged(ticker, favourite);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<EtfDetailStore, EtfDetailState>(
+      builder: (context, state) {
+        final etf = state.etf;
+        if (etf == null) return const SizedBox.shrink();
+        return IconButton(
+          onPressed: () => _toggle(context, etf.ticker),
+          icon: Icon(etf.favourite ? Icons.star : Icons.star_border),
+        );
+      },
     );
   }
 }
@@ -85,7 +132,8 @@ class _DetailView extends StatelessWidget {
     final marketData = etf.marketData;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: pagePadding(context),
       children: [
         Text(etf.name, style: theme.textTheme.headlineSmall),
         Text(
@@ -94,6 +142,16 @@ class _DetailView extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        if (etf.leveragedOrInverse)
+          const Row(
+            children: [
+              Flexible(child: LeverageBadge()),
+              InfoTooltipButton(
+                title: 'Effet de levier ou inverse',
+                text: _leverageInfo,
+              ),
+            ],
+          ),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () =>

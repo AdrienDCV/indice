@@ -85,4 +85,57 @@ void main() {
 
     expect(store.state, const EtfDetailState(errorKey: 'error.unexpected'));
   });
+
+  test('pins its etf right away and returns the confirmed state', () async {
+    final repository = repositoryWith((_) async => buildEtfDetail());
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+
+    final saving = store.toggleFavourite();
+
+    expect(store.state.etf?.favourite, isTrue);
+    expect(await saving, isTrue);
+    expect(repository.addedFavourites, ['SPY']);
+  });
+
+  test('unpins its etf', () async {
+    final repository = repositoryWith(
+      (_) async => buildEtfDetail(favourite: true),
+    );
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+
+    expect(await store.toggleFavourite(), isFalse);
+    expect(store.state.etf?.favourite, isFalse);
+    expect(repository.removedFavourites, ['SPY']);
+  });
+
+  test('restores the star when the api cannot save the favourite', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onRetrieveEtf: (_) async => buildEtfDetail(),
+      onAddFavourite: (_) async => throw apiError('error.unexpected'),
+    );
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+
+    expect(await store.toggleFavourite(), isNull);
+    expect(store.state.etf?.favourite, isFalse);
+    expect(store.state.favouriteErrorKey, 'error.unexpected');
+  });
+
+  test('refreshes its etf while keeping the current one displayed', () async {
+    final repository = repositoryWith((_) async => buildEtfDetail());
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+    repository.onRetrieveEtf = (_) async => buildEtfDetail(favourite: true);
+
+    final refreshing = store.refresh();
+
+    expect(store.state.isLoading, isFalse);
+    expect(store.state.etf?.favourite, isFalse);
+    await refreshing;
+    expect(store.state.etf?.favourite, isTrue);
+    expect(repository.retrievedTickers, ['SPY', 'SPY']);
+  });
 }
