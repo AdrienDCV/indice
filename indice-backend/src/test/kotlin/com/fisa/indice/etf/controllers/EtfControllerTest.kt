@@ -198,22 +198,14 @@ class EtfControllerTest(
     }
 
     @Test
-    fun `should return created when an etf is pinned`() {
-        every { etfService.addFavourite("SPY") } returns true
-
-        mockMvc.put("/etfs/SPY/favourite").andExpect {
-            status { isCreated() }
-            content { string("") }
-        }
-    }
-
-    @Test
-    fun `should return ok when the etf was already a favourite`() {
-        every { etfService.addFavourite("SPY") } returns false
+    fun `should return the etf detail when an etf is pinned`() {
+        every { etfService.addFavourite("SPY") } returns EtfDetail(etf.copy(favourite = true), null, fetchedAt, stale = false)
 
         mockMvc.put("/etfs/SPY/favourite").andExpect {
             status { isOk() }
-            content { string("") }
+            jsonPath("$.ticker") { value("SPY") }
+            jsonPath("$.favourite") { value(true) }
+            jsonPath("$.marketData") { value(null) }
         }
     }
 

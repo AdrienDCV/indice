@@ -5,10 +5,12 @@ class AppSearchBar extends StatelessWidget {
     super.key,
     required this.hintText,
     required this.onChanged,
+    this.enabled = true,
   });
 
   final String hintText;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +22,7 @@ class AppSearchBar extends StatelessWidget {
         EdgeInsets.symmetric(horizontal: 16),
       ),
       onChanged: onChanged,
+      enabled: enabled,
     );
   }
 }

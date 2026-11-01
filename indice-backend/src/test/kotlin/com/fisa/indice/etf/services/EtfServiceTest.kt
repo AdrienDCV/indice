@@ -8,6 +8,8 @@ import com.fisa.indice.etf.entities.FavouriteEtfEntity
 import com.fisa.indice.etf.exceptions.EtfNotFoundException
 import com.fisa.indice.etf.exceptions.InvalidTickerException
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
+import com.fisa.indice.etf.models.Etf
+import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.repositories.EtfRepository
 import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import io.mockk.CapturingSlot
@@ -45,12 +47,20 @@ class EtfServiceTest {
     private val favouriteEtfRepository = mockk<FavouriteEtfRepository> {
         every { findAllById(any()) } returns emptyList()
     }
+    private val etfDetailService = mockk<EtfDetailService>()
+    private val pinnedDetail = EtfDetail(
+        Etf(first, "NYSE", "ETF $first", "USD", now, favourite = true),
+        marketData = null,
+        closingPricesFetchedAt = null,
+        stale = true,
+    )
     private val etfService = EtfService(
         etfRepository,
         twelveDataClient,
         Clock.fixed(now, ZoneOffset.UTC),
         EtfCatalogProperties(country),
         favouriteEtfRepository,
+        etfDetailService,
     )
 
     private fun entity(ticker: String, fetchedAt: Instant) =
@@ -218,12 +228,13 @@ class EtfServiceTest {
         every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
         every { favouriteEtfRepository.existsById(first) } returns false
         every { favouriteEtfRepository.save(FavouriteEtfEntity(first)) } returns FavouriteEtfEntity(first)
+        every { etfDetailService.retrieveEtf(first) } returns pinnedDetail
 
         // When
-        val added = etfService.addFavourite(" spy ")
+        val detail = etfService.addFavourite(" spy ")
 
         // Then
-        assertTrue(added)
+        assertEquals(pinnedDetail, detail)
         verify(exactly = 1) { favouriteEtfRepository.save(FavouriteEtfEntity(first)) }
     }
 
@@ -232,12 +243,13 @@ class EtfServiceTest {
         // Given
         every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
         every { favouriteEtfRepository.existsById(first) } returns true
+        every { etfDetailService.retrieveEtf(first) } returns pinnedDetail
 
         // When
-        val added = etfService.addFavourite(first)
+        val detail = etfService.addFavourite(first)
 
         // Then
-        assertFalse(added)
+        assertEquals(pinnedDetail, detail)
         verify(exactly = 0) { favouriteEtfRepository.save(any()) }
     }
 

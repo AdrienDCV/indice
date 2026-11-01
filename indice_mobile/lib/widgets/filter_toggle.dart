@@ -11,7 +11,7 @@ class FilterToggle extends StatelessWidget {
 
   final String label;
   final bool isSelected;
-  final ValueChanged<bool> onSelected;
+  final ValueChanged<bool>? onSelected;
   final IconData? icon;
 
   @override

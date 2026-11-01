@@ -292,4 +292,60 @@ void main() {
     expect(store.state.etfs, [spy, qqq]);
     expect(repository.catalogRequests.last.page, 0);
   });
+
+  test('tells when the catalog comes from the device', () async {
+    final store = EtfCatalogStore(
+      FakeEtfRepository(() async => buildCatalog(), catalogOffline: true),
+    );
+
+    await store.init();
+
+    expect(store.state.offline, isTrue);
+    expect(store.state.etfs, [spy, qqq]);
+  });
+
+  test('does not load more while showing the cached catalog', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(etfs: [spy], totalPages: 2),
+      catalogOffline: true,
+    );
+    final store = EtfCatalogStore(repository);
+    await store.init();
+
+    await store.loadMore();
+
+    expect(repository.retrieveEtfsCalls, 1);
+  });
+
+  test('shows the favourites filter as active offline', () async {
+    final store = EtfCatalogStore(
+      FakeEtfRepository(() async => buildCatalog(), catalogOffline: true),
+    );
+
+    await store.init();
+
+    expect(store.state.favouritesOnly, isTrue);
+  });
+
+  test('syncs the favourite downloads once, after loading online', () async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    final store = EtfCatalogStore(repository);
+
+    await store.init();
+    await store.refresh();
+
+    expect(repository.syncFavouriteDownloadsCalls, 1);
+  });
+
+  test('does not sync the favourite downloads offline', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      catalogOffline: true,
+    );
+    final store = EtfCatalogStore(repository);
+
+    await store.init();
+
+    expect(repository.syncFavouriteDownloadsCalls, 0);
+  });
 }

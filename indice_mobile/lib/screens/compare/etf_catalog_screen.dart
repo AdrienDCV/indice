@@ -7,6 +7,7 @@ import '../../stores/etf/etf_catalog_state.dart';
 import '../../stores/etf/etf_catalog_store.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/page_padding.dart';
+import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/card/etf_card.dart';
 import '../../widgets/error/error_view.dart';
@@ -18,6 +19,8 @@ const _leverageInfo =
     'Certains ETF amplifient (effet de levier) ou inversent les variations '
     'd’un indice : ils sont conçus pour des opérations de très court terme. '
     'Ceux repérés d’après leur nom portent une étiquette.';
+const _offlineMessage =
+    'Hors ligne · seuls vos favoris téléchargés sont disponibles';
 const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
 const _loadMoreDistance = 300.0;
 
@@ -35,7 +38,21 @@ class EtfCatalogScreen extends StatelessWidget {
           context,
         ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
         child: BlocBuilder<EtfCatalogStore, EtfCatalogState>(
-          builder: (context, state) => _CatalogView(state: state),
+          builder: (context, state) {
+            final offline = state.offline;
+            return Column(
+              children: [
+                if (offline) const OfflineBar(message: _offlineMessage),
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: offline,
+                    child: _CatalogView(state: state),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -77,6 +94,7 @@ class _CatalogViewState extends State<_CatalogView> {
     final state = widget.state;
     final store = context.read<EtfCatalogStore>();
     final errorKey = state.errorKey;
+    final offline = state.offline;
 
     return RefreshIndicator(
       onRefresh: store.refresh,
@@ -92,6 +110,7 @@ class _CatalogViewState extends State<_CatalogView> {
             filterIcon: Icons.star,
             isFilterSelected: state.favouritesOnly,
             onFilterChanged: store.favouritesOnlyChanged,
+            enabled: !offline,
           ),
           const SizedBox(height: 12),
           FilledButton(
@@ -109,7 +128,7 @@ class _CatalogViewState extends State<_CatalogView> {
               child: Center(child: CircularProgressIndicator()),
             )
           else ...[
-            if (state.stale)
+            if (!offline && state.stale)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: StaleDataBanner(message: _staleMessage(state.fetchedAt)),
@@ -127,7 +146,9 @@ class _CatalogViewState extends State<_CatalogView> {
                 currency: etf.currency,
                 isFavourite: etf.favourite,
                 isLeveragedOrInverse: etf.leveragedOrInverse,
-                onFavouriteTap: () => store.toggleFavourite(etf.ticker),
+                onFavouriteTap: !offline
+                    ? () => store.toggleFavourite(etf.ticker)
+                    : null,
                 onTap: () => context.push('/compare/etf/${etf.ticker}'),
               ),
             LoadMoreFooter(
@@ -148,6 +169,10 @@ String _staleMessage(DateTime? fetchedAt) => fetchedAt == null
           'Dernière mise à jour le ${fetchedAt.toFrenchDate()}.';
 
 String _emptyMessage(EtfCatalogState state) {
+  if (state.offline) {
+    return 'Aucun favori disponible hors ligne. '
+        'Épinglez un ETF pour le retrouver sans connexion.';
+  }
   final search = state.search;
   return switch ((search.isEmpty, state.favouritesOnly)) {
     (true, false) => 'Aucun ETF disponible pour le moment.',

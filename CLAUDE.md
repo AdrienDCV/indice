@@ -21,7 +21,8 @@ indice/
   - `indice-backend/CLAUDE.md` : architecture, règles de code, tests, migrations ;
   - `indice-backend/docs/` : glossaire (`glossaire.md`) et plans d'implémentation (`plans/`) ;
   - `indice_mobile/CLAUDE.md` : architecture (stores, repositories, models freezed), règles d'affichage, navigation.
-- Ce fichier ne contient que les règles **communes** aux deux projets : Git, commits et pull requests.
+- Les décisions structurantes et leur justification sont consignées dans des **ADR** : propres à un projet dans son dossier (ex. [ADR mobile](indice_mobile/docs/adr/README.md)), transverses dans `docs/adr/` à la racine. Chaque dossier a son `README.md` (cycle de vie, index), son modèle `0000-template.md` et sa propre numérotation.
+- Ce fichier ne contient que les règles **communes** aux deux projets : Git, commits, pull requests et organisation des ADR.
 
 ## Façon de travailler
 

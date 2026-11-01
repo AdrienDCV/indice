@@ -46,7 +46,7 @@ class EtfComparisonStore extends Cubit<EtfComparisonState> {
         search: search,
         size: suggestionCount,
       );
-      return catalog.etfs.content;
+      return catalog.data.etfs.content;
     } catch (_) {
       return const [];
     }

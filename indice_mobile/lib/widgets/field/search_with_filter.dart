@@ -12,6 +12,7 @@ class SearchWithFilter extends StatelessWidget {
     required this.filterIcon,
     required this.isFilterSelected,
     required this.onFilterChanged,
+    this.enabled = true,
   });
 
   final String hintText;
@@ -20,6 +21,7 @@ class SearchWithFilter extends StatelessWidget {
   final IconData filterIcon;
   final bool isFilterSelected;
   final ValueChanged<bool> onFilterChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +29,16 @@ class SearchWithFilter extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 8,
       children: [
-        AppSearchBar(hintText: hintText, onChanged: onSearchChanged),
+        AppSearchBar(
+          hintText: hintText,
+          onChanged: onSearchChanged,
+          enabled: enabled,
+        ),
         FilterToggle(
           label: filterLabel,
           icon: filterIcon,
           isSelected: isFilterSelected,
-          onSelected: onFilterChanged,
+          onSelected: enabled ? onFilterChanged : null,
         ),
       ],
     );

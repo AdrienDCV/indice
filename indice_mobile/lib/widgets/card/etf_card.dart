@@ -21,7 +21,7 @@ class EtfCard extends StatelessWidget {
   final String currency;
   final bool isFavourite;
   final bool isLeveragedOrInverse;
-  final VoidCallback onFavouriteTap;
+  final VoidCallback? onFavouriteTap;
   final VoidCallback? onTap;
 
   @override

@@ -8,6 +8,8 @@ final http = Dio();
 void setupHttpClient() {
   http.options.baseUrl = Environment.apiUrl;
   http.options.headers['Content-Type'] = 'application/json';
+  http.options.connectTimeout = const Duration(seconds: 10);
+  http.options.receiveTimeout = const Duration(seconds: 20);
 
   http.interceptors.add(LoggingInterceptor());
 }

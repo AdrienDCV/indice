@@ -8,6 +8,7 @@ part 'etf_detail_state.freezed.dart';
 abstract class EtfDetailState with _$EtfDetailState {
   const factory EtfDetailState({
     EtfDetailData? etf,
+    DateTime? cachedAt,
     @Default(false) bool isLoading,
     String? errorKey,
     String? favouriteErrorKey,

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/http.dart';
@@ -48,5 +49,15 @@ void main() {
 
   test('extracts nothing from an error that does not come from dio', () {
     expect(extractErrorMessage(const FormatException()), isNull);
+  });
+
+  test('gives up on an unreachable api so that the cache can take over', () {
+    dotenv.loadFromString(envString: 'API_BASE_URL=http://localhost:8080/api');
+
+    setupHttpClient();
+    addTearDown(http.interceptors.clear);
+
+    expect(http.options.connectTimeout, const Duration(seconds: 10));
+    expect(http.options.receiveTimeout, const Duration(seconds: 20));
   });
 }

@@ -12,6 +12,7 @@ import 'package:indice_mobile/models/etf/max_drawdown_data.dart';
 import 'package:indice_mobile/models/etf/price_point_data.dart';
 import 'package:indice_mobile/models/etf/price_range_data.dart';
 import 'package:indice_mobile/models/etf/returns_data.dart';
+import 'package:indice_mobile/repositories/cached_result.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 
 const spy = EtfData(
@@ -214,6 +215,8 @@ class FakeEtfRepository implements EtfRepository {
     this.onCompare = _unexpectedCompare,
     this.onAddFavourite = _succeed,
     this.onRemoveFavourite = _succeed,
+    this.catalogOffline = false,
+    this.detailCachedAt,
   });
 
   Future<EtfCatalogData> Function() onRetrieveEtfs;
@@ -221,6 +224,8 @@ class FakeEtfRepository implements EtfRepository {
   Future<EtfComparisonData> Function(String etfA, String etfB) onCompare;
   Future<void> Function(String ticker) onAddFavourite;
   Future<void> Function(String ticker) onRemoveFavourite;
+  bool catalogOffline;
+  DateTime? detailCachedAt;
   final catalogRequests = <CatalogRequest>[];
   final retrievedTickers = <String>[];
   final comparedPairs = <(String, String)>[];
@@ -230,25 +235,32 @@ class FakeEtfRepository implements EtfRepository {
   int get retrieveEtfsCalls => catalogRequests.length;
 
   @override
-  Future<EtfCatalogData> retrieveEtfs({
+  Future<CachedResult<EtfCatalogData>> retrieveEtfs({
     int page = 0,
     int size = 50,
     String search = '',
     bool favouritesOnly = false,
-  }) {
+  }) async {
     catalogRequests.add((
       page: page,
       size: size,
       search: search,
       favouritesOnly: favouritesOnly,
     ));
-    return onRetrieveEtfs();
+    return CachedResult(await onRetrieveEtfs(), offline: catalogOffline);
   }
 
   @override
   Future<void> addFavourite(String ticker) {
     addedFavourites.add(ticker);
     return onAddFavourite(ticker);
+  }
+
+  int syncFavouriteDownloadsCalls = 0;
+
+  @override
+  Future<void> syncFavouriteDownloads() async {
+    syncFavouriteDownloadsCalls++;
   }
 
   @override
@@ -258,9 +270,13 @@ class FakeEtfRepository implements EtfRepository {
   }
 
   @override
-  Future<EtfDetailData> retrieveEtf(String ticker) {
+  Future<CachedResult<EtfDetailData>> retrieveEtf(String ticker) async {
     retrievedTickers.add(ticker);
-    return onRetrieveEtf(ticker);
+    return CachedResult(
+      await onRetrieveEtf(ticker),
+      offline: detailCachedAt != null,
+      cachedAt: detailCachedAt,
+    );
   }
 
   @override
