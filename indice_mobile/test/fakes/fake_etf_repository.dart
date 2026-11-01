@@ -19,6 +19,8 @@ const spy = EtfData(
   exchange: 'NYSE ARCA',
   name: 'SPDR S&P 500 ETF Trust',
   currency: 'USD',
+  favourite: false,
+  leveragedOrInverse: false,
 );
 
 const qqq = EtfData(
@@ -26,20 +28,24 @@ const qqq = EtfData(
   exchange: 'NASDAQ',
   name: 'Invesco QQQ Trust',
   currency: 'USD',
+  favourite: false,
+  leveragedOrInverse: false,
 );
 
 EtfCatalogData buildCatalog({
   List<EtfData> etfs = const [spy, qqq],
   DateTime? fetchedAt,
   bool stale = false,
+  int page = 0,
+  int totalPages = 1,
 }) {
   return EtfCatalogData(
     etfs: PaginatedData(
       content: etfs,
-      page: 0,
-      size: 100,
+      page: page,
+      size: 50,
       totalElements: etfs.length,
-      totalPages: 1,
+      totalPages: totalPages,
     ),
     fetchedAt: fetchedAt,
     stale: stale,
@@ -86,7 +92,12 @@ final spyMarketData = MarketData(
   ],
 );
 
-EtfDetailData buildEtfDetail({MarketData? marketData, bool stale = false}) {
+EtfDetailData buildEtfDetail({
+  MarketData? marketData,
+  bool stale = false,
+  bool favourite = false,
+  bool leveragedOrInverse = false,
+}) {
   return EtfDetailData(
     ticker: spy.ticker,
     exchange: spy.exchange,
@@ -95,6 +106,8 @@ EtfDetailData buildEtfDetail({MarketData? marketData, bool stale = false}) {
     marketData: marketData,
     fetchedAt: DateTime.utc(2026, 10, 20, 9),
     stale: stale,
+    favourite: favourite,
+    leveragedOrInverse: leveragedOrInverse,
   );
 }
 
@@ -185,24 +198,63 @@ Future<EtfComparisonData> _unexpectedCompare(String etfA, String etfB) {
   throw UnimplementedError('compare($etfA, $etfB) was not expected');
 }
 
+typedef CatalogRequest = ({
+  int page,
+  int size,
+  String search,
+  bool favouritesOnly,
+});
+
+Future<void> _succeed(String ticker) async {}
+
 class FakeEtfRepository implements EtfRepository {
   FakeEtfRepository(
     this.onRetrieveEtfs, {
     this.onRetrieveEtf = _unexpectedRetrieveEtf,
     this.onCompare = _unexpectedCompare,
+    this.onAddFavourite = _succeed,
+    this.onRemoveFavourite = _succeed,
   });
 
   Future<EtfCatalogData> Function() onRetrieveEtfs;
   Future<EtfDetailData> Function(String ticker) onRetrieveEtf;
   Future<EtfComparisonData> Function(String etfA, String etfB) onCompare;
-  int retrieveEtfsCalls = 0;
+  Future<void> Function(String ticker) onAddFavourite;
+  Future<void> Function(String ticker) onRemoveFavourite;
+  final catalogRequests = <CatalogRequest>[];
   final retrievedTickers = <String>[];
   final comparedPairs = <(String, String)>[];
+  final addedFavourites = <String>[];
+  final removedFavourites = <String>[];
+
+  int get retrieveEtfsCalls => catalogRequests.length;
 
   @override
-  Future<EtfCatalogData> retrieveEtfs() {
-    retrieveEtfsCalls++;
+  Future<EtfCatalogData> retrieveEtfs({
+    int page = 0,
+    int size = 50,
+    String search = '',
+    bool favouritesOnly = false,
+  }) {
+    catalogRequests.add((
+      page: page,
+      size: size,
+      search: search,
+      favouritesOnly: favouritesOnly,
+    ));
     return onRetrieveEtfs();
+  }
+
+  @override
+  Future<void> addFavourite(String ticker) {
+    addedFavourites.add(ticker);
+    return onAddFavourite(ticker);
+  }
+
+  @override
+  Future<void> removeFavourite(String ticker) {
+    removedFavourites.add(ticker);
+    return onRemoveFavourite(ticker);
   }
 
   @override

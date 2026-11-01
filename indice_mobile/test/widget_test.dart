@@ -13,7 +13,6 @@ import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_comparison_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
-import 'package:indice_mobile/widgets/field/select_field.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
 import 'fakes/fake_etf_repository.dart';
@@ -23,7 +22,7 @@ void main() {
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     expect(find.byType(HomePage), findsOneWidget);
-    expect(find.widgetWithText(AppBar, 'Accueil'), findsOneWidget);
+    expect(find.byType(AppBar), findsNothing);
     expect(find.text('Prêt à découvrir\nl’investissement ?'), findsOneWidget);
     expect(find.widgetWithText(ModuleButton, 'Apprendre'), findsOneWidget);
     expect(
@@ -210,10 +209,12 @@ void main() {
 
     expect(find.byType(EtfComparisonScreen), findsOneWidget);
     expect(find.byType(NavigationBar), findsOneWidget);
-    final selectors = tester.widgetList<SelectField<String>>(
-      find.byType(SelectField<String>),
+    expect(
+      tester
+          .widgetList<SearchAnchor>(find.byType(SearchAnchor))
+          .map((selector) => selector.enabled),
+      [true, true],
     );
-    expect(selectors.map((selector) => selector.value), [null, null]);
   });
 
   testWidgets('compares an etf from its detail with the etf locked', (
@@ -235,11 +236,12 @@ void main() {
     await tester.tap(find.text('Comparer cet ETF'));
     await tester.pumpAndSettle();
 
-    final firstSelector = tester
-        .widgetList<SelectField<String>>(find.byType(SelectField<String>))
-        .first;
+    final firstSelector = find.byType(SearchAnchor).first;
     expect(find.byType(EtfComparisonScreen), findsOneWidget);
-    expect(firstSelector.value, 'SPY');
-    expect(firstSelector.onChanged, isNull);
+    expect(
+      find.descendant(of: firstSelector, matching: find.text('SPY')),
+      findsOneWidget,
+    );
+    expect(tester.widget<SearchAnchor>(firstSelector).enabled, isFalse);
   });
 }

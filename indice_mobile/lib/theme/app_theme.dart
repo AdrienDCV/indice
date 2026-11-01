@@ -10,6 +10,12 @@ const _backgroundColor = Color(0xFFF6F6F3);
 const _gainColor = Color(0xFF2E7D32);
 const _compareModuleColor = Color(0xFF458C64);
 
+const _appBarTitleStyle = TextStyle(
+  color: _headingColor,
+  fontSize: 20,
+  fontWeight: FontWeight.w600,
+);
+
 const _titleStyle = TextStyle(
   color: _headingColor,
   fontSize: 22,
@@ -46,11 +52,20 @@ ThemeData buildAppTheme() {
       // Titres de section (ex. « Nouveauté pédagogique : »).
       titleLarge: _titleStyle,
     ),
-    appBarTheme: const AppBarTheme(
+    appBarTheme: AppBarTheme(
       backgroundColor: _backgroundColor,
       elevation: 0,
+      scrolledUnderElevation: 0,
+      toolbarHeight: 48,
       centerTitle: true,
-      titleTextStyle: _titleStyle,
+      titleTextStyle: _appBarTitleStyle,
+    ),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 68,
+      elevation: 0,
+      labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+      backgroundColor: _backgroundColor.withValues(alpha: 0.8),
+      surfaceTintColor: Colors.transparent,
     ),
     cardTheme: CardThemeData(
       color: Colors.white,

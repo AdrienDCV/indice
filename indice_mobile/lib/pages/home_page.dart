@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../data/fake_resources.dart';
 import '../theme/module_colors.dart';
+import '../utils/page_padding.dart';
 import '../widgets/module_button.dart';
 import '../widgets/resource_card.dart';
 
@@ -14,9 +15,8 @@ class HomePage extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Accueil')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context),
         children: [
           Text(
             'Prêt à découvrir\nl’investissement ?',

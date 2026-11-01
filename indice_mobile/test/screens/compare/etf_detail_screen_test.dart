@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/injection.dart';
@@ -9,27 +10,36 @@ import 'package:indice_mobile/models/etf/price_point_data.dart';
 import 'package:indice_mobile/models/etf/returns_data.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
+import 'package:indice_mobile/stores/etf/etf_catalog_store.dart';
+import 'package:indice_mobile/widgets/badge/leverage_badge.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/chart/price_chart.dart';
 import 'package:indice_mobile/widgets/indicator/price_range_bar.dart';
+import 'package:indice_mobile/widgets/info/info_tooltip_button.dart';
 
 import '../../fakes/fake_etf_repository.dart';
 
 Future<FakeEtfRepository> pumpScreen(
   WidgetTester tester,
-  Future<EtfDetailData> Function(String ticker) onRetrieveEtf,
-) async {
+  Future<EtfDetailData> Function(String ticker) onRetrieveEtf, {
+  EtfCatalogStore? catalogStore,
+  Future<void> Function(String ticker)? onAddFavourite,
+}) async {
   tester.view.physicalSize = const Size(1080, 6000);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
   final repository = FakeEtfRepository(
     () async => buildCatalog(),
     onRetrieveEtf: onRetrieveEtf,
+    onAddFavourite: onAddFavourite ?? (_) async {},
   );
   getIt.registerSingleton<EtfRepository>(repository);
   addTearDown(getIt.reset);
   await tester.pumpWidget(
-    const MaterialApp(home: EtfDetailScreen(ticker: 'SPY')),
+    BlocProvider(
+      create: (_) => catalogStore ?? EtfCatalogStore(repository),
+      child: const MaterialApp(home: EtfDetailScreen(ticker: 'SPY')),
+    ),
   );
   return repository;
 }
@@ -186,5 +196,94 @@ void main() {
       find.widgetWithText(FilledButton, 'Comparer cet ETF'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('pins the etf from the app bar and updates the catalog', (
+    WidgetTester tester,
+  ) async {
+    final catalogStore = EtfCatalogStore(
+      FakeEtfRepository(() async => buildCatalog()),
+    );
+    await catalogStore.init();
+    final repository = await pumpScreen(
+      tester,
+      (_) async => buildEtfDetail(marketData: spyMarketData),
+      catalogStore: catalogStore,
+    );
+    await tester.pump();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.star_border),
+      ),
+    );
+    await tester.pump();
+
+    expect(repository.addedFavourites, ['SPY']);
+    expect(
+      find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byIcon(Icons.star),
+      ),
+      findsOneWidget,
+    );
+    expect(catalogStore.state.etfs.first.favourite, isTrue);
+  });
+
+  testWidgets('warns when the favourite cannot be saved', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      (_) async => buildEtfDetail(marketData: spyMarketData),
+      onAddFavourite: (_) async => throw apiError('error.unexpected'),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byIcon(Icons.star_border));
+    await tester.pump();
+
+    expect(find.text('Impossible de modifier les favoris.'), findsOneWidget);
+    expect(find.byIcon(Icons.star_border), findsOneWidget);
+  });
+
+  testWidgets('reloads the etf when pulled down', (WidgetTester tester) async {
+    final repository = await pumpScreen(
+      tester,
+      (_) async => buildEtfDetail(marketData: spyMarketData),
+    );
+    await tester.pump();
+
+    await tester.flingFrom(
+      tester.getTopLeft(find.byType(ListView)) + const Offset(40, 20),
+      const Offset(0, 1500),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.retrievedTickers, ['SPY', 'SPY']);
+  });
+
+  testWidgets('flags a leveraged or inverse etf and explains it', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreenWith(
+      tester,
+      buildEtfDetail(marketData: spyMarketData, leveragedOrInverse: true),
+    );
+
+    expect(find.byType(LeverageBadge), findsOneWidget);
+
+    await tester.tap(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is InfoTooltipButton &&
+            widget.title == 'Effet de levier ou inverse',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('D’après son nom'), findsOneWidget);
   });
 }

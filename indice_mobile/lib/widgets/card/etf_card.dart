@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../badge/leverage_badge.dart';
+
 class EtfCard extends StatelessWidget {
   const EtfCard({
     super.key,
@@ -7,6 +9,9 @@ class EtfCard extends StatelessWidget {
     required this.ticker,
     required this.exchange,
     required this.currency,
+    required this.isFavourite,
+    required this.isLeveragedOrInverse,
+    required this.onFavouriteTap,
     this.onTap,
   });
 
@@ -14,6 +19,9 @@ class EtfCard extends StatelessWidget {
   final String ticker;
   final String exchange;
   final String currency;
+  final bool isFavourite;
+  final bool isLeveragedOrInverse;
+  final VoidCallback onFavouriteTap;
   final VoidCallback? onTap;
 
   @override
@@ -46,7 +54,15 @@ class EtfCard extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
+                    if (isLeveragedOrInverse) const LeverageBadge(),
                   ],
+                ),
+              ),
+              IconButton(
+                onPressed: onFavouriteTap,
+                icon: Icon(
+                  isFavourite ? Icons.star : Icons.star_border,
+                  color: theme.colorScheme.primary,
                 ),
               ),
             ],
