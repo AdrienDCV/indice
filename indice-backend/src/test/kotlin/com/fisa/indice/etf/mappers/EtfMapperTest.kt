@@ -43,4 +43,13 @@ class EtfMapperTest {
         assertEquals(now, dto.fetchedAt)
         assertTrue(dto.stale)
     }
+
+    @Test
+    fun `should carry the favourite flag from entity to response`() {
+        // When
+        val dto = etf.toEntity().toModel(favourite = true).toDto()
+
+        // Then
+        assertTrue(dto.favourite)
+    }
 }

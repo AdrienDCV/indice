@@ -15,7 +15,7 @@ Contraintes métier non négociables :
 
 Objets métier principaux : `Etf`, `RessourcePedagogique`, `Media` (image ou vidéo, type déduit de l'extension du fichier/lien).
 
-Vocabulaire financier, métier et technique : voir `docs/glossaire.md`. Tout nouveau terme introduit dans le code ou un plan y est ajouté. Les plans d'implémentation sont dans `docs/plans/`.
+Vocabulaire financier, métier et technique : voir `docs/glossaire.md`. Tout nouveau terme introduit dans le code ou un plan y est ajouté. Les plans d'implémentation sont dans `docs/plans/`. Les décisions structurantes et leur justification sont consignées dans des ADR : voir `docs/adr/README.md`.
 
 ## Stack
 

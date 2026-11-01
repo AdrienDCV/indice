@@ -70,6 +70,7 @@ class EtfDetailMapperTest {
                 ),
                 fetchedAt = now,
                 stale = false,
+                favourite = false,
             ),
             dto,
         )
@@ -89,5 +90,12 @@ class EtfDetailMapperTest {
         assertEquals(null, dto.marketData)
         assertEquals(null, dto.fetchedAt)
         assertEquals(true, dto.stale)
+    }
+
+    @Test
+    fun `should map the favourite flag of the etf`() {
+        val dto = EtfDetail(etf.copy(favourite = true), marketData = null, closingPricesFetchedAt = null, stale = true).toDto()
+
+        assertEquals(true, dto.favourite)
     }
 }

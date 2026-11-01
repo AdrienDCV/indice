@@ -5,6 +5,7 @@ import com.fisa.indice.etf.mappers.toModel
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.repositories.EtfRepository
+import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -12,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional
 class EtfDetailService(
     private val etfRepository: EtfRepository,
     private val closingPriceService: ClosingPriceService,
+    private val favouriteEtfRepository: FavouriteEtfRepository,
 ) {
 
     @Transactional
@@ -22,5 +24,6 @@ class EtfDetailService(
     }
 
     private fun findEtf(ticker: String): Etf =
-        etfRepository.findByTicker(ticker)?.toModel() ?: throw EtfNotFoundException()
+        etfRepository.findByTicker(ticker)?.toModel(favourite = favouriteEtfRepository.existsById(ticker))
+            ?: throw EtfNotFoundException()
 }

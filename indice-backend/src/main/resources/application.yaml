@@ -49,17 +49,6 @@ twelvedata:
 
 etf:
   catalog:
-    # ETF proposés dans l'application (tickers américains, offre gratuite de Twelve Data).
-    # Un ticker absent de la réponse de Twelve Data n'apparaît pas dans le catalogue.
+    # Pays des ETF proposés : le catalogue contient tous les ETF de ce pays renvoyés par Twelve Data
+    # (l'offre gratuite ne couvre que les États-Unis).
     country: United States
-    selected-tickers:
-      - SPY  # SPDR S&P 500
-      - QQQ  # Invesco Nasdaq-100
-      - VTI  # Vanguard Total Stock Market (marché américain)
-      - URTH # iShares MSCI World
-      - VEA  # Vanguard FTSE Developed Markets (pays développés hors États-Unis)
-      - VGK  # Vanguard FTSE Europe
-      - EEM  # iShares MSCI Emerging Markets
-      - BND  # Vanguard Total Bond Market (obligations)
-      - GLD  # SPDR Gold Shares (or)
-      - SCHD # Schwab U.S. Dividend Equity

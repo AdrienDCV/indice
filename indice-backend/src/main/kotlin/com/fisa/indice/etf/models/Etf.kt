@@ -10,6 +10,7 @@ data class Etf(
     val name: String,
     val currency: String,
     val fetchedAt: Instant,
+    val favourite: Boolean = false,
     val id: UUID = UUID.randomUUID(),
 ) {
     init {

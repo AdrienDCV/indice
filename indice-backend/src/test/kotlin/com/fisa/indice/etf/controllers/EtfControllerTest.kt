@@ -24,8 +24,12 @@ import org.springframework.context.annotation.Bean
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import io.mockk.justRun
+import io.mockk.verify
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
+import org.springframework.test.web.servlet.put
 import java.math.BigDecimal
 import java.time.Instant
 import java.time.LocalDate
@@ -52,7 +56,7 @@ class EtfControllerTest(
 
     private fun givenServiceReturnsOneEtf(): CapturingSlot<Pageable> {
         val pageable = slot<Pageable>()
-        every { etfService.retrieveEtfs(capture(pageable)) } answers {
+        every { etfService.retrieveEtfs(capture(pageable), any(), any()) } answers {
             RetrievedEtfCatalog(PageImpl(listOf(etf), pageable.captured, 12), fetchedAt, stale = false)
         }
         return pageable
@@ -71,6 +75,7 @@ class EtfControllerTest(
             jsonPath("$.etfs.content[0].name") { value("SPDR S&P 500 ETF Trust") }
             jsonPath("$.etfs.content[0].isin") { doesNotExist() }
             jsonPath("$.etfs.content[0].currency") { value("USD") }
+            jsonPath("$.etfs.content[0].favourite") { value(false) }
             jsonPath("$.etfs.page") { value(1) }
             jsonPath("$.etfs.size") { value(5) }
             jsonPath("$.etfs.totalElements") { value(12) }
@@ -131,6 +136,7 @@ class EtfControllerTest(
             jsonPath("$.marketData.pricePoints[0].changeSinceStart") { value(0.0) }
             jsonPath("$.fetchedAt") { value("2026-10-07T08:00:00Z") }
             jsonPath("$.stale") { value(false) }
+            jsonPath("$.favourite") { value(false) }
         }
     }
 
@@ -162,6 +168,77 @@ class EtfControllerTest(
         mockMvc.get("/etfs/ARKK").andExpect {
             status { isNotFound() }
             jsonPath("$[0].message") { value("error.etfs.etf-not-found") }
+        }
+    }
+
+    @Test
+    fun `should pass the search and the favourites filter to the service`() {
+        // Given
+        givenServiceReturnsOneEtf()
+
+        // When
+        mockMvc.get("/etfs?search=van&favourites=true").andExpect { status { isOk() } }
+
+        // Then
+        verify(exactly = 1) { etfService.retrieveEtfs(any(), "van", true) }
+    }
+
+    @Test
+    fun `should not filter the catalog by default`() {
+        // Given
+        givenServiceReturnsOneEtf()
+
+        // When
+        mockMvc.get("/etfs").andExpect { status { isOk() } }
+
+        // Then
+        verify(exactly = 1) { etfService.retrieveEtfs(any(), null, false) }
+    }
+
+    @Test
+    fun `should return created when an etf is pinned`() {
+        every { etfService.addFavourite("SPY") } returns true
+
+        mockMvc.put("/etfs/SPY/favourite").andExpect {
+            status { isCreated() }
+            content { string("") }
+        }
+    }
+
+    @Test
+    fun `should return ok when the etf was already a favourite`() {
+        every { etfService.addFavourite("SPY") } returns false
+
+        mockMvc.put("/etfs/SPY/favourite").andExpect {
+            status { isOk() }
+            content { string("") }
+        }
+    }
+
+    @Test
+    fun `should return not found when pinning an etf outside the catalog`() {
+        every { etfService.addFavourite("ARKK") } throws EtfNotFoundException()
+
+        mockMvc.put("/etfs/ARKK/favourite").andExpect {
+            status { isNotFound() }
+            jsonPath("$[0].message") { value("error.etfs.etf-not-found") }
+        }
+    }
+
+    @Test
+    fun `should return no content when an etf is unpinned`() {
+        justRun { etfService.removeFavourite("SPY") }
+
+        mockMvc.delete("/etfs/SPY/favourite").andExpect { status { isNoContent() } }
+    }
+
+    @Test
+    fun `should return bad request when unpinning an invalid ticker`() {
+        every { etfService.removeFavourite("SPY$") } throws InvalidTickerException()
+
+        mockMvc.delete("/etfs/SPY$/favourite").andExpect {
+            status { isBadRequest() }
+            jsonPath("$[0].message") { value("error.etfs.invalid-ticker") }
         }
     }
 }

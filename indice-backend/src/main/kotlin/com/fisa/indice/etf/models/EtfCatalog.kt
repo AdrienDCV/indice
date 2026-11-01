@@ -5,11 +5,10 @@ import java.time.Instant
 
 data class EtfCatalog(val etfs: List<Etf>) {
 
-    fun synchronizedWith(source: List<Etf>, selectedTickers: Set<String>): EtfCatalog {
+    fun synchronizedWith(source: List<Etf>): EtfCatalog {
         val currentByTicker = etfs.associateBy { it.ticker }
         return EtfCatalog(
             source
-                .filter { it.ticker in selectedTickers }
                 .distinctBy { it.ticker }
                 .map { candidate -> currentByTicker[candidate.ticker]?.refreshedFrom(candidate) ?: candidate }
         )

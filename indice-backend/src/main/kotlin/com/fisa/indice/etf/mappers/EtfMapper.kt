@@ -9,13 +9,14 @@ import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.RetrievedEtfCatalog
 import java.time.Instant
 
-fun EtfEntity.toModel(): Etf = Etf(
+fun EtfEntity.toModel(favourite: Boolean = false): Etf = Etf(
     id = id,
     ticker = ticker,
     exchange = exchange,
     name = name,
     currency = currency,
     fetchedAt = fetchedAt,
+    favourite = favourite,
 )
 
 fun Etf.toEntity(): EtfEntity = EtfEntity(
@@ -32,6 +33,7 @@ fun Etf.toDto(): EtfResponseDto = EtfResponseDto(
     exchange = exchange,
     name = name,
     currency = currency,
+    favourite = favourite,
 )
 
 fun RetrievedEtfCatalog.toDto(): EtfCatalogResponseDto = EtfCatalogResponseDto(

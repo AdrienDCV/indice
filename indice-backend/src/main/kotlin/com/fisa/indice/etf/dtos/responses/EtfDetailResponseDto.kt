@@ -10,4 +10,5 @@ data class EtfDetailResponseDto(
     val marketData: MarketDataResponseDto?,
     val fetchedAt: Instant?,
     val stale: Boolean,
+    val favourite: Boolean,
 )

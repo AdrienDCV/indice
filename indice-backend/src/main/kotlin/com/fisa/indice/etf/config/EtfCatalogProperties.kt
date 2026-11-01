@@ -5,5 +5,4 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 @ConfigurationProperties(prefix = "etf.catalog")
 data class EtfCatalogProperties(
     val country: String,
-    val selectedTickers: Set<String>,
 )

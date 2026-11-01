@@ -57,15 +57,16 @@ Les identifiants de code sont en anglais ; leur équivalent français est indiqu
 | **Module Construire** | Construction d'un portefeuille fictif à but pédagogique. Optionnel, prévu plus tard. |
 | **Ressource pédagogique** (`RessourcePedagogique`) | Contenu du module *Apprendre*. Peut contenir un **média**. |
 | **Média** (`Media`) | Image ou vidéo associée à une ressource. Son type (`MediaType` : `IMAGE` ou `VIDEO`) est déduit de l'extension du fichier ou du lien. |
-| **Catalogue d'ETF** (`EtfCatalog`) | Liste des ETF proposés dans l'application, stockée en base et exposée par `GET /api/etfs`. |
+| **Catalogue d'ETF** (`EtfCatalog`) | Liste des ETF proposés dans l'application : tous les ETF américains renvoyés par Twelve Data (`etf.catalog.country`). Stockée en base et exposée, paginée, par `GET /api/etfs`. |
+| **Recherche dans le catalogue** (`search`) | Filtre de `GET /api/etfs` : garde les ETF dont le ticker **commence** par le texte ou dont le nom le **contient**, sans tenir compte des majuscules. |
+| **Favori** (`favourite`, `FavouriteEtfEntity`) | ETF épinglé par l'utilisateur, enregistré dans la table `favourite_etf` (un ticker par ligne). Épinglé par `PUT /api/etfs/{ticker}/favourite`, retiré par `DELETE`, et filtré par `GET /api/etfs?favourites=true`. L'application n'ayant pas de comptes, les favoris ne sont rattachés à aucun utilisateur (ADR backend 0002). |
 | **Comparaison d'ETF** (`EtfComparison`) | Mise en regard de deux ETF du catalogue sur leur période commune : indicateurs de chacun (`Performance`), séries de cours (`pricePoints`) et corrélation. Exposée par `GET /api/etfs/compare?etfA=...&etfB=...`. Elle ne désigne aucun gagnant. |
 | **ETF A / ETF B** (`etfA`, `etfB`) | Les deux côtés d'une comparaison, avec le vocabulaire de l'application mobile. Les clés d'erreur indiquent le côté concerné (ex. `error.etfs.etf-a-insufficient-data`). |
-| **Synchronisation** | Mise à jour du catalogue à partir de l'annuaire des ETF de Twelve Data. Elle a lieu **à la demande**, lorsqu'un utilisateur consulte un catalogue périmé. Les ETF connus sont rafraîchis, les ETF sélectionnés nouveaux sont ajoutés, et ceux absents de la réponse sont retirés. |
+| **Synchronisation** | Mise à jour du catalogue à partir de l'annuaire des ETF de Twelve Data. Elle a lieu **à la demande**, lorsqu'un utilisateur consulte un catalogue périmé. Les ETF connus sont rafraîchis, les nouveaux sont ajoutés, et ceux absents de la réponse sont retirés (avec leurs cours et leur favori). |
 | **Date de synchronisation** (`fetchedAt`) | Date de la dernière synchronisation réussie d'un ETF. Celle du catalogue est la plus récente de ses ETF. |
 | **Durée de validité** (`TTL`, *Time To Live*) | Durée pendant laquelle le catalogue est considéré comme à jour : 7 jours. |
 | **Catalogue périmé** (`EtfCatalog.isStale`) | Catalogue vide, ou dont la dernière synchronisation date de plus de 7 jours. Déclenche un appel à Twelve Data. |
 | **Données obsolètes** (`stale` dans la réponse) | Indique que le catalogue renvoyé est périmé **et** que sa synchronisation vient d'échouer : les données affichées peuvent être anciennes. |
-| **ETF sélectionnés** (`etf.catalog.selected-tickers`) | Liste de tickers choisie à la main pour leur intérêt pédagogique, définie dans `application.yaml`. Le catalogue contient exactement ceux de ces ETF que Twelve Data renvoie. |
 
 ---
 
