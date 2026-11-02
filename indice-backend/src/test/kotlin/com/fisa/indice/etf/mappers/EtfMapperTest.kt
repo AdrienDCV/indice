@@ -43,4 +43,20 @@ class EtfMapperTest {
         assertEquals(now, dto.fetchedAt)
         assertTrue(dto.stale)
     }
+
+    @Test
+    fun `should carry the favourite flag from entity to response`() {
+        // When
+        val dto = etf.toEntity().toModel(favourite = true).toDto()
+
+        // Then
+        assertTrue(dto.favourite)
+    }
+
+    @Test
+    fun `should tell whether the etf is leveraged or inverse`() {
+        val dto = etf.copy(name = "Direxion Daily S&P 500 Bull 3X Shares").toDto()
+
+        assertTrue(dto.leveragedOrInverse)
+    }
 }

@@ -15,6 +15,8 @@ abstract class EtfDetailData with _$EtfDetailData {
     MarketData? marketData,
     DateTime? fetchedAt,
     required bool stale,
+    required bool favourite,
+    required bool leveragedOrInverse,
   }) = _EtfDetailData;
 
   factory EtfDetailData.fromJson(Map<String, dynamic> json) =>

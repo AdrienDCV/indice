@@ -4,8 +4,12 @@ import com.fisa.indice.etf.clients.TwelveDataClient
 import com.fisa.indice.etf.config.EtfCatalogProperties
 import com.fisa.indice.etf.dtos.twelvedata.TwelveDataEtfDto
 import com.fisa.indice.etf.entities.EtfEntity
+import com.fisa.indice.etf.entities.FavouriteEtfEntity
+import com.fisa.indice.etf.exceptions.EtfNotFoundException
+import com.fisa.indice.etf.exceptions.InvalidTickerException
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.repositories.EtfRepository
+import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.justRun
@@ -13,6 +17,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.Clock
@@ -37,11 +42,15 @@ class EtfServiceTest {
 
     private val etfRepository = mockk<EtfRepository>()
     private val twelveDataClient = mockk<TwelveDataClient>()
+    private val favouriteEtfRepository = mockk<FavouriteEtfRepository> {
+        every { findAllById(any()) } returns emptyList()
+    }
     private val etfService = EtfService(
         etfRepository,
         twelveDataClient,
         Clock.fixed(now, ZoneOffset.UTC),
-        EtfCatalogProperties(country, setOf(first, second)),
+        EtfCatalogProperties(country),
+        favouriteEtfRepository,
     )
 
     private fun entity(ticker: String, fetchedAt: Instant) =
@@ -52,7 +61,7 @@ class EtfServiceTest {
     private fun givenStoredEtfs(vararg entities: EtfEntity) {
         every { etfRepository.findFirstByOrderByFetchedAtDesc() } returns entities.maxByOrNull { it.fetchedAt }
         every { etfRepository.findAll() } returns entities.toList()
-        every { etfRepository.findAll(pageable) } returns PageImpl(entities.toList(), pageable, entities.size.toLong())
+        every { etfRepository.findInCatalog("", false, pageable) } returns PageImpl(entities.toList(), pageable, entities.size.toLong())
     }
 
     private fun givenSaveAllReturnsItsArgument(): CapturingSlot<List<EtfEntity>> {
@@ -67,7 +76,7 @@ class EtfServiceTest {
         givenStoredEtfs(entity(first, yesterday))
 
         // When
-        val result = etfService.retrieveEtfs(pageable)
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         verify(exactly = 0) { twelveDataClient.fetchEtfs(any()) }
@@ -86,12 +95,12 @@ class EtfServiceTest {
         val saved = givenSaveAllReturnsItsArgument()
 
         // When
-        val result = etfService.retrieveEtfs(pageable)
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         verify(exactly = 1) { twelveDataClient.fetchEtfs(country) }
         verify(exactly = 0) { etfRepository.deleteAllByIdInBatch(any()) }
-        verify(exactly = 1) { etfRepository.findAll(pageable) }
+        verify(exactly = 1) { etfRepository.findInCatalog("", false, pageable) }
         assertEquals(setOf(first, second), saved.captured.map { it.ticker }.toSet())
         assertTrue(saved.captured.all { it.fetchedAt == now })
         assertEquals(now, result.lastSynchronizedAt)
@@ -108,7 +117,7 @@ class EtfServiceTest {
         val saved = givenSaveAllReturnsItsArgument()
 
         // When
-        etfService.retrieveEtfs(pageable)
+        etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         verify(exactly = 1) { etfRepository.deleteAllByIdInBatch(listOf(absent.id)) }
@@ -116,27 +125,27 @@ class EtfServiceTest {
     }
 
     @Test
-    fun `should ignore twelve data etfs that are not selected`() {
+    fun `should keep every etf of twelve data response`() {
         // Given
         givenStoredEtfs()
         every { twelveDataClient.fetchEtfs(country) } returns listOf(etf("ARKK"), etf(first))
         val saved = givenSaveAllReturnsItsArgument()
 
         // When
-        etfService.retrieveEtfs(pageable)
+        etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
-        assertEquals(listOf(first), saved.captured.map { it.ticker })
+        assertEquals(listOf("ARKK", first), saved.captured.map { it.ticker })
     }
 
     @Test
-    fun `should keep stored etfs flagged as stale when twelve data response contains no selected etf`() {
+    fun `should keep stored etfs flagged as stale when twelve data response is empty`() {
         // Given
         givenStoredEtfs(entity(first, lastWeek))
-        every { twelveDataClient.fetchEtfs(country) } returns listOf(etf("ARKK"))
+        every { twelveDataClient.fetchEtfs(country) } returns emptyList()
 
         // When
-        val result = etfService.retrieveEtfs(pageable)
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         verify(exactly = 0) { etfRepository.deleteAllByIdInBatch(any()) }
@@ -153,7 +162,7 @@ class EtfServiceTest {
         every { twelveDataClient.fetchEtfs(any()) } throws TwelveDataUnavailableException()
 
         // When
-        val result = etfService.retrieveEtfs(pageable)
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         verify(exactly = 0) { etfRepository.saveAll(any<List<EtfEntity>>()) }
@@ -168,11 +177,96 @@ class EtfServiceTest {
         every { twelveDataClient.fetchEtfs(any()) } throws TwelveDataUnavailableException()
 
         // When
-        val result = etfService.retrieveEtfs(pageable)
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
 
         // Then
         assertTrue(result.etfs.isEmpty)
         assertNull(result.lastSynchronizedAt)
         assertTrue(result.stale)
+    }
+
+    @Test
+    fun `should search the catalog with a trimmed lower case text and the favourites filter`() {
+        // Given
+        givenStoredEtfs(entity(first, yesterday))
+        every { etfRepository.findInCatalog("van", true, pageable) } returns PageImpl(emptyList(), pageable, 0)
+
+        // When
+        val result = etfService.retrieveEtfs(pageable, search = "  VAN ", favouritesOnly = true)
+
+        // Then
+        verify(exactly = 1) { etfRepository.findInCatalog("van", true, pageable) }
+        assertTrue(result.etfs.isEmpty)
+    }
+
+    @Test
+    fun `should tell which etfs of the page are favourites`() {
+        // Given
+        givenStoredEtfs(entity(first, yesterday), entity(second, yesterday))
+        every { favouriteEtfRepository.findAllById(listOf(first, second)) } returns listOf(FavouriteEtfEntity(first))
+
+        // When
+        val result = etfService.retrieveEtfs(pageable, search = null, favouritesOnly = false)
+
+        // Then
+        assertEquals(mapOf(first to true, second to false), result.etfs.content.associate { it.ticker to it.favourite })
+    }
+
+    @Test
+    fun `should pin an etf that was not a favourite yet`() {
+        // Given
+        every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
+        every { favouriteEtfRepository.existsById(first) } returns false
+        every { favouriteEtfRepository.save(FavouriteEtfEntity(first)) } returns FavouriteEtfEntity(first)
+
+        // When
+        val added = etfService.addFavourite(" spy ")
+
+        // Then
+        assertTrue(added)
+        verify(exactly = 1) { favouriteEtfRepository.save(FavouriteEtfEntity(first)) }
+    }
+
+    @Test
+    fun `should not pin an etf twice`() {
+        // Given
+        every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
+        every { favouriteEtfRepository.existsById(first) } returns true
+
+        // When
+        val added = etfService.addFavourite(first)
+
+        // Then
+        assertFalse(added)
+        verify(exactly = 0) { favouriteEtfRepository.save(any()) }
+    }
+
+    @Test
+    fun `should throw EtfNotFoundException when pinning an etf outside the catalog`() {
+        every { etfRepository.findByTicker("ARKK") } returns null
+
+        assertThrows<EtfNotFoundException> { etfService.addFavourite("ARKK") }
+    }
+
+    @Test
+    fun `should throw InvalidTickerException when pinning an invalid ticker`() {
+        assertThrows<InvalidTickerException> { etfService.addFavourite("SP Y") }
+    }
+
+    @Test
+    fun `should unpin an etf`() {
+        // Given
+        justRun { favouriteEtfRepository.deleteById(first) }
+
+        // When
+        etfService.removeFavourite(" spy ")
+
+        // Then
+        verify(exactly = 1) { favouriteEtfRepository.deleteById(first) }
+    }
+
+    @Test
+    fun `should throw InvalidTickerException when unpinning an invalid ticker`() {
+        assertThrows<InvalidTickerException> { etfService.removeFavourite("SP Y") }
     }
 }

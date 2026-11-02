@@ -7,6 +7,7 @@ import com.fisa.indice.etf.models.ClosingPrice
 import com.fisa.indice.etf.models.ClosingPriceHistory
 import com.fisa.indice.etf.models.EtfPrices
 import com.fisa.indice.etf.repositories.EtfRepository
+import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -28,7 +29,10 @@ class EtfDetailServiceTest {
 
     private val etfRepository = mockk<EtfRepository>()
     private val closingPriceService = mockk<ClosingPriceService>()
-    private val etfDetailService = EtfDetailService(etfRepository, closingPriceService)
+    private val favouriteEtfRepository = mockk<FavouriteEtfRepository> {
+        every { existsById(any()) } returns false
+    }
+    private val etfDetailService = EtfDetailService(etfRepository, closingPriceService, favouriteEtfRepository)
 
     private fun price(date: String, close: String) = ClosingPrice(LocalDate.parse(date), BigDecimal(close))
 
@@ -77,5 +81,19 @@ class EtfDetailServiceTest {
         assertNull(detail.closingPricesFetchedAt)
         assertTrue(detail.stale)
         assertEquals("SPY", detail.etf.ticker)
+    }
+
+    @Test
+    fun `should tell whether the etf is a favourite`() {
+        // Given
+        every { etfRepository.findByTicker("SPY") } returns etf
+        every { favouriteEtfRepository.existsById("SPY") } returns true
+        every { closingPriceService.retrievePrices(any()) } returns EtfPrices(null, null, stale = true)
+
+        // When
+        val detail = etfDetailService.retrieveEtf("spy")
+
+        // Then
+        assertTrue(detail.etf.favourite)
     }
 }

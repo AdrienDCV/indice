@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../models/level.dart';
 import '../models/resource.dart';
 import '../utils/filter_resources.dart';
+import '../utils/page_padding.dart';
 import '../widgets/app_search_bar.dart';
 import '../widgets/filter_toggle.dart';
 import '../widgets/resource_card.dart';
@@ -40,9 +41,8 @@ class _LearnPageState extends State<LearnPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Apprendre')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: pagePadding(context),
         children: [
           AppSearchBar(
             hintText: 'Rechercher une vidéo ou un article',

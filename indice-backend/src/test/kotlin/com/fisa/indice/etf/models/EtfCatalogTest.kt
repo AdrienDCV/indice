@@ -10,7 +10,6 @@ import kotlin.test.assertTrue
 class EtfCatalogTest {
 
     private val now = Instant.parse("2026-10-07T08:00:00Z")
-    private val selectedTickers = setOf("SPY", "QQQ", "BND")
 
     private fun etf(ticker: String, name: String = "ETF $ticker", fetchedAt: Instant = now) =
         Etf(ticker, "NYSE", name, "USD", fetchedAt)
@@ -36,21 +35,21 @@ class EtfCatalogTest {
     }
 
     @Test
-    fun `should only keep selected etfs when synchronized`() {
+    fun `should keep every etf of the source when synchronized`() {
         // Given
         val source = listOf(etf("SPY"), etf("ARKK"), etf("QQQ"))
 
         // When
-        val catalog = EtfCatalog(emptyList()).synchronizedWith(source, selectedTickers)
+        val catalog = EtfCatalog(emptyList()).synchronizedWith(source)
 
         // Then
-        assertEquals(setOf("SPY", "QQQ"), catalog.etfs.map { it.ticker }.toSet())
+        assertEquals(setOf("SPY", "ARKK", "QQQ"), catalog.etfs.map { it.ticker }.toSet())
     }
 
     @Test
     fun `should keep a single etf when a ticker is listed twice`() {
         // When
-        val catalog = EtfCatalog(emptyList()).synchronizedWith(listOf(etf("SPY"), etf("SPY", name = "Duplicate")), selectedTickers)
+        val catalog = EtfCatalog(emptyList()).synchronizedWith(listOf(etf("SPY"), etf("SPY", name = "Duplicate")))
 
         // Then
         assertEquals(listOf("SPY"), catalog.etfs.map { it.ticker })
@@ -65,7 +64,7 @@ class EtfCatalogTest {
         val catalog = EtfCatalog(listOf(known, absent))
 
         // When
-        val synchronized = catalog.synchronizedWith(listOf(etf("SPY", name = "New name"), etf("BND")), selectedTickers)
+        val synchronized = catalog.synchronizedWith(listOf(etf("SPY", name = "New name"), etf("BND")))
 
         // Then
         assertEquals(setOf("SPY", "BND"), synchronized.etfs.map { it.ticker }.toSet())
@@ -95,7 +94,7 @@ class EtfCatalogTest {
         val snapshot = original.copy()
 
         // When
-        original.synchronizedWith(listOf(etf("SPY", name = "New")), selectedTickers)
+        original.synchronizedWith(listOf(etf("SPY", name = "New")))
 
         // Then
         assertEquals(snapshot, original)

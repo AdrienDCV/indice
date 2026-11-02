@@ -20,6 +20,8 @@ fun EtfDetail.toDto(): EtfDetailResponseDto = EtfDetailResponseDto(
     marketData = marketData?.toDto(),
     fetchedAt = closingPricesFetchedAt,
     stale = stale,
+    favourite = etf.favourite,
+    leveragedOrInverse = etf.isLeveragedOrInverse(),
 )
 
 fun MarketData.toDto(): MarketDataResponseDto = MarketDataResponseDto(

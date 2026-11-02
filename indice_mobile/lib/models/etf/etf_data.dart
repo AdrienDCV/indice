@@ -10,6 +10,8 @@ abstract class EtfData with _$EtfData {
     required String exchange,
     required String name,
     required String currency,
+    required bool favourite,
+    required bool leveragedOrInverse,
   }) = _EtfData;
 
   factory EtfData.fromJson(Map<String, dynamic> json) =>

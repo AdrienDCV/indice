@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS favourite_etf (
+    ticker VARCHAR(20) PRIMARY KEY REFERENCES etf (ticker) ON DELETE CASCADE
+);

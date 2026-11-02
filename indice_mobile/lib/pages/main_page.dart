@@ -52,6 +52,7 @@ class _MainPageState extends State<MainPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBody: true,
       body: FadeTransition(
         opacity: _fade,
         child: SlideTransition(position: _slide, child: widget.navigationShell),

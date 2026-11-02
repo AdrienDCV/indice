@@ -1,4 +1,8 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
+
+const _blurSigma = 12.0;
 
 class AppNavigationBar extends StatelessWidget {
   const AppNavigationBar({
@@ -12,31 +16,36 @@ class AppNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return NavigationBar(
-      selectedIndex: selectedIndex,
-      onDestinationSelected: onDestinationSelected,
-      destinations: const [
-        NavigationDestination(
-          icon: Icon(Icons.home_outlined),
-          selectedIcon: Icon(Icons.home),
-          label: 'Accueil',
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: _blurSigma, sigmaY: _blurSigma),
+        child: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: onDestinationSelected,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Accueil',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.pie_chart_outline),
+              selectedIcon: Icon(Icons.pie_chart),
+              label: 'Construire',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.candlestick_chart_outlined),
+              selectedIcon: Icon(Icons.candlestick_chart),
+              label: 'Comparer',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.school_outlined),
+              selectedIcon: Icon(Icons.school),
+              label: 'Apprendre',
+            ),
+          ],
         ),
-        NavigationDestination(
-          icon: Icon(Icons.pie_chart_outline),
-          selectedIcon: Icon(Icons.pie_chart),
-          label: 'Construire',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.candlestick_chart_outlined),
-          selectedIcon: Icon(Icons.candlestick_chart),
-          label: 'Comparer',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.school_outlined),
-          selectedIcon: Icon(Icons.school),
-          label: 'Apprendre',
-        ),
-      ],
+      ),
     );
   }
 }

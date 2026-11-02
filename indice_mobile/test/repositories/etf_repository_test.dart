@@ -12,7 +12,7 @@ const catalogJson = '''
 {
   "etfs": {
     "content": [
-      { "ticker": "VGK", "exchange": "NYSE ARCA", "name": "Vanguard FTSE Europe ETF", "currency": "USD" }
+      { "ticker": "VGK", "exchange": "NYSE ARCA", "name": "Vanguard FTSE Europe ETF", "currency": "USD", "favourite": true, "leveragedOrInverse": false }
     ],
     "page": 0,
     "size": 100,
@@ -44,7 +44,9 @@ const etfDetailJson = '''
     ]
   },
   "fetchedAt": "2026-10-20T09:00:00Z",
-  "stale": false
+  "stale": false,
+  "favourite": true,
+  "leveragedOrInverse": false
 }
 ''';
 
@@ -82,16 +84,74 @@ void respondWith(String json, int statusCode) {
 void main() {
   setUp(() => http.options.baseUrl = baseUrl);
 
-  test('requests the first 100 etfs of the catalog', () async {
+  test(
+    'requests the first page of 50 etfs without filter by default',
+    () async {
+      late Uri requestedUrl;
+      http.httpClientAdapter = FakeHttpClientAdapter((options) async {
+        requestedUrl = options.uri;
+        return jsonBody(catalogJson, 200);
+      });
+
+      await EtfRepository().retrieveEtfs();
+
+      expect(requestedUrl, Uri.parse('$baseUrl/etfs?page=0&size=50'));
+    },
+  );
+
+  test('sends the page, the search and the favourites filter', () async {
     late Uri requestedUrl;
     http.httpClientAdapter = FakeHttpClientAdapter((options) async {
       requestedUrl = options.uri;
       return jsonBody(catalogJson, 200);
     });
 
-    await EtfRepository().retrieveEtfs();
+    await EtfRepository().retrieveEtfs(
+      page: 2,
+      size: 10,
+      search: 'van',
+      favouritesOnly: true,
+    );
 
-    expect(requestedUrl, Uri.parse('$baseUrl/etfs?size=100'));
+    expect(
+      requestedUrl,
+      Uri.parse('$baseUrl/etfs?page=2&size=10&search=van&favourites=true'),
+    );
+  });
+
+  test('pins an etf with a put on its favourite', () async {
+    late RequestOptions request;
+    http.httpClientAdapter = FakeHttpClientAdapter((options) async {
+      request = options;
+      return ResponseBody.fromString('', 201);
+    });
+
+    await EtfRepository().addFavourite('SPY');
+
+    expect(request.method, 'PUT');
+    expect(request.uri, Uri.parse('$baseUrl/etfs/SPY/favourite'));
+  });
+
+  test('unpins an etf with a delete on its favourite', () async {
+    late RequestOptions request;
+    http.httpClientAdapter = FakeHttpClientAdapter((options) async {
+      request = options;
+      return ResponseBody.fromString('', 204);
+    });
+
+    await EtfRepository().removeFavourite('SPY');
+
+    expect(request.method, 'DELETE');
+    expect(request.uri, Uri.parse('$baseUrl/etfs/SPY/favourite'));
+  });
+
+  test('lets the dio error through when a favourite cannot be saved', () {
+    respondWith(
+      '[{ "error": "Not Found", "message": "error.etfs.etf-not-found" }]',
+      404,
+    );
+
+    expect(EtfRepository().addFavourite('ARKK'), throwsA(isA<DioException>()));
   });
 
   test('returns the catalog sent by the api', () async {
@@ -103,6 +163,7 @@ void main() {
     expect(catalog.etfs.content.single.name, 'Vanguard FTSE Europe ETF');
     expect(catalog.etfs.content.single.exchange, 'NYSE ARCA');
     expect(catalog.etfs.content.single.currency, 'USD');
+    expect(catalog.etfs.content.single.favourite, isTrue);
     expect(catalog.etfs.totalElements, 1);
     expect(catalog.fetchedAt, DateTime.utc(2026, 10, 7, 8));
     expect(catalog.stale, isTrue);
@@ -176,6 +237,7 @@ void main() {
     expect(etf.name, 'State Street SPDR S&P 500 ETF Trust');
     expect(etf.fetchedAt, DateTime.utc(2026, 10, 20, 9));
     expect(etf.stale, isFalse);
+    expect(etf.favourite, isTrue);
     expect(marketData.lastClose, 766.48);
     expect(marketData.lastCloseDate, DateTime(2026, 10, 19));
     expect(marketData.historyStartDate, DateTime(2021, 10, 12));
@@ -201,13 +263,16 @@ void main() {
   "currency": "USD",
   "marketData": null,
   "fetchedAt": null,
-  "stale": true
+  "stale": true,
+  "favourite": false,
+  "leveragedOrInverse": true
 }
 ''', 200);
 
     final etf = await EtfRepository().retrieveEtf('SPY');
 
     expect(etf.marketData, isNull);
+    expect(etf.leveragedOrInverse, isTrue);
     expect(etf.fetchedAt, isNull);
     expect(etf.stale, isTrue);
   });

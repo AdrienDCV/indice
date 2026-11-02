@@ -5,4 +5,6 @@ data class EtfResponseDto(
     val exchange: String,
     val name: String,
     val currency: String,
+    val favourite: Boolean,
+    val leveragedOrInverse: Boolean,
 )
