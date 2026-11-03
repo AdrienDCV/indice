@@ -29,11 +29,6 @@ class AppNavigationBar extends StatelessWidget {
               label: 'Accueil',
             ),
             NavigationDestination(
-              icon: Icon(Icons.pie_chart_outline),
-              selectedIcon: Icon(Icons.pie_chart),
-              label: 'Construire',
-            ),
-            NavigationDestination(
               icon: Icon(Icons.candlestick_chart_outlined),
               selectedIcon: Icon(Icons.candlestick_chart),
               label: 'Comparer',

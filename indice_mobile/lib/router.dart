@@ -4,7 +4,6 @@ import 'package:video_player/video_player.dart';
 
 import 'data/fake_resources.dart';
 import 'models/resource.dart';
-import 'pages/build_page.dart';
 import 'pages/home_page.dart';
 import 'pages/learn_page.dart';
 import 'pages/main_page.dart';
@@ -24,11 +23,6 @@ GoRouter buildRouter() => GoRouter(
       branches: [
         StatefulShellBranch(
           routes: [GoRoute(path: '/', builder: (_, _) => const HomePage())],
-        ),
-        StatefulShellBranch(
-          routes: [
-            GoRoute(path: '/build', builder: (_, _) => const BuildPage()),
-          ],
         ),
         StatefulShellBranch(
           routes: [
