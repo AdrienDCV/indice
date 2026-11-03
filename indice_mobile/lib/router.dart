@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
-import 'data/fake_resources.dart';
-import 'models/resource.dart';
+import 'pages/build_page.dart';
 import 'pages/home_page.dart';
-import 'pages/learn_page.dart';
 import 'pages/main_page.dart';
-import 'pages/resource_detail_page.dart';
 import 'pages/video_fullscreen_page.dart';
 import 'screens/compare/etf_catalog_screen.dart';
 import 'screens/compare/etf_comparison_screen.dart';
 import 'screens/compare/etf_detail_screen.dart';
+import 'screens/learn/learn_screen.dart';
+import 'screens/learn/resource_detail_screen.dart';
 import 'screens/compare/etf_picker_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
@@ -58,18 +57,15 @@ GoRouter buildRouter() => GoRouter(
         ),
         StatefulShellBranch(
           routes: [
-            GoRoute(
-              path: '/learn',
-              builder: (_, _) => const LearnPage(resources: fakeResources),
-            ),
+            GoRoute(path: '/learn', builder: (_, _) => const LearnScreen()),
           ],
         ),
       ],
     ),
     GoRoute(
-      path: '/resource',
+      path: '/resource/:id',
       builder: (_, state) =>
-          ResourceDetailPage(resource: state.extra! as Resource),
+          ResourceDetailScreen(id: state.pathParameters['id']!),
     ),
     GoRoute(
       path: '/video',

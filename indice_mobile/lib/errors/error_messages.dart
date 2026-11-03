@@ -19,6 +19,8 @@ const _messages = {
       'd’historique en commun (au moins un an est nécessaire).',
   'error.etfs.same-etf-comparison': 'Choisis deux ETF différents.',
   'error.request.missing-parameter': 'Choisis deux ETF pour les comparer.',
+  'error.request.invalid-parameter': 'Cette demande n’est pas valide.',
+  'error.resources.resource-not-found': 'Cette ressource est introuvable.',
 };
 
 String errorMessage(String key, {Map<String, String> params = const {}}) {

@@ -1,25 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:indice_mobile/data/fake_resources.dart';
 import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/main.dart';
 import 'package:indice_mobile/pages/home_page.dart';
-import 'package:indice_mobile/pages/learn_page.dart';
-import 'package:indice_mobile/pages/resource_detail_page.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
+import 'package:indice_mobile/repositories/resource_repository.dart';
 import 'package:indice_mobile/router.dart';
 import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_comparison_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_picker_screen.dart';
 import 'package:indice_mobile/widgets/field/etf_slot_field.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
+import 'package:indice_mobile/screens/learn/learn_screen.dart';
+import 'package:indice_mobile/screens/learn/resource_detail_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
 
 import 'fakes/fake_etf_repository.dart';
+import 'fakes/fake_resource_repository.dart';
 
 void main() {
+  late FakeResourceRepository resourceRepository;
+
+  setUp(() {
+    resourceRepository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+    );
+    getIt.registerSingleton<ResourceRepository>(resourceRepository);
+  });
+
+  tearDown(getIt.reset);
+
   testWidgets('displays the home page on startup', (WidgetTester tester) async {
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
@@ -38,14 +50,11 @@ void main() {
     );
     expect(find.byIcon(Icons.arrow_forward), findsNWidgets(2));
     expect(find.text('Nouveauté pédagogique :'), findsOneWidget);
-    expect(find.text(fakeResources.first.title), findsOneWidget);
-    expect(find.text(fakeResources.first.duration), findsOneWidget);
-    expect(
-      find.byIcon(
-        fakeResources.first.isFavorite ? Icons.bookmark : Icons.bookmark_border,
-      ),
-      findsWidgets,
-    );
+    await tester.pumpAndSettle();
+    expect(find.text(feesArticle.title), findsOneWidget);
+    expect(find.text('7\u00A0min'), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
+    expect(find.byIcon(Icons.bookmark), findsOneWidget);
   });
 
   testWidgets('opens the learn page from the navigation bar', (
@@ -56,7 +65,7 @@ void main() {
     await tester.tap(find.byIcon(Icons.school_outlined));
     await tester.pumpAndSettle();
 
-    expect(find.byType(LearnPage), findsOneWidget);
+    expect(find.byType(LearnScreen), findsOneWidget);
     expect(find.byType(HomePage), findsNothing);
     expect(find.byType(AppSearchBar), findsOneWidget);
   });
@@ -69,7 +78,7 @@ void main() {
     await tester.tap(find.widgetWithText(ModuleButton, 'Apprendre'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(LearnPage), findsOneWidget);
+    expect(find.byType(LearnScreen), findsOneWidget);
     expect(find.byType(HomePage), findsNothing);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
@@ -83,7 +92,6 @@ void main() {
     getIt.registerSingleton<EtfRepository>(
       FakeEtfRepository(() async => buildCatalog()),
     );
-    addTearDown(getIt.reset);
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.widgetWithText(ModuleButton, 'Comparer'));
@@ -125,7 +133,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tabsOpacity(), 1);
-    expect(find.byType(LearnPage), findsOneWidget);
+    expect(find.byType(LearnScreen), findsOneWidget);
   });
 
   testWidgets('opens a resource detail above the navigation bar', (
@@ -138,7 +146,7 @@ void main() {
     await tester.tap(find.text('Comprendre les frais'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(ResourceDetailPage), findsOneWidget);
+    expect(find.byType(ResourceDetailScreen), findsOneWidget);
     expect(find.byType(NavigationBar), findsNothing);
   });
 
@@ -147,7 +155,6 @@ void main() {
   ) async {
     final repository = FakeEtfRepository(() async => buildCatalog());
     getIt.registerSingleton<EtfRepository>(repository);
-    addTearDown(getIt.reset);
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     expect(repository.retrieveEtfsCalls, 0);
@@ -175,7 +182,6 @@ void main() {
       onRetrieveEtf: (_) async => buildEtfDetail(marketData: spyMarketData),
     );
     getIt.registerSingleton<EtfRepository>(repository);
-    addTearDown(getIt.reset);
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
@@ -201,7 +207,6 @@ void main() {
     getIt.registerSingleton<EtfRepository>(
       FakeEtfRepository(() async => buildCatalog()),
     );
-    addTearDown(getIt.reset);
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));
@@ -245,7 +250,6 @@ void main() {
         onRetrieveEtf: (_) async => buildEtfDetail(marketData: spyMarketData),
       ),
     );
-    addTearDown(getIt.reset);
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
     await tester.tap(find.byIcon(Icons.candlestick_chart_outlined));

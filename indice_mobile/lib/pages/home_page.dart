@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../data/fake_resources.dart';
+import '../stores/resource/resource_catalog_state.dart';
+import '../stores/resource/resource_catalog_store.dart';
 import '../theme/module_colors.dart';
 import '../utils/page_padding.dart';
+import '../utils/resource_formatting.dart';
+import '../widgets/card/resource_card.dart';
 import '../widgets/module_button.dart';
-import '../widgets/resource_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -38,12 +41,24 @@ class HomePage extends StatelessWidget {
           const SizedBox(height: 32),
           Text('Nouveauté pédagogique :', style: textTheme.titleLarge),
           const SizedBox(height: 12),
-          for (final resource in fakeResources)
-            ResourceCard(
-              resource: resource,
-              onTap: () => context.push('/resource', extra: resource),
-              onFavoriteTap: () {},
+          BlocBuilder<ResourceCatalogStore, ResourceCatalogState>(
+            builder: (context, state) => Column(
+              children: [
+                for (final resource in state.resources)
+                  ResourceCard(
+                    title: resource.title,
+                    description: resource.description,
+                    duration: resource.durationMinutes.toFrenchDuration(),
+                    type: resource.type,
+                    isFavourite: resource.favourite,
+                    onTap: () => context.push('/resource/${resource.id}'),
+                    onFavouriteTap: () => context
+                        .read<ResourceCatalogStore>()
+                        .toggleFavourite(resource.id),
+                  ),
+              ],
             ),
+          ),
         ],
       ),
     );

@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 
-import '../models/resource.dart';
-import 'resource_thumbnail.dart';
+import '../../models/resource/resource_type.dart';
+import '../resource_thumbnail.dart';
 
 class ResourceCard extends StatelessWidget {
   const ResourceCard({
     super.key,
-    required this.resource,
+    required this.title,
+    required this.description,
+    required this.duration,
+    required this.type,
+    required this.isFavourite,
     required this.onTap,
-    required this.onFavoriteTap,
+    required this.onFavouriteTap,
   });
 
-  final Resource resource;
+  final String title;
+  final String description;
+  final String duration;
+  final ResourceType type;
+  final bool isFavourite;
   final VoidCallback onTap;
-  final VoidCallback onFavoriteTap;
+  final VoidCallback onFavouriteTap;
 
   @override
   Widget build(BuildContext context) {
@@ -28,7 +36,7 @@ class ResourceCard extends StatelessWidget {
               SizedBox(
                 width: 110,
                 height: 90,
-                child: ResourceThumbnail(type: resource.type),
+                child: ResourceThumbnail(type: type),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -36,7 +44,7 @@ class ResourceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      resource.title,
+                      title,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -44,7 +52,7 @@ class ResourceCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      resource.description,
+                      description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -61,7 +69,7 @@ class ResourceCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          resource.duration,
+                          duration,
                           style: const TextStyle(
                             fontSize: 13,
                             color: Colors.black54,
@@ -69,12 +77,12 @@ class ResourceCard extends StatelessWidget {
                         ),
                         const Spacer(),
                         IconButton(
-                          onPressed: onFavoriteTap,
-                          tooltip: resource.isFavorite
+                          onPressed: onFavouriteTap,
+                          tooltip: isFavourite
                               ? 'Retirer des favoris'
                               : 'Ajouter aux favoris',
                           icon: Icon(
-                            resource.isFavorite
+                            isFavourite
                                 ? Icons.bookmark
                                 : Icons.bookmark_border,
                             color: Theme.of(context).colorScheme.primary,

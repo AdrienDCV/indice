@@ -10,8 +10,10 @@ import 'package:path_provider/path_provider.dart';
 import 'http.dart';
 import 'injection.dart';
 import 'repositories/etf_repository.dart';
+import 'repositories/resource_repository.dart';
 import 'router.dart';
 import 'stores/etf/etf_catalog_store.dart';
+import 'stores/resource/resource_catalog_store.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
@@ -32,8 +34,16 @@ class IndiceApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => EtfCatalogStore(getIt<EtfRepository>())..init(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => EtfCatalogStore(getIt<EtfRepository>())..init(),
+        ),
+        BlocProvider(
+          create: (_) =>
+              ResourceCatalogStore(getIt<ResourceRepository>())..init(),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Indice',
         debugShowCheckedModeBanner: false,
