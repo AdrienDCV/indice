@@ -11,6 +11,8 @@ import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/router.dart';
 import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
 import 'package:indice_mobile/screens/compare/etf_comparison_screen.dart';
+import 'package:indice_mobile/screens/compare/etf_picker_screen.dart';
+import 'package:indice_mobile/widgets/field/etf_slot_field.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
 import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/module_button.dart';
@@ -211,9 +213,26 @@ void main() {
     expect(find.byType(NavigationBar), findsOneWidget);
     expect(
       tester
-          .widgetList<SearchAnchor>(find.byType(SearchAnchor))
-          .map((selector) => selector.enabled),
+          .widgetList<EtfSlotField>(find.byType(EtfSlotField))
+          .map((selector) => selector.onTap != null),
       [true, true],
+    );
+
+    await tester.tap(find.text('Premier ETF'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfPickerScreen), findsOneWidget);
+
+    await tester.tap(find.text('SPDR S&P 500 ETF Trust'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EtfPickerScreen), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(EtfSlotField).first,
+        matching: find.text('SPY'),
+      ),
+      findsOneWidget,
     );
   });
 
@@ -236,12 +255,12 @@ void main() {
     await tester.tap(find.text('Comparer cet ETF'));
     await tester.pumpAndSettle();
 
-    final firstSelector = find.byType(SearchAnchor).first;
+    final firstSelector = find.byType(EtfSlotField).first;
     expect(find.byType(EtfComparisonScreen), findsOneWidget);
     expect(
       find.descendant(of: firstSelector, matching: find.text('SPY')),
       findsOneWidget,
     );
-    expect(tester.widget<SearchAnchor>(firstSelector).enabled, isFalse);
+    expect(tester.widget<EtfSlotField>(firstSelector).onTap, isNull);
   });
 }
