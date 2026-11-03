@@ -9,6 +9,7 @@ import '../../models/etf/etf_comparison_data.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_comparison_state.dart';
 import '../../stores/etf/etf_comparison_store.dart';
+import '../../utils/axis_scale.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
 import '../../utils/page_padding.dart';
@@ -19,6 +20,7 @@ import '../../widgets/field/etf_slot_field.dart';
 import '../../widgets/indicator/comparison_table.dart';
 import '../../widgets/indicator/correlation_gauge.dart';
 import '../../widgets/info/info_message.dart';
+import '../../widgets/info/info_note.dart';
 import '../../widgets/info/info_tooltip_button.dart';
 import 'etf_picker_screen.dart';
 
@@ -260,8 +262,9 @@ class _ComparisonView extends StatelessWidget {
                         ],
                       ),
                   ],
-                  axisLabel: (value) =>
-                      value.toFrenchSignedPercent(fractionDigits: 0),
+                  axisLabel: (value, interval) => value.toFrenchSignedPercent(
+                    fractionDigits: fractionDigitsOf(interval * 100),
+                  ),
                   tooltipLabel: (index) => [
                     etfA.pricePoints[index].date.toFrenchDate(),
                     for (final etf in etfs) _pointLabel(etf, index),
@@ -354,25 +357,10 @@ class _ComparisonView extends StatelessWidget {
             ],
           ),
         ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: 16,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            Expanded(
-              child: Text(
-                'Les performances passées ne préjugent pas des performances '
-                'futures.',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ],
+        const InfoNote(
+          text:
+              'Les performances passées ne préjugent pas des performances '
+              'futures.',
         ),
       ],
     );

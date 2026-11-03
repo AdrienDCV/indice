@@ -20,7 +20,7 @@ Future<void> pumpChart(
         body: PriceChart(
           series: [(label: 'SPY', color: Colors.green, points: points)],
           tooltipLabel: tooltipLabel ?? (index) => 'Point $index',
-          axisLabel: (value) => value.toStringAsFixed(0),
+          axisLabel: (value, interval) => value.toStringAsFixed(0),
         ),
       ),
     ),
@@ -58,6 +58,17 @@ void main() {
     await pumpChart(tester, dailyPoints(100));
 
     expect(find.text('2022'), findsOneWidget);
+  });
+
+  testWidgets('graduates the price axis on round values', (
+    WidgetTester tester,
+  ) async {
+    await pumpChart(tester, dailyPoints(100));
+
+    for (final label in ['100', '120', '140', '160', '180', '200']) {
+      expect(find.text(label), findsOneWidget);
+    }
+    expect(find.text('199'), findsNothing);
   });
 
   testWidgets('asks the tooltip label of the point held down', (
@@ -104,7 +115,7 @@ void main() {
               (label: 'QQQ', color: Colors.teal, points: dailyPoints(100)),
             ],
             tooltipLabel: (index) => 'Point $index',
-            axisLabel: (value) => '$value %',
+            axisLabel: (value, interval) => '$value %',
           ),
         ),
       ),

@@ -3,6 +3,8 @@ import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../utils/axis_scale.dart';
+
 class PriceChart extends StatefulWidget {
   const PriceChart({
     super.key,
@@ -16,7 +18,7 @@ class PriceChart extends StatefulWidget {
   >
   series;
   final String Function(int index) tooltipLabel;
-  final String Function(double value) axisLabel;
+  final String Function(double value, double interval) axisLabel;
 
   @override
   State<PriceChart> createState() => _PriceChartState();
@@ -24,7 +26,7 @@ class PriceChart extends StatefulWidget {
 
 class _PriceChartState extends State<PriceChart> {
   static const _pointsPerVisibleWindow = 252;
-  static const _leftTitlesWidth = 48.0;
+  static const _leftTitlesWidth = 40.0;
   static const _bottomTitlesHeight = 28.0;
 
   TransformationController? _transformationController;
@@ -58,6 +60,10 @@ class _PriceChartState extends State<PriceChart> {
     final titleStyle = theme.textTheme.bodySmall?.copyWith(
       color: colorScheme.onSurfaceVariant,
     );
+    final yScale = axisScaleOf([
+      for (final series in widget.series)
+        for (final point in series.points) point.value,
+    ]);
 
     return Column(
       spacing: 8,
@@ -69,8 +75,14 @@ class _PriceChartState extends State<PriceChart> {
               LineChartData(
                 minX: 0,
                 maxX: (_dates.length - 1).toDouble(),
+                minY: yScale.min,
+                maxY: yScale.max,
+                baselineY: yScale.min,
                 borderData: FlBorderData(show: false),
-                gridData: const FlGridData(drawVerticalLine: false),
+                gridData: FlGridData(
+                  drawVerticalLine: false,
+                  horizontalInterval: yScale.interval,
+                ),
                 lineBarsData: [
                   for (final series in widget.series)
                     LineChartBarData(
@@ -90,9 +102,13 @@ class _PriceChartState extends State<PriceChart> {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: _leftTitlesWidth,
+                      interval: yScale.interval,
                       getTitlesWidget: (value, meta) => SideTitleWidget(
                         meta: meta,
-                        child: Text(widget.axisLabel(value), style: titleStyle),
+                        child: Text(
+                          widget.axisLabel(value, yScale.interval),
+                          style: titleStyle,
+                        ),
                       ),
                     ),
                   ),

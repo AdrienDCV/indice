@@ -50,6 +50,12 @@ void main() {
     expect(missing.toFrenchDecimal(), '—');
   });
 
+  test('formats a number with the requested number of decimals', () {
+    expect(95.0.toFrenchDecimal(fractionDigits: 0), '95');
+    expect(4.5.toFrenchDecimal(fractionDigits: 1), '4,5');
+    expect(1200.0.toFrenchDecimal(fractionDigits: 0), '1\u00A0200');
+  });
+
   test('formats a percentage with the requested number of decimals', () {
     expect(0.5.toFrenchSignedPercent(fractionDigits: 0), '+50\u00A0%');
     expect((-0.25).toFrenchSignedPercent(fractionDigits: 0), '-25\u00A0%');
