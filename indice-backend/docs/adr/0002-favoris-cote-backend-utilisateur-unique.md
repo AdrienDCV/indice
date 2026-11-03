@@ -17,6 +17,8 @@ Les favoris sont stockés **côté backend**, dans une table `favourite_etf` qui
 - `DELETE /etfs/{ticker}/favourite` le retire : 204 dans tous les cas.
 - `GET /etfs?favourites=true` filtre le catalogue, et chaque ETF renvoyé porte un champ `favourite`.
 
+Les **ressources pédagogiques** suivent la même décision : table `favourite_resource (resource_id)`, clé étrangère vers `resource (id)` en `ON DELETE CASCADE`, `PUT` et `DELETE /resources/{id}/favourite`, filtre `GET /resources?favourites=true`. Le `PUT` renvoie la fiche de la ressource (200), comme pour les ETF.
+
 ## Alternatives envisagées
 
 - **Favoris sur le téléphone** (Shared Preferences), envoyés au backend pour filtrer (`GET /etfs?tickers=SPY,BND`) : favoris propres à chaque appareil et modifiables hors ligne. Écartée : l'équipe préfère que le système soit déjà en place côté serveur le jour où une authentification sera ajoutée.
