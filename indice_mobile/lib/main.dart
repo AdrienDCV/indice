@@ -1,8 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'http.dart';
 import 'injection.dart';
@@ -17,7 +20,8 @@ Future<void> main() async {
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   await dotenv.load(fileName: '.env.local');
   setupHttpClient();
-  configureDependencies();
+  final cacheDirectory = await getApplicationCacheDirectory();
+  configureDependencies(Directory('${cacheDirectory.path}/api_cache'));
   runApp(IndiceApp(router: buildRouter()));
 }
 

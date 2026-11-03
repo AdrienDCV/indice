@@ -9,6 +9,7 @@ import com.fisa.indice.etf.mappers.toEntity
 import com.fisa.indice.etf.mappers.toModel
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfCatalog
+import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.models.RetrievedEtfCatalog
 import com.fisa.indice.etf.repositories.EtfRepository
 import com.fisa.indice.etf.repositories.FavouriteEtfRepository
@@ -27,6 +28,7 @@ class EtfService(
     private val clock: Clock,
     private val etfCatalogProperties: EtfCatalogProperties,
     private val favouriteEtfRepository: FavouriteEtfRepository,
+    private val etfDetailService: EtfDetailService,
 ) {
 
     @Transactional
@@ -45,12 +47,11 @@ class EtfService(
     }
 
     @Transactional
-    fun addFavourite(ticker: String): Boolean {
+    fun addFavourite(ticker: String): EtfDetail {
         val normalizedTicker = Etf.normalizeTicker(ticker)
         if (etfRepository.findByTicker(normalizedTicker) == null) throw EtfNotFoundException()
-        if (favouriteEtfRepository.existsById(normalizedTicker)) return false
-        favouriteEtfRepository.save(FavouriteEtfEntity(normalizedTicker))
-        return true
+        if (!favouriteEtfRepository.existsById(normalizedTicker)) favouriteEtfRepository.save(FavouriteEtfEntity(normalizedTicker))
+        return etfDetailService.retrieveEtf(normalizedTicker)
     }
 
     @Transactional

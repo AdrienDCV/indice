@@ -6,6 +6,7 @@ import '../../errors/error_messages.dart';
 import '../../http.dart';
 import '../../models/etf/etf_catalog_data.dart';
 import '../../models/etf/etf_data.dart';
+import '../../repositories/cached_result.dart';
 import '../../repositories/etf_repository.dart';
 import 'etf_catalog_state.dart';
 
@@ -18,6 +19,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   final EtfRepository _etfRepository;
   Timer? _searchTimer;
   int _request = 0;
+  bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
 
@@ -37,11 +39,16 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   }
 
   Future<void> loadMore() async {
-    if (!state.hasMore || state.isLoading || state.isLoadingMore) return;
+    if (!state.hasMore ||
+        state.isLoading ||
+        state.isLoadingMore ||
+        state.offline) {
+      return;
+    }
     final request = _request;
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
-      final catalog = await _retrievePage(state.nextPage);
+      final catalog = (await _retrievePage(state.nextPage)).data;
       if (request != _request) return;
       emit(
         state.copyWith(
@@ -116,8 +123,9 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
       ),
     );
     try {
-      final catalog = await _retrievePage(0);
+      final result = await _retrievePage(0);
       if (request != _request) return;
+      final catalog = result.data;
       emit(
         state.copyWith(
           etfs: catalog.etfs.content,
@@ -125,9 +133,15 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
           hasMore: _hasMore(catalog),
           fetchedAt: catalog.fetchedAt,
           stale: catalog.stale,
+          offline: result.offline,
+          favouritesOnly: result.offline || state.favouritesOnly,
           isLoading: false,
         ),
       );
+      if (!result.offline && !_downloadsSynced) {
+        _downloadsSynced = true;
+        unawaited(_etfRepository.syncFavouriteDownloads());
+      }
     } catch (error) {
       if (request != _request) return;
       emit(
@@ -141,7 +155,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     }
   }
 
-  Future<EtfCatalogData> _retrievePage(int page) {
+  Future<CachedResult<EtfCatalogData>> _retrievePage(int page) {
     return _etfRepository.retrieveEtfs(
       page: page,
       size: pageSize,

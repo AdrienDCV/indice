@@ -14,6 +14,7 @@ abstract class EtfCatalogState with _$EtfCatalogState {
     @Default(false) bool hasMore,
     DateTime? fetchedAt,
     @Default(false) bool stale,
+    @Default(false) bool offline,
     @Default(false) bool isLoading,
     String? errorKey,
     @Default(false) bool isLoadingMore,

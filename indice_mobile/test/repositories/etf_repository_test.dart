@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/http.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
+import 'package:indice_mobile/storage/api_cache.dart';
 
 import '../fakes/fake_http_client_adapter.dart';
 
@@ -81,8 +85,29 @@ void respondWith(String json, int statusCode) {
   );
 }
 
+void failWithoutResponse() {
+  http.httpClientAdapter = FakeHttpClientAdapter(
+    (options) async => throw DioException.connectionError(
+      requestOptions: options,
+      reason: 'Connection refused',
+    ),
+  );
+}
+
 void main() {
-  setUp(() => http.options.baseUrl = baseUrl);
+  late Directory cacheDirectory;
+  late ApiCache apiCache;
+  late EtfRepository repository;
+  final cachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+
+  setUp(() async {
+    http.options.baseUrl = baseUrl;
+    cacheDirectory = await Directory.systemTemp.createTemp('api_cache_test');
+    apiCache = ApiCache(cacheDirectory, now: () => cachedAt);
+    repository = EtfRepository(apiCache);
+  });
+
+  tearDown(() => cacheDirectory.delete(recursive: true));
 
   test(
     'requests the first page of 50 etfs without filter by default',
@@ -93,7 +118,7 @@ void main() {
         return jsonBody(catalogJson, 200);
       });
 
-      await EtfRepository().retrieveEtfs();
+      await repository.retrieveEtfs();
 
       expect(requestedUrl, Uri.parse('$baseUrl/etfs?page=0&size=50'));
     },
@@ -106,7 +131,7 @@ void main() {
       return jsonBody(catalogJson, 200);
     });
 
-    await EtfRepository().retrieveEtfs(
+    await repository.retrieveEtfs(
       page: 2,
       size: 10,
       search: 'van',
@@ -123,10 +148,10 @@ void main() {
     late RequestOptions request;
     http.httpClientAdapter = FakeHttpClientAdapter((options) async {
       request = options;
-      return ResponseBody.fromString('', 201);
+      return jsonBody(etfDetailJson, 200);
     });
 
-    await EtfRepository().addFavourite('SPY');
+    await repository.addFavourite('SPY');
 
     expect(request.method, 'PUT');
     expect(request.uri, Uri.parse('$baseUrl/etfs/SPY/favourite'));
@@ -139,7 +164,7 @@ void main() {
       return ResponseBody.fromString('', 204);
     });
 
-    await EtfRepository().removeFavourite('SPY');
+    await repository.removeFavourite('SPY');
 
     expect(request.method, 'DELETE');
     expect(request.uri, Uri.parse('$baseUrl/etfs/SPY/favourite'));
@@ -151,13 +176,13 @@ void main() {
       404,
     );
 
-    expect(EtfRepository().addFavourite('ARKK'), throwsA(isA<DioException>()));
+    expect(repository.addFavourite('ARKK'), throwsA(isA<DioException>()));
   });
 
   test('returns the catalog sent by the api', () async {
     respondWith(catalogJson, 200);
 
-    final catalog = await EtfRepository().retrieveEtfs();
+    final catalog = (await repository.retrieveEtfs()).data;
 
     expect(catalog.etfs.content.single.ticker, 'VGK');
     expect(catalog.etfs.content.single.name, 'Vanguard FTSE Europe ETF');
@@ -178,7 +203,7 @@ void main() {
       200,
     );
 
-    final catalog = await EtfRepository().retrieveEtfs();
+    final catalog = (await repository.retrieveEtfs()).data;
 
     expect(catalog.fetchedAt, isNull);
   });
@@ -189,18 +214,18 @@ void main() {
       200,
     );
 
-    final catalog = await EtfRepository().retrieveEtfs();
+    final catalog = (await repository.retrieveEtfs()).data;
 
     expect(catalog.etfs.content.single.name, 'Indice européen');
   });
 
-  test('lets the dio error through when the api answers with an error', () {
+  test('lets the dio error through when a next page fails', () {
     respondWith(
       '[{ "error": "Internal Server Error", "message": "error.unexpected" }]',
       500,
     );
 
-    expect(EtfRepository().retrieveEtfs(), throwsA(isA<DioException>()));
+    expect(repository.retrieveEtfs(page: 1), throwsA(isA<DioException>()));
   });
 
   test('requests the detail of the etf by its ticker', () async {
@@ -210,7 +235,7 @@ void main() {
       return jsonBody(etfDetailJson, 200);
     });
 
-    await EtfRepository().retrieveEtf('SPY');
+    await repository.retrieveEtf('SPY');
 
     expect(requestedUrl, Uri.parse('$baseUrl/etfs/SPY'));
   });
@@ -222,7 +247,7 @@ void main() {
       return jsonBody(etfDetailJson, 200);
     });
 
-    await EtfRepository().retrieveEtf('SP/Y');
+    await repository.retrieveEtf('SP/Y');
 
     expect(requestedUrl.path, '/api/etfs/SP%2FY');
   });
@@ -230,7 +255,7 @@ void main() {
   test('returns the etf detail sent by the api', () async {
     respondWith(etfDetailJson, 200);
 
-    final etf = await EtfRepository().retrieveEtf('SPY');
+    final etf = (await repository.retrieveEtf('SPY')).data;
     final marketData = etf.marketData!;
 
     expect(etf.ticker, 'SPY');
@@ -269,7 +294,7 @@ void main() {
 }
 ''', 200);
 
-    final etf = await EtfRepository().retrieveEtf('SPY');
+    final etf = (await repository.retrieveEtf('SPY')).data;
 
     expect(etf.marketData, isNull);
     expect(etf.leveragedOrInverse, isTrue);
@@ -283,7 +308,7 @@ void main() {
       404,
     );
 
-    expect(EtfRepository().retrieveEtf('ARKK'), throwsA(isA<DioException>()));
+    expect(repository.retrieveEtf('ARKK'), throwsA(isA<DioException>()));
   });
 
   test('requests the comparison of the two etfs', () async {
@@ -293,7 +318,7 @@ void main() {
       return jsonBody(comparisonJson, 200);
     });
 
-    await EtfRepository().compare('SPY', 'QQQ');
+    await repository.compare('SPY', 'QQQ');
 
     expect(requestedUrl, Uri.parse('$baseUrl/etfs/compare?etfA=SPY&etfB=QQQ'));
   });
@@ -301,7 +326,7 @@ void main() {
   test('returns the comparison sent by the api', () async {
     respondWith(comparisonJson, 200);
 
-    final comparison = await EtfRepository().compare('SPY', 'QQQ');
+    final comparison = await repository.compare('SPY', 'QQQ');
 
     expect(comparison.commonPeriod.startDate, DateTime(2021, 10, 20));
     expect(comparison.commonPeriod.endDate, DateTime(2026, 10, 19));
@@ -324,6 +349,183 @@ void main() {
       422,
     );
 
-    expect(EtfRepository().compare('SPY', 'QQQ'), throwsA(isA<DioException>()));
+    expect(repository.compare('SPY', 'QQQ'), throwsA(isA<DioException>()));
+  });
+
+  final notFavouriteDetailJson = etfDetailJson.replaceFirst(
+    '"favourite": true',
+    '"favourite": false',
+  );
+
+  test('downloads the detail returned when pinning an etf', () async {
+    respondWith(etfDetailJson, 201);
+
+    await repository.addFavourite('SPY');
+
+    expect((await apiCache.read('etf_detail_SPY'))!.response['ticker'], 'SPY');
+  });
+
+  test('deletes the download when unpinning an etf', () async {
+    await apiCache.write('etf_detail_SPY', {'ticker': 'SPY'});
+    http.httpClientAdapter = FakeHttpClientAdapter(
+      (_) async => ResponseBody.fromString('', 204),
+    );
+
+    await repository.removeFavourite('SPY');
+
+    expect(await apiCache.read('etf_detail_SPY'), isNull);
+  });
+
+  test('updates the download of a favourite opened online', () async {
+    respondWith(etfDetailJson, 200);
+
+    final result = await repository.retrieveEtf('SPY');
+
+    expect(result.offline, isFalse);
+    expect((await apiCache.read('etf_detail_SPY'))!.cachedAt, cachedAt);
+  });
+
+  test('keeps no download of an etf that is not a favourite', () async {
+    await apiCache.write('etf_detail_SPY', {'ticker': 'SPY'});
+    respondWith(notFavouriteDetailJson, 200);
+
+    await repository.retrieveEtf('SPY');
+
+    expect(await apiCache.read('etf_detail_SPY'), isNull);
+  });
+
+  test('reads the downloaded detail when the api cannot be reached', () async {
+    respondWith(etfDetailJson, 200);
+    await repository.retrieveEtf('SPY');
+    failWithoutResponse();
+
+    final result = await repository.retrieveEtf('SPY');
+
+    expect(result.data.ticker, 'SPY');
+    expect(result.offline, isTrue);
+    expect(result.cachedAt, cachedAt);
+  });
+
+  test('reads the downloaded detail when the api fails with a 500', () async {
+    respondWith(etfDetailJson, 200);
+    await repository.retrieveEtf('SPY');
+    respondWith(
+      '[{ "error": "Internal Server Error", "message": "error.unexpected" }]',
+      500,
+    );
+
+    expect((await repository.retrieveEtf('SPY')).cachedAt, cachedAt);
+  });
+
+  test('lets the dio error through for a detail never downloaded', () {
+    failWithoutResponse();
+
+    expect(repository.retrieveEtf('SPY'), throwsA(isA<DioException>()));
+  });
+
+  test(
+    'ignores the download when the api answers with a client error',
+    () async {
+      respondWith(etfDetailJson, 200);
+      await repository.retrieveEtf('SPY');
+      respondWith(
+        '[{ "error": "Not Found", "message": "error.etfs.etf-not-found" }]',
+        404,
+      );
+
+      expect(repository.retrieveEtf('SPY'), throwsA(isA<DioException>()));
+    },
+  );
+
+  test(
+    'lists the downloaded favourites when the catalog cannot be reached',
+    () async {
+      await apiCache.write(
+        'etf_detail_VGK',
+        jsonDecode(
+          etfDetailJson
+              .replaceFirst('"ticker": "SPY"', '"ticker": "VGK"')
+              .replaceFirst(
+                '"name": "State Street SPDR S&P 500 ETF Trust"',
+                '"name": "Vanguard FTSE Europe ETF"',
+              ),
+        ) as Map<String, dynamic>,
+      );
+      await apiCache.write(
+        'etf_detail_SPY',
+        jsonDecode(etfDetailJson) as Map<String, dynamic>,
+      );
+      failWithoutResponse();
+
+      final result = await repository.retrieveEtfs();
+
+      expect(result.data.etfs.content.map((etf) => etf.ticker), ['SPY', 'VGK']);
+      expect(result.data.etfs.content.first.favourite, isTrue);
+      expect(result.offline, isTrue);
+    },
+  );
+
+  test('lets the dio error through for a search without network', () async {
+    await apiCache.write(
+      'etf_detail_SPY',
+      jsonDecode(etfDetailJson) as Map<String, dynamic>,
+    );
+    failWithoutResponse();
+
+    expect(
+      repository.retrieveEtfs(search: 'van'),
+      throwsA(isA<DioException>()),
+    );
+  });
+
+  test(
+    'returns an empty offline catalog when no favourite is downloaded',
+    () async {
+      failWithoutResponse();
+
+      final result = await repository.retrieveEtfs();
+
+      expect(result.offline, isTrue);
+      expect(result.data.etfs.content, isEmpty);
+    },
+  );
+
+  test('downloads missing favourites and deletes the others on sync', () async {
+    await apiCache.write(
+      'etf_detail_QQQ',
+      jsonDecode(
+        etfDetailJson.replaceFirst('"ticker": "SPY"', '"ticker": "QQQ"'),
+      ) as Map<String, dynamic>,
+    );
+    http.httpClientAdapter = FakeHttpClientAdapter((options) async {
+      if (options.path == '/etfs') {
+        return jsonBody(
+          catalogJson.replaceFirst('"ticker": "VGK"', '"ticker": "SPY"'),
+          200,
+        );
+      }
+      return jsonBody(etfDetailJson, 200);
+    });
+
+    await repository.syncFavouriteDownloads();
+
+    expect(await apiCache.read('etf_detail_SPY'), isNotNull);
+    expect(await apiCache.read('etf_detail_QQQ'), isNull);
+  });
+
+  test('ignores the failures of the sync', () async {
+    failWithoutResponse();
+
+    await repository.syncFavouriteDownloads();
+
+    expect(cacheDirectory.listSync(), isEmpty);
+  });
+
+  test('does not download the comparison', () async {
+    respondWith(comparisonJson, 200);
+
+    await repository.compare('SPY', 'QQQ');
+
+    expect(cacheDirectory.listSync(), isEmpty);
   });
 }

@@ -9,6 +9,7 @@ import 'package:indice_mobile/models/etf/etf_data.dart';
 import 'package:indice_mobile/screens/compare/etf_catalog_screen.dart';
 import 'package:indice_mobile/stores/etf/etf_catalog_store.dart';
 import 'package:indice_mobile/utils/date_formatting.dart';
+import 'package:indice_mobile/widgets/banner/offline_bar.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/card/etf_card.dart';
 
@@ -313,5 +314,63 @@ void main() {
 
     expect(repository.retrieveEtfsCalls, 2);
     expect(find.byType(EtfCard), findsNWidgets(2));
+  });
+
+  testWidgets('shows the cached catalog offline, without search nor star', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      FakeEtfRepository(
+        () async => buildCatalog(stale: true),
+        catalogOffline: true,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text('Hors ligne · seuls vos favoris téléchargés sont disponibles'),
+      findsOneWidget,
+    );
+    expect(find.byType(OfflineBar), findsOneWidget);
+    expect(find.byType(StaleDataBanner), findsNothing);
+    expect(find.byType(EtfCard), findsNWidgets(2));
+    expect(tester.widget<SearchBar>(find.byType(SearchBar)).enabled, isFalse);
+    expect(
+      tester.widget<FilterChip>(find.byType(FilterChip)).onSelected,
+      isNull,
+    );
+    expect(
+      tester
+          .widgetList<IconButton>(
+            find.ancestor(
+              of: find.byIcon(Icons.star_border),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .every((button) => button.onPressed == null),
+      isTrue,
+    );
+  });
+
+  testWidgets('tells when no favourite is available offline', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      FakeEtfRepository(
+        () async => buildCatalog(etfs: const []),
+        catalogOffline: true,
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text(
+        'Aucun favori disponible hors ligne. '
+        'Épinglez un ETF pour le retrouver sans connexion.',
+      ),
+      findsOneWidget,
+    );
   });
 }

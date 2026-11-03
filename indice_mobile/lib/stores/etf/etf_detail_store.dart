@@ -19,8 +19,14 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
   Future<void> _load({required bool showLoading}) async {
     emit(state.copyWith(isLoading: showLoading, errorKey: null));
     try {
-      final etf = await _etfRepository.retrieveEtf(_ticker);
-      emit(state.copyWith(etf: etf, isLoading: false));
+      final result = await _etfRepository.retrieveEtf(_ticker);
+      emit(
+        state.copyWith(
+          etf: result.data,
+          cachedAt: result.cachedAt,
+          isLoading: false,
+        ),
+      );
     } catch (error) {
       emit(
         state.copyWith(

@@ -12,8 +12,10 @@ import '../../stores/etf/etf_detail_state.dart';
 import '../../stores/etf/etf_detail_store.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
+import '../../utils/offline_message.dart';
 import '../../utils/page_padding.dart';
 import '../../widgets/badge/leverage_badge.dart';
+import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/chart/price_chart.dart';
 import '../../widgets/error/error_view.dart';
@@ -85,9 +87,18 @@ class EtfDetailScreen extends StatelessWidget {
               if (state.isLoading || etf == null) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return RefreshIndicator(
-                onRefresh: context.read<EtfDetailStore>().refresh,
-                child: _DetailView(etf: etf),
+              final cachedAt = state.cachedAt;
+              return Column(
+                children: [
+                  if (cachedAt != null)
+                    OfflineBar(message: offlineMessage(cachedAt)),
+                  Expanded(
+                    child: RefreshIndicator(
+                      onRefresh: context.read<EtfDetailStore>().refresh,
+                      child: _DetailView(etf: etf, cachedAt: cachedAt),
+                    ),
+                  ),
+                ],
               );
             },
           ),
@@ -113,7 +124,9 @@ class _FavouriteButton extends StatelessWidget {
         final etf = state.etf;
         if (etf == null) return const SizedBox.shrink();
         return IconButton(
-          onPressed: () => _toggle(context, etf.ticker),
+          onPressed: state.cachedAt == null
+              ? () => _toggle(context, etf.ticker)
+              : null,
           icon: Icon(etf.favourite ? Icons.star : Icons.star_border),
         );
       },
@@ -122,14 +135,16 @@ class _FavouriteButton extends StatelessWidget {
 }
 
 class _DetailView extends StatelessWidget {
-  const _DetailView({required this.etf});
+  const _DetailView({required this.etf, required this.cachedAt});
 
   final EtfDetailData etf;
+  final DateTime? cachedAt;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final marketData = etf.marketData;
+    final cachedAt = this.cachedAt;
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -166,7 +181,7 @@ class _DetailView extends StatelessWidget {
             marketData: marketData,
             ticker: etf.ticker,
             currency: etf.currency,
-            stale: etf.stale,
+            stale: etf.stale && cachedAt == null,
           ),
         const SizedBox(height: 24),
         Text(

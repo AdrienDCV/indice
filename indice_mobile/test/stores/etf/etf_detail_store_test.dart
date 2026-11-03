@@ -138,4 +138,15 @@ void main() {
     expect(store.state.etf?.favourite, isTrue);
     expect(repository.retrievedTickers, ['SPY', 'SPY']);
   });
+
+  test('tells when the detail comes from the cache', () async {
+    final cachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+    final repository = repositoryWith((_) async => buildEtfDetail())
+      ..detailCachedAt = cachedAt;
+    final store = EtfDetailStore(repository, 'SPY');
+
+    await store.init();
+
+    expect(store.state.cachedAt, cachedAt);
+  });
 }

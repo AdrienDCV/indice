@@ -11,7 +11,9 @@ import 'package:indice_mobile/models/etf/returns_data.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/screens/compare/etf_detail_screen.dart';
 import 'package:indice_mobile/stores/etf/etf_catalog_store.dart';
+import 'package:indice_mobile/utils/date_formatting.dart';
 import 'package:indice_mobile/widgets/badge/leverage_badge.dart';
+import 'package:indice_mobile/widgets/banner/offline_bar.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/chart/price_chart.dart';
 import 'package:indice_mobile/widgets/indicator/price_range_bar.dart';
@@ -24,6 +26,7 @@ Future<FakeEtfRepository> pumpScreen(
   Future<EtfDetailData> Function(String ticker) onRetrieveEtf, {
   EtfCatalogStore? catalogStore,
   Future<void> Function(String ticker)? onAddFavourite,
+  DateTime? cachedAt,
 }) async {
   tester.view.physicalSize = const Size(1080, 6000);
   tester.view.devicePixelRatio = 3;
@@ -32,6 +35,7 @@ Future<FakeEtfRepository> pumpScreen(
     () async => buildCatalog(),
     onRetrieveEtf: onRetrieveEtf,
     onAddFavourite: onAddFavourite ?? (_) async {},
+    detailCachedAt: cachedAt,
   );
   getIt.registerSingleton<EtfRepository>(repository);
   addTearDown(getIt.reset);
@@ -285,5 +289,51 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('D’après son nom'), findsOneWidget);
+  });
+
+  testWidgets('shows the cached detail offline, without star', (
+    WidgetTester tester,
+  ) async {
+    final cachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+    await pumpScreen(
+      tester,
+      (_) async => buildEtfDetail(marketData: spyMarketData, stale: true),
+      cachedAt: cachedAt,
+    );
+    await tester.pump();
+
+    expect(
+      find.text('Hors ligne · données du ${cachedAt.toFrenchDateTime()}'),
+      findsOneWidget,
+    );
+    expect(find.byType(OfflineBar), findsOneWidget);
+    expect(find.byType(StaleDataBanner), findsNothing);
+    expect(find.byType(PriceChart), findsOneWidget);
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byIcon(Icons.star_border),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('warns about cached data even without market data', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      (_) async => buildEtfDetail(),
+      cachedAt: DateTime.utc(2026, 10, 30, 13, 5),
+    );
+    await tester.pump();
+
+    expect(find.byType(OfflineBar), findsOneWidget);
+    expect(find.byType(StaleDataBanner), findsNothing);
+    expect(find.text(noHistoryMessage), findsOneWidget);
   });
 }

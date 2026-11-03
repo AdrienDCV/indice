@@ -8,7 +8,6 @@ import com.fisa.indice.etf.services.EtfService
 import org.springframework.data.domain.Pageable
 import org.springframework.data.web.PageableDefault
 import org.springframework.http.HttpStatus
-import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -36,8 +35,8 @@ class EtfController(
         etfDetailService.retrieveEtf(ticker).toDto()
 
     @PutMapping("/etfs/{ticker}/favourite")
-    fun addFavourite(@PathVariable ticker: String): ResponseEntity<Unit> =
-        if (etfService.addFavourite(ticker)) ResponseEntity.status(HttpStatus.CREATED).build() else ResponseEntity.ok().build()
+    fun addFavourite(@PathVariable ticker: String): EtfDetailResponseDto =
+        etfService.addFavourite(ticker).toDto()
 
     @DeleteMapping("/etfs/{ticker}/favourite")
     @ResponseStatus(HttpStatus.NO_CONTENT)

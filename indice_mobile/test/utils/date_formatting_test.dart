@@ -17,4 +17,21 @@ void main() {
       DateTime(local.year, local.month, local.day).toFrenchDate(),
     );
   });
+
+  test('formats a date and time with two-digit hours and minutes', () {
+    expect(
+      DateTime(2026, 10, 30, 9, 5).toFrenchDateTime(),
+      '30/10/2026 à 09:05',
+    );
+    expect(
+      DateTime(2026, 10, 30, 14, 45).toFrenchDateTime(),
+      '30/10/2026 à 14:45',
+    );
+  });
+
+  test('formats a utc date and time in local time', () {
+    final utc = DateTime.utc(2026, 10, 30, 13, 5);
+
+    expect(utc.toFrenchDateTime(), utc.toLocal().toFrenchDateTime());
+  });
 }

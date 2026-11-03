@@ -28,6 +28,7 @@ Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format
 | Variables d'environnement | `flutter_dotenv` |
 | Lecture vidéo | `video_player` |
 | Graphiques | `fl_chart` |
+| Stockage local (cache) | `path_provider` |
 
 ## Commandes
 
@@ -63,6 +64,7 @@ flutter test                                                 # Tous les tests
 - Lancer `flutter analyze` (aucun avertissement) et `flutter test` avant d'annoncer qu'une tâche est terminée.
 - Les fichiers `*.freezed.dart` et `*.g.dart` sont ignorés par Git : les générer avec `build_runner` après un clone, un changement de branche ou toute modification d'une classe `@freezed`. Ne jamais les modifier à la main.
 - Ne jamais commiter sans demande. Commits et pull requests : voir `../CLAUDE.md` (scope `mobile`).
+- Les décisions structurantes et leur justification sont consignées dans des ADR (`docs/adr/`) : voir [docs/adr/README.md](docs/adr/README.md) pour le format, le cycle de vie et l'index.
 
 ## Architecture
 
@@ -82,6 +84,7 @@ lib/
 │   ├── etf/                # etf_data.dart, etf_comparison_data.dart…
 │   └── resource/
 ├── repositories/           # appels à l'API, par notion : etf_repository.dart…
+├── storage/                # lecture et écriture des fichiers locaux : api_cache.dart
 ├── stores/                 # états de l'app (Cubit), par notion
 │   └── etf/                # etf_comparison_store.dart + etf_comparison_state.dart
 ├── screens/                # assemblages de widgets, par module : home/, compare/, learn/…
@@ -136,7 +139,7 @@ lib/
 - Seul endroit qui appelle l'API. Un repository par notion.
 - Utilisent le client dio global `http` de `lib/http.dart`, configuré une seule fois par `setupHttpClient()` dans `main()` (URL de base, en-têtes, intercepteur de logs). Les chemins sont relatifs à l'URL de base (`http.get('/etfs')`).
 - Renvoient des models `Data` (`Future<EtfData>`, `Future<PaginatedData<EtfData>>`). Jamais de `Map` JSON ni de `Response` en sortie.
-- Ne traitent pas les erreurs : une `DioException` remonte telle quelle jusqu'au store.
+- Ne traitent pas les erreurs : une `DioException` remonte telle quelle jusqu'au store. Seule exception : les fiches des favoris sont gardées sur le téléphone avec `ApiCache` (`lib/storage/`), et relues en cas d'erreur réseau ou 5xx (jamais 4xx). Le repository renvoie alors un `CachedResult<T>` avec `offline: true` et, pour une fiche, sa date d'enregistrement (`cachedAt`) (voir `docs/adr/0001-favoris-consultables-hors-ligne.md`).
 - Réponse en erreur : le corps de l'API est toujours une **liste** de `{ "error": "Not Found", "message": "error.etfs.etf-not-found" }` : `error` est le libellé HTTP, la **clé** d'erreur est dans `message`. `extractErrorMessage(error)` (`lib/http.dart`) renvoie la clé de la première erreur, ou `null` (erreur réseau, corps illisible, erreur hors dio).
 - Tests : remplacer `http.httpClientAdapter` par un faux adaptateur (`test/fakes/`).
 - Classe concrète par défaut (cf. YAGNI).
