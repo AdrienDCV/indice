@@ -10,6 +10,7 @@ import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_catalog_store.dart';
 import '../../stores/etf/etf_detail_state.dart';
 import '../../stores/etf/etf_detail_store.dart';
+import '../../utils/axis_scale.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
 import '../../utils/offline_message.dart';
@@ -17,12 +18,13 @@ import '../../utils/page_padding.dart';
 import '../../widgets/badge/leverage_badge.dart';
 import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/banner/stale_data_banner.dart';
+import '../../widgets/card/content_card.dart';
 import '../../widgets/chart/price_chart.dart';
 import '../../widgets/error/error_view.dart';
 import '../../widgets/indicator/indicator_tile.dart';
 import '../../widgets/indicator/price_range_bar.dart';
 import '../../widgets/indicator/returns_table.dart';
-import '../../widgets/info/info_title.dart';
+import '../../widgets/info/info_note.dart';
 import '../../widgets/info/info_tooltip_button.dart';
 
 const _leverageInfo =
@@ -168,6 +170,14 @@ class _DetailView extends StatelessWidget {
               ),
             ],
           ),
+        if (marketData != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            '${marketData.lastClose.toFrenchPrice(etf.currency)} au '
+            '${marketData.lastCloseDate.toFrenchDate()}',
+            style: theme.textTheme.titleLarge,
+          ),
+        ],
         const SizedBox(height: 16),
         FilledButton(
           onPressed: () =>
@@ -184,12 +194,11 @@ class _DetailView extends StatelessWidget {
             currency: etf.currency,
             stale: etf.stale && cachedAt == null,
           ),
-        const SizedBox(height: 24),
-        Text(
-          'Les performances passées ne préjugent pas des performances futures.',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+        const SizedBox(height: 12),
+        const InfoNote(
+          text:
+              'Les performances passées ne préjugent pas des performances '
+              'futures.',
         ),
       ],
     );
@@ -225,112 +234,113 @@ class _MarketDataView extends StatelessWidget {
     final returns = marketData.returns;
     final maxDrawdown = marketData.maxDrawdown;
     final fiftyTwoWeekRange = marketData.fiftyTwoWeekRange;
-    final lastCloseDate = marketData.lastCloseDate.toFrenchDate();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 8,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 12,
       children: [
         if (stale)
           StaleDataBanner(
-            message: 'Données au $lastCloseDate, mise à jour impossible.',
+            message:
+                'Données au ${marketData.lastCloseDate.toFrenchDate()}, '
+                'mise à jour impossible.',
           ),
-        Text(
-          '${marketData.lastClose.toFrenchPrice(currency)} au $lastCloseDate',
-          style: Theme.of(context).textTheme.titleLarge,
+        ContentCard(
+          title: 'Évolution du cours',
+          infoText: _priceChartInfo(marketData.historyStartDate),
+          child: marketData.pricePoints.length < 2
+              ? const Text(_noHistoryMessage)
+              : PriceChart(
+                  series: [
+                    (
+                      label: ticker,
+                      color: Theme.of(context).colorScheme.primary,
+                      points: [
+                        for (final point in marketData.pricePoints)
+                          (date: point.date, value: point.close),
+                      ],
+                    ),
+                  ],
+                  axisLabel: (value, interval) => value.toFrenchDecimal(
+                    fractionDigits: fractionDigitsOf(interval),
+                  ),
+                  tooltipLabel: (index) {
+                    final point = marketData.pricePoints[index];
+                    return '${point.date.toFrenchDate()}\n'
+                        '${point.close.toFrenchPrice(currency)}\n'
+                        '${point.changeSinceStart.toFrenchSignedPercent()} '
+                        'depuis le '
+                        '${marketData.historyStartDate.toFrenchDate()}';
+                  },
+                ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: InfoTitle(
-            title: 'Évolution du cours',
-            infoText: _priceChartInfo(marketData.historyStartDate),
-          ),
-        ),
-        if (marketData.pricePoints.length < 2)
-          const Text(_noHistoryMessage)
-        else
-          PriceChart(
-            series: [
-              (
-                label: ticker,
-                color: Theme.of(context).colorScheme.primary,
-                points: [
-                  for (final point in marketData.pricePoints)
-                    (date: point.date, value: point.close),
+        ContentCard(
+          title: 'Rendements',
+          infoText: _returnInfo,
+          child: Column(
+            spacing: 8,
+            children: [
+              ReturnsTable(
+                returns: [
+                  (
+                    period: '1 an',
+                    value: returns.oneYear.toFrenchSignedPercent(),
+                    trend: returns.oneYear.trend,
+                  ),
+                  (
+                    period: '3 ans',
+                    value: returns.threeYears.toFrenchSignedPercent(),
+                    trend: returns.threeYears.trend,
+                  ),
+                  (
+                    period: '5 ans',
+                    value: returns.fiveYears.toFrenchSignedPercent(),
+                    trend: returns.fiveYears.trend,
+                  ),
                 ],
               ),
+              IndicatorTile(
+                label: 'Annualisé sur 5 ans',
+                value: returns.fiveYearsAnnualized.toFrenchSignedPercent(),
+                infoText: _annualizedReturnInfo,
+                trend: returns.fiveYearsAnnualized.trend,
+              ),
             ],
-            axisLabel: (value) => value.toStringAsFixed(0),
-            tooltipLabel: (index) {
-              final point = marketData.pricePoints[index];
-              return '${point.date.toFrenchDate()}\n'
-                  '${point.close.toFrenchPrice(currency)}\n'
-                  '${point.changeSinceStart.toFrenchSignedPercent()} depuis le '
-                  '${marketData.historyStartDate.toFrenchDate()}';
-            },
-          ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: InfoTitle(title: 'Rendements', infoText: _returnInfo),
-        ),
-        ReturnsTable(
-          returns: [
-            (
-              period: '1 an',
-              value: returns.oneYear.toFrenchSignedPercent(),
-              trend: returns.oneYear.trend,
-            ),
-            (
-              period: '3 ans',
-              value: returns.threeYears.toFrenchSignedPercent(),
-              trend: returns.threeYears.trend,
-            ),
-            (
-              period: '5 ans',
-              value: returns.fiveYears.toFrenchSignedPercent(),
-              trend: returns.fiveYears.trend,
-            ),
-          ],
-        ),
-        IndicatorTile(
-          label: 'Annualisé sur 5 ans',
-          value: returns.fiveYearsAnnualized.toFrenchSignedPercent(),
-          infoText: _annualizedReturnInfo,
-          trend: returns.fiveYearsAnnualized.trend,
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: InfoTitle(title: 'Risque'),
-        ),
-        IndicatorTile(
-          label: 'Volatilité sur 1 an',
-          value: marketData.volatilityOneYear.toFrenchPercent(),
-          infoText: _volatilityInfo,
-        ),
-        IndicatorTile(
-          label: 'Perte maximale sur 5 ans',
-          value: maxDrawdown?.value.toFrenchSignedPercent() ?? '—',
-          infoText: _maxDrawdownInfo,
-          detail: maxDrawdown == null
-              ? null
-              : 'Du ${maxDrawdown.peakDate.toFrenchDate()} '
-                    'au ${maxDrawdown.troughDate.toFrenchDate()}',
-        ),
-        Padding(
-          padding: const EdgeInsets.only(top: 16),
-          child: InfoTitle(
-            title: 'Fourchette sur 52 semaines',
-            infoText: _priceRangeInfo,
           ),
         ),
-        if (fiftyTwoWeekRange == null)
-          const Text('—')
-        else
-          PriceRangeBar(
-            low: fiftyTwoWeekRange.low.toFrenchPrice(currency),
-            high: fiftyTwoWeekRange.high.toFrenchPrice(currency),
-            position: fiftyTwoWeekRange.position,
+        ContentCard(
+          title: 'Risque',
+          child: Column(
+            spacing: 8,
+            children: [
+              IndicatorTile(
+                label: 'Volatilité sur 1 an',
+                value: marketData.volatilityOneYear.toFrenchPercent(),
+                infoText: _volatilityInfo,
+              ),
+              IndicatorTile(
+                label: 'Perte maximale sur 5 ans',
+                value: maxDrawdown?.value.toFrenchSignedPercent() ?? '—',
+                infoText: _maxDrawdownInfo,
+                detail: maxDrawdown == null
+                    ? null
+                    : 'Du ${maxDrawdown.peakDate.toFrenchDate()} '
+                          'au ${maxDrawdown.troughDate.toFrenchDate()}',
+              ),
+            ],
           ),
+        ),
+        ContentCard(
+          title: 'Fourchette sur 52 semaines',
+          infoText: _priceRangeInfo,
+          child: fiftyTwoWeekRange == null
+              ? const Text('—')
+              : PriceRangeBar(
+                  low: fiftyTwoWeekRange.low.toFrenchPrice(currency),
+                  high: fiftyTwoWeekRange.high.toFrenchPrice(currency),
+                  position: fiftyTwoWeekRange.position,
+                ),
+        ),
         if (_hasMissingIndicator)
           Text(
             'Historique disponible depuis le '

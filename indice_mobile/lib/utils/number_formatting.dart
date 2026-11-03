@@ -22,10 +22,10 @@ extension NumberFormatting on double? {
     return '${_frenchDecimal(value, 2)}$_nonBreakingSpace$currency';
   }
 
-  String toFrenchDecimal() {
+  String toFrenchDecimal({int fractionDigits = 2}) {
     final value = this;
     if (value == null) return _missingValue;
-    return _frenchDecimal(value, 2);
+    return _frenchDecimal(value, fractionDigits);
   }
 }
 
