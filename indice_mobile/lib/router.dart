@@ -2,16 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:video_player/video_player.dart';
 
-import 'pages/build_page.dart';
 import 'pages/home_page.dart';
 import 'pages/main_page.dart';
 import 'pages/video_fullscreen_page.dart';
 import 'screens/compare/etf_catalog_screen.dart';
 import 'screens/compare/etf_comparison_screen.dart';
 import 'screens/compare/etf_detail_screen.dart';
+import 'screens/compare/etf_picker_screen.dart';
 import 'screens/learn/learn_screen.dart';
 import 'screens/learn/resource_detail_screen.dart';
-import 'screens/compare/etf_picker_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/',
