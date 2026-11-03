@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../errors/error_messages.dart';
 import '../../injection.dart';
 import '../../models/etf/compared_etf_data.dart';
 import '../../models/etf/etf_comparison_data.dart';
-import '../../models/etf/etf_data.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_comparison_state.dart';
 import '../../stores/etf/etf_comparison_store.dart';
@@ -13,10 +13,14 @@ import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
 import '../../utils/page_padding.dart';
 import '../../widgets/banner/stale_data_banner.dart';
+import '../../widgets/card/content_card.dart';
 import '../../widgets/chart/price_chart.dart';
+import '../../widgets/field/etf_slot_field.dart';
 import '../../widgets/indicator/comparison_table.dart';
 import '../../widgets/indicator/correlation_gauge.dart';
+import '../../widgets/info/info_message.dart';
 import '../../widgets/info/info_tooltip_button.dart';
+import 'etf_picker_screen.dart';
 
 const _noHistoryMessage =
     'Aucun historique de cours disponible pour le moment.';
@@ -86,133 +90,76 @@ class _EtfSelectors extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final store = context.read<EtfComparisonStore>();
     final colors = _etfColors(context);
 
-    Future<List<EtfData>> suggestionsWithout(
-      String? ticker,
-      String search,
-    ) async => [
-      for (final etf in await store.suggestEtfs(search))
-        if (etf.ticker != ticker) etf,
-    ];
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _EtfSearchField(
-              label: 'Premier ETF',
-              leading: _ColorDot(color: colors[0]),
-              ticker: state.etfA,
-              suggestions: (search) => suggestionsWithout(state.etfB, search),
-              onSelected: isEtfALocked ? null : store.selectEtfA,
-            ),
-            const _VersusDivider(),
-            _EtfSearchField(
-              label: 'Second ETF',
-              leading: _ColorDot(color: colors[1]),
-              ticker: state.etfB,
-              suggestions: (search) => suggestionsWithout(state.etfA, search),
-              onSelected: store.selectEtfB,
-            ),
-          ],
+    return Column(
+      spacing: 8,
+      children: [
+        _EtfSlotSelector(
+          label: 'Premier ETF',
+          color: colors[0],
+          slot: EtfSlot.first,
+          ticker: state.etfA,
+          excludedTicker: state.etfB,
+          onSelected: isEtfALocked ? null : store.selectEtfA,
         ),
-      ),
+        Text(
+          'VS',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+            letterSpacing: 1,
+          ),
+        ),
+        _EtfSlotSelector(
+          label: 'Second ETF',
+          color: colors[1],
+          slot: EtfSlot.second,
+          ticker: state.etfB,
+          excludedTicker: state.etfA,
+          onSelected: store.selectEtfB,
+        ),
+      ],
     );
   }
 }
 
-class _EtfSearchField extends StatelessWidget {
-  const _EtfSearchField({
+class _EtfSlotSelector extends StatelessWidget {
+  const _EtfSlotSelector({
     required this.label,
-    required this.leading,
+    required this.color,
+    required this.slot,
     required this.ticker,
-    required this.suggestions,
+    required this.excludedTicker,
     required this.onSelected,
   });
 
   final String label;
-  final Widget leading;
+  final Color color;
+  final EtfSlot slot;
   final String? ticker;
-  final Future<List<EtfData>> Function(String search) suggestions;
+  final String? excludedTicker;
   final ValueChanged<String>? onSelected;
 
   @override
   Widget build(BuildContext context) {
     final onSelected = this.onSelected;
-    final ticker = this.ticker;
 
-    return SearchAnchor(
-      enabled: onSelected != null,
-      viewHintText: 'Rechercher un ETF par nom ou ticker',
-      builder: (context, controller) => InkWell(
-        onTap: controller.openView,
-        child: InputDecorator(
-          isEmpty: ticker == null,
-          decoration: InputDecoration(
-            labelText: label,
-            prefixIcon: leading,
-            suffixIcon: const Icon(Icons.search),
-            enabled: onSelected != null,
-          ),
-          child: Text(ticker ?? ''),
-        ),
-      ),
-      suggestionsBuilder: (context, controller) async {
-        final search = controller.text.trim();
-        if (search.isEmpty || onSelected == null) return const [];
-        final etfs = await suggestions(search);
-        return [
-          for (final etf in etfs)
-            ListTile(
-              title: Text(
-                '${etf.ticker} · ${etf.name}',
-                overflow: TextOverflow.ellipsis,
-              ),
-              onTap: () {
-                controller.closeView(etf.ticker);
-                onSelected(etf.ticker);
+    return Hero(
+      tag: slot.heroTag,
+      child: EtfSlotField(
+        label: label,
+        color: color,
+        ticker: ticker,
+        onTap: onSelected == null
+            ? null
+            : () async {
+                final picked = await context.push<String>(
+                  etfPickerLocation(slot, excludedTicker: excludedTicker),
+                );
+                if (picked != null) onSelected(picked);
               },
-            ),
-        ];
-      },
-    );
-  }
-}
-
-class _VersusDivider extends StatelessWidget {
-  const _VersusDivider();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        spacing: 12,
-        children: [
-          const Expanded(child: Divider()),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: Text(
-                'VS',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: colorScheme.onPrimaryContainer,
-                ),
-              ),
-            ),
-          ),
-          const Expanded(child: Divider()),
-        ],
       ),
     );
   }
@@ -231,13 +178,13 @@ class _ComparisonResult extends StatelessWidget {
     final comparison = state.comparison;
 
     if (etfA == null || etfB == null) {
-      return const _Placeholder(
+      return const InfoMessage(
         icon: Icons.compare_arrows,
         message: 'Choisis deux ETF pour les comparer.',
       );
     }
     if (errorKey != null) {
-      return _Placeholder(
+      return InfoMessage(
         icon: Icons.info_outline,
         message: errorMessage(errorKey, params: {'etfA': etfA, 'etfB': etfB}),
         action: errorKey == unexpectedErrorKey
@@ -255,36 +202,6 @@ class _ComparisonResult extends StatelessWidget {
       );
     }
     return _ComparisonView(comparison: comparison);
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.icon, required this.message, this.action});
-
-  final IconData icon;
-  final String message;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final action = this.action;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
-      child: Column(
-        spacing: 12,
-        children: [
-          Icon(icon, size: 48, color: theme.colorScheme.primary),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodyLarge,
-          ),
-          ?action,
-        ],
-      ),
-    );
   }
 }
 
@@ -326,7 +243,7 @@ class _ComparisonView extends StatelessWidget {
         ),
         for (final etf in etfs)
           if (etf.stale) StaleDataBanner(message: _staleMessage(etf)),
-        _SectionCard(
+        ContentCard(
           title: 'Évolution',
           infoText: _priceChartInfo(commonPeriod.startDate),
           child: etfA.pricePoints.length < 2 || etfB.pricePoints.length < 2
@@ -351,7 +268,7 @@ class _ComparisonView extends StatelessWidget {
                   ].join('\n'),
                 ),
         ),
-        _SectionCard(
+        ContentCard(
           title: 'Indicateurs',
           child: ComparisonTable(
             columns: [
@@ -419,7 +336,7 @@ class _ComparisonView extends StatelessWidget {
             ],
           ),
         ),
-        _SectionCard(
+        ContentCard(
           title: 'Corrélation',
           infoText: _correlationInfo,
           child: Column(
@@ -474,62 +391,5 @@ class _ComparisonView extends StatelessWidget {
     final point = etf.pricePoints[index];
     return '${etf.ticker} · ${point.close.toFrenchPrice(etf.currency)} · '
         '${point.changeSinceStart.toFrenchSignedPercent()}';
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child, this.infoText});
-
-  final String title;
-  final Widget child;
-  final String? infoText;
-
-  @override
-  Widget build(BuildContext context) {
-    final infoText = this.infoText;
-
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 8,
-          children: [
-            Row(
-              children: [
-                Flexible(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                if (infoText != null)
-                  InfoTooltipButton(title: title, text: infoText),
-              ],
-            ),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ColorDot extends StatelessWidget {
-  const _ColorDot({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      widthFactor: 1,
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-      ),
-    );
   }
 }

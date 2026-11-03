@@ -6,12 +6,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/models/etf/etf_comparison_data.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
-import 'package:indice_mobile/screens/compare/etf_comparison_screen.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/chart/price_chart.dart';
+import 'package:indice_mobile/widgets/field/etf_slot_field.dart';
 import 'package:indice_mobile/widgets/indicator/comparison_table.dart';
 import 'package:indice_mobile/widgets/indicator/correlation_gauge.dart';
 
+import '../../fakes/compare_router.dart';
 import '../../fakes/fake_etf_repository.dart';
 
 Future<FakeEtfRepository> pumpScreen(
@@ -28,16 +29,25 @@ Future<FakeEtfRepository> pumpScreen(
   );
   getIt.registerSingleton<EtfRepository>(repository);
   addTearDown(getIt.reset);
-  await tester.pumpWidget(MaterialApp(home: EtfComparisonScreen(etfA: etfA)));
+  await tester.pumpWidget(
+    MaterialApp.router(
+      routerConfig: buildCompareRouter(
+        Uri(
+          path: '/compare/comparison',
+          queryParameters: {'etfA': ?etfA},
+        ).toString(),
+      ),
+    ),
+  );
   await tester.pump();
   return repository;
 }
 
 Finder selector(String label) =>
-    find.ancestor(of: find.text(label), matching: find.byType(SearchAnchor));
+    find.ancestor(of: find.text(label), matching: find.byType(EtfSlotField));
 
 bool isEnabled(WidgetTester tester, String label) =>
-    tester.widget<SearchAnchor>(selector(label)).enabled;
+    tester.widget<EtfSlotField>(selector(label)).onTap != null;
 
 Finder selectedTicker(String label, String ticker) =>
     find.descendant(of: selector(label), matching: find.text(ticker));
@@ -49,16 +59,38 @@ Future<void> openSelector(WidgetTester tester, String label) async {
 
 Future<void> choose(WidgetTester tester, String label, String option) async {
   await openSelector(tester, label);
-  await tester.enterText(find.byType(TextField).last, option.substring(0, 2));
-  await tester.pumpAndSettle();
   await tester.tap(find.text(option).last);
   await tester.pumpAndSettle();
 }
 
-const spyOption = 'SPY · SPDR S&P 500 ETF Trust';
-const qqqOption = 'QQQ · Invesco QQQ Trust';
+const spyOption = 'SPDR S&P 500 ETF Trust';
+const qqqOption = 'Invesco QQQ Trust';
 
 void main() {
+  testWidgets('does not open the picker of a locked etf', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(tester, etfA: 'SPY');
+
+    await openSelector(tester, 'Premier ETF');
+
+    expect(find.text('Choisir le premier ETF'), findsNothing);
+  });
+
+  testWidgets(
+    'keeps the selection when the picker is closed without choosing',
+    (WidgetTester tester) async {
+      final repository = await pumpScreen(tester);
+
+      await openSelector(tester, 'Premier ETF');
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Choisis deux ETF pour les comparer.'), findsOneWidget);
+      expect(repository.comparedPairs, isEmpty);
+    },
+  );
+
   testWidgets('starts with two empty selectors from the catalog', (
     WidgetTester tester,
   ) async {
@@ -82,30 +114,17 @@ void main() {
     expect(isEnabled(tester, 'Second ETF'), isTrue);
   });
 
-  testWidgets('removes the etf chosen on one side from the other side', (
+  testWidgets('opens the picker of the slot without the other etf', (
     WidgetTester tester,
   ) async {
-    final repository = await pumpScreen(tester, etfA: 'SPY');
+    await pumpScreen(tester, etfA: 'SPY');
 
     await openSelector(tester, 'Second ETF');
-    await tester.enterText(find.byType(TextField).last, 'tr');
-    await tester.pumpAndSettle();
 
-    expect(repository.catalogRequests.last.search, 'tr');
-    expect(repository.catalogRequests.last.size, 10);
+    expect(find.text('Choisir le second ETF'), findsOneWidget);
+
     expect(find.text(qqqOption), findsOneWidget);
     expect(find.text(spyOption), findsNothing);
-  });
-
-  testWidgets('does not search an etf before something is typed', (
-    WidgetTester tester,
-  ) async {
-    final repository = await pumpScreen(tester);
-
-    await openSelector(tester, 'Premier ETF');
-
-    expect(repository.catalogRequests, isEmpty);
-    expect(find.byType(ListTile), findsNothing);
   });
 
   testWidgets('shows a progress indicator while comparing', (
@@ -115,8 +134,6 @@ void main() {
     await pumpScreen(tester, etfA: 'SPY', onCompare: (_, _) => response.future);
 
     await openSelector(tester, 'Second ETF');
-    await tester.enterText(find.byType(TextField).last, 'QQ');
-    await tester.pumpAndSettle();
     await tester.tap(find.text(qqqOption).last);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));

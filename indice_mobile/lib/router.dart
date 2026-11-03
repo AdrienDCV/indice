@@ -13,6 +13,7 @@ import 'pages/video_fullscreen_page.dart';
 import 'screens/compare/etf_catalog_screen.dart';
 import 'screens/compare/etf_comparison_screen.dart';
 import 'screens/compare/etf_detail_screen.dart';
+import 'screens/compare/etf_picker_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/',
@@ -40,6 +41,17 @@ GoRouter buildRouter() => GoRouter(
                   builder: (_, state) => EtfComparisonScreen(
                     etfA: state.uri.queryParameters['etfA'],
                   ),
+                  routes: [
+                    GoRoute(
+                      path: 'etf-picker',
+                      builder: (_, state) => EtfPickerScreen(
+                        slot: EtfSlot.values.byName(
+                          state.uri.queryParameters['slot']!,
+                        ),
+                        excludedTicker: state.uri.queryParameters['exclude'],
+                      ),
+                    ),
+                  ],
                 ),
                 GoRoute(
                   path: 'etf/:ticker',

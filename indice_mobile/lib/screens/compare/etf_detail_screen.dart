@@ -22,6 +22,7 @@ import '../../widgets/error/error_view.dart';
 import '../../widgets/indicator/indicator_tile.dart';
 import '../../widgets/indicator/price_range_bar.dart';
 import '../../widgets/indicator/returns_table.dart';
+import '../../widgets/info/info_title.dart';
 import '../../widgets/info/info_tooltip_button.dart';
 
 const _leverageInfo =
@@ -238,9 +239,12 @@ class _MarketDataView extends StatelessWidget {
           '${marketData.lastClose.toFrenchPrice(currency)} au $lastCloseDate',
           style: Theme.of(context).textTheme.titleLarge,
         ),
-        _SectionTitle(
-          title: 'Évolution du cours',
-          infoText: _priceChartInfo(marketData.historyStartDate),
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: InfoTitle(
+            title: 'Évolution du cours',
+            infoText: _priceChartInfo(marketData.historyStartDate),
+          ),
         ),
         if (marketData.pricePoints.length < 2)
           const Text(_noHistoryMessage)
@@ -265,7 +269,10 @@ class _MarketDataView extends StatelessWidget {
                   '${marketData.historyStartDate.toFrenchDate()}';
             },
           ),
-        const _SectionTitle(title: 'Rendements', infoText: _returnInfo),
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: InfoTitle(title: 'Rendements', infoText: _returnInfo),
+        ),
         ReturnsTable(
           returns: [
             (
@@ -291,7 +298,10 @@ class _MarketDataView extends StatelessWidget {
           infoText: _annualizedReturnInfo,
           trend: returns.fiveYearsAnnualized.trend,
         ),
-        const _SectionTitle(title: 'Risque'),
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: InfoTitle(title: 'Risque'),
+        ),
         IndicatorTile(
           label: 'Volatilité sur 1 an',
           value: marketData.volatilityOneYear.toFrenchPercent(),
@@ -306,9 +316,12 @@ class _MarketDataView extends StatelessWidget {
               : 'Du ${maxDrawdown.peakDate.toFrenchDate()} '
                     'au ${maxDrawdown.troughDate.toFrenchDate()}',
         ),
-        const _SectionTitle(
-          title: 'Fourchette sur 52 semaines',
-          infoText: _priceRangeInfo,
+        Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: InfoTitle(
+            title: 'Fourchette sur 52 semaines',
+            infoText: _priceRangeInfo,
+          ),
         ),
         if (fiftyTwoWeekRange == null)
           const Text('—')
@@ -324,30 +337,6 @@ class _MarketDataView extends StatelessWidget {
             '${marketData.historyStartDate.toFrenchDate()}.',
           ),
       ],
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.infoText});
-
-  final String title;
-  final String? infoText;
-
-  @override
-  Widget build(BuildContext context) {
-    final infoText = this.infoText;
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 16),
-      child: Row(
-        children: [
-          Flexible(
-            child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-          ),
-          if (infoText != null) InfoTooltipButton(title: title, text: infoText),
-        ],
-      ),
     );
   }
 }
