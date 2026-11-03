@@ -73,7 +73,7 @@ void main() {
     expect(find.byType(HomePage), findsNothing);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      3,
+      2,
     );
   });
 
@@ -93,7 +93,7 @@ void main() {
     expect(find.byType(HomePage), findsNothing);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
-      2,
+      1,
     );
   });
 
