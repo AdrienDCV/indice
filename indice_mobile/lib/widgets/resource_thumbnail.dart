@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../models/resource_type.dart';
+import '../models/resource/resource_type.dart';
 
 /// Miniature provisoire, en attendant les vraies images de l'API.
 class ResourceThumbnail extends StatelessWidget {
