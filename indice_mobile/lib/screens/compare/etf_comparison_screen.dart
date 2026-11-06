@@ -13,6 +13,7 @@ import '../../utils/axis_scale.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
 import '../../utils/page_padding.dart';
+import '../../widgets/animation/reveal_on_scroll_column.dart';
 import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/card/content_card.dart';
 import '../../widgets/chart/price_chart.dart';
@@ -222,7 +223,7 @@ class _ComparisonView extends StatelessWidget {
     final commonPeriod = comparison.commonPeriod;
     final correlation = comparison.correlation;
 
-    return Column(
+    return RevealOnScrollColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,
       children: [

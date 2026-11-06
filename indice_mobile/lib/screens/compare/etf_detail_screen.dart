@@ -15,6 +15,7 @@ import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
 import '../../utils/offline_message.dart';
 import '../../utils/page_padding.dart';
+import '../../widgets/animation/reveal_on_scroll_column.dart';
 import '../../widgets/badge/leverage_badge.dart';
 import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/banner/stale_data_banner.dart';
@@ -235,7 +236,7 @@ class _MarketDataView extends StatelessWidget {
     final maxDrawdown = marketData.maxDrawdown;
     final fiftyTwoWeekRange = marketData.fiftyTwoWeekRange;
 
-    return Column(
+    return RevealOnScrollColumn(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 12,
       children: [

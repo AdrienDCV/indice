@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../animation/reveal_on_scroll_column.dart';
+
 class CorrelationGauge extends StatelessWidget {
   const CorrelationGauge({super.key, required this.value});
 
@@ -35,8 +37,19 @@ class CorrelationGauge extends StatelessWidget {
                 ),
               ),
               Container(width: 2, height: 14, color: colorScheme.outline),
-              Align(
-                alignment: Alignment(value.clamp(-1, 1), 0),
+              TweenAnimationBuilder<double>(
+                tween: Tween(
+                  begin: 0,
+                  end: RevealOnScrollColumn.isRevealed(context)
+                      ? value.clamp(-1, 1)
+                      : 0,
+                ),
+                duration: MediaQuery.disableAnimationsOf(context)
+                    ? Duration.zero
+                    : const Duration(milliseconds: 600),
+                curve: Curves.easeOutCubic,
+                builder: (context, position, marker) =>
+                    Align(alignment: Alignment(position, 0), child: marker),
                 child: Container(
                   width: 20,
                   height: 20,
