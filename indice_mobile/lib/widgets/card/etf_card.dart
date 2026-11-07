@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../badge/leverage_badge.dart';
+import '../favourite/favourite_icon.dart';
 
 class EtfCard extends StatelessWidget {
   const EtfCard({
@@ -60,8 +61,9 @@ class EtfCard extends StatelessWidget {
               ),
               IconButton(
                 onPressed: onFavouriteTap,
-                icon: Icon(
-                  isFavourite ? Icons.star : Icons.star_border,
+                style: IconButton.styleFrom(overlayColor: Colors.transparent),
+                icon: FavouriteIcon(
+                  isFavourite: isFavourite,
                   color: theme.colorScheme.primary,
                 ),
               ),

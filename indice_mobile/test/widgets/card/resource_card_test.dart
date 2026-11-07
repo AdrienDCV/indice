@@ -57,7 +57,7 @@ void main() {
     expect(find.byTooltip('Ajouter aux favoris'), findsNothing);
   });
 
-  testWidgets('signals a tap on the bookmark without opening the resource', (
+  testWidgets('signals a tap on the star without opening the resource', (
     WidgetTester tester,
   ) async {
     var opened = false;

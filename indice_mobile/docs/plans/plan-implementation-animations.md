@@ -28,7 +28,7 @@ Ces animations ne font que de l'affichage : elles animent des valeurs déjà re�
 
 - La barre plus bas / plus haut de la fiche ETF (`PriceRangeBar`) : pas d'animation.
 - Le graphique d'évolution (courbe qui se dessinerait) : écarté au cadrage.
-- L'onglet Apprendre (`lib/pages/`) : code en attente du refactoring de migration.
+- Les animations propres à l'onglet Apprendre : il ne reçoit que le rebond de l'étoile (section 6).
 - Toute modification des stores et du contrat d'API.
 - Le retrait du `Hero` du sélecteur d'ETF.
 
@@ -103,6 +103,10 @@ L'en-tête de la fiche (nom, ticker, cours, bouton « Comparer cet ETF ») reste
 
 - `EtfCard` : `IconButton(icon: FavouriteIcon(isFavourite: isFavourite, color: theme.colorScheme.primary))`.
 - Fiche ETF, `_FavouriteButton` : `IconButton(icon: FavouriteIcon(isFavourite: etf.favourite))`. La couleur vient du thème de l'`AppBar`, comme aujourd'hui.
+- `ResourceCard` : `IconButton(icon: FavouriteIcon(isFavourite: isFavourite, color: theme.colorScheme.primary))`, à la place du marque-page.
+- Fiche ressource, `_FavouriteButton` : `IconButton(icon: FavouriteIcon(isFavourite: resource.favourite))`, à la place du marque-page.
+
+Les stores des ressources (`ResourceCatalogStore`, `ResourceDetailStore`) changent eux aussi l'icône tout de suite et la remettent en cas d'erreur : le rebond s'y comporte comme pour les ETF, sans les modifier.
 
 ## 7. Tests
 
@@ -112,6 +116,7 @@ L'en-tête de la fiche (nom, ticker, cours, bouton « Comparer cet ETF ») reste
 | `test/widgets/animation/reveal_on_scroll_column_test.dart` (nouveau) | Les enfants sont transparents au départ ; les enfants visibles apparaissent ; le premier démarre avant le second ; un enfant hors de l'écran attend qu'on fasse défiler jusqu'à lui ; `isRevealed` passe de `false` à `true` ; hors d'une page qui défile, tout apparaît ; avec `disableAnimations`, tout est visible dès le premier affichage ; `spacing` et `crossAxisAlignment` sont transmis |
 | `test/widgets/favourite/favourite_icon_test.dart` (nouveau) | Bonne icône selon `isFavourite` ; pas de rebond au premier affichage ; l'échelle dépasse 1 pendant l'animation quand `isFavourite` change, puis revient à 1 ; pas de rebond avec `disableAnimations` |
 | `test/widgets/card/etf_card_test.dart` | Doit rester vert (les recherches `find.byIcon(Icons.star)` trouvent toujours l'icône) |
+| `test/widget_test.dart` | L'aperçu des ressources de l'accueil affiche une étoile au lieu d'un marque-page |
 | Tests des écrans (`etf_comparison_screen_test.dart`, `etf_detail_screen_test.dart`, `etf_catalog_screen_test.dart`, `etf_picker_screen_test.dart`) | Ajouter `pumpAndSettle` là où un test lit une position ou tape sur un élément encore en cours d'animation |
 
 `MediaQuery(data: MediaQueryData(disableAnimations: true), ...)` sert à simuler l'option d'accessibilité dans les tests.
@@ -125,7 +130,7 @@ Chaque commit passe `flutter analyze` et `flutter test`.
 
 ## 9. Critères de fin
 
-- Les trois animations sont visibles sur téléphone : la jauge quand on descend jusqu'à la corrélation, l'apparition des cartes sur la comparaison et sur la fiche, l'étoile dans le catalogue et sur la fiche.
+- Les trois animations sont visibles sur téléphone : la jauge quand on descend jusqu'à la corrélation, l'apparition des cartes sur la comparaison et sur la fiche, l'étoile dans le catalogue et sur la fiche ETF, dans la liste des ressources et sur la fiche ressource.
 - Avec « réduire les animations » activé sur le téléphone, rien ne bouge et tout s'affiche correctement.
 - `flutter analyze` ne signale rien, et `flutter test` passe.
 - Aucun store, repository ni model modifié.
@@ -133,3 +138,5 @@ Chaque commit passe `flutter analyze` et `flutter test`.
 ## 10. Ajustements pendant le développement
 
 - **Apparition au défilement (A et C)** : la première version jouait la jauge et la cascade au chargement. La carte « Corrélation » étant en bas de l'écran, l'animation se déroulait sans être vue. Le déclenchement se fait désormais quand chaque carte entre à l'écran (`StaggeredColumn` remplacé par `RevealOnScrollColumn`), et A et C sont livrées dans le même commit.
+- **Icône favori des ressources (D)** : les ressources pédagogiques, ajoutées après le cadrage, utilisaient un marque-page, alors que le filtre « Favoris » de l'onglet Apprendre et les ETF utilisent une étoile. Elles passent à `FavouriteIcon`, qui donne la même étoile et le même rebond partout.
+- **Cercle d'appui des boutons favoris (D)** : le disque gris que Material affiche derrière un `IconButton` pendant l'appui se superposait au rebond. Il est retiré sur les quatre boutons favoris (`IconButton.styleFrom(overlayColor: Colors.transparent)`) : le rebond suffit à confirmer l'appui. Les autres boutons de l'application le gardent.

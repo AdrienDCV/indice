@@ -22,6 +22,7 @@ import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/card/content_card.dart';
 import '../../widgets/chart/price_chart.dart';
 import '../../widgets/error/error_view.dart';
+import '../../widgets/favourite/favourite_icon.dart';
 import '../../widgets/indicator/indicator_tile.dart';
 import '../../widgets/indicator/price_range_bar.dart';
 import '../../widgets/indicator/returns_table.dart';
@@ -131,7 +132,8 @@ class _FavouriteButton extends StatelessWidget {
           onPressed: state.cachedAt == null
               ? () => _toggle(context, etf.ticker)
               : null,
-          icon: Icon(etf.favourite ? Icons.star : Icons.star_border),
+          style: IconButton.styleFrom(overlayColor: Colors.transparent),
+          icon: FavouriteIcon(isFavourite: etf.favourite),
         );
       },
     );

@@ -11,6 +11,7 @@ import '../../stores/resource/resource_detail_state.dart';
 import '../../stores/resource/resource_detail_store.dart';
 import '../../utils/resource_formatting.dart';
 import '../../widgets/error/error_view.dart';
+import '../../widgets/favourite/favourite_icon.dart';
 import '../../widgets/info/info_item.dart';
 import '../../widgets/resource_thumbnail.dart';
 import '../../widgets/video_player.dart';
@@ -85,9 +86,8 @@ class _FavouriteButton extends StatelessWidget {
           tooltip: resource.favourite
               ? 'Retirer des favoris'
               : 'Ajouter aux favoris',
-          icon: Icon(
-            resource.favourite ? Icons.bookmark : Icons.bookmark_border,
-          ),
+          style: IconButton.styleFrom(overlayColor: Colors.transparent),
+          icon: FavouriteIcon(isFavourite: resource.favourite),
         );
       },
     );
