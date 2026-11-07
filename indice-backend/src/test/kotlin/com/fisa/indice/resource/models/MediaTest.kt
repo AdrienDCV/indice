@@ -20,6 +20,17 @@ class MediaTest {
         assertEquals(MediaType.VIDEO, Media("https://example.com/media/lesson.$extension").type)
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = ["https://www.youtube.com/watch?v=lA6b8tckrQQ", "https://youtube.com/watch?v=lA6b8tckrQQ"])
+    fun `should be a video when the url is a youtube video page`(url: String) {
+        assertEquals(MediaType.VIDEO, Media(url).type)
+    }
+
+    @Test
+    fun `should reject a youtube page that is not a video`() {
+        assertThrows<IllegalArgumentException> { Media("https://www.youtube.com/user/lafinancepourtous") }
+    }
+
     @Test
     fun `should ignore the case of the extension`() {
         assertEquals(MediaType.VIDEO, Media("https://example.com/lesson.MP4").type)
