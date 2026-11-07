@@ -18,9 +18,14 @@ data class Media(val url: String) {
             "m3u8" to MediaType.VIDEO,
         )
 
+        private val YOUTUBE_HOSTS = setOf("youtube.com", "www.youtube.com")
+        private const val YOUTUBE_VIDEO_PATH = "/watch"
+
         private fun typeOf(url: String): MediaType {
             require(url.isNotBlank()) { "A media must have a URL" }
-            val path = URI.create(url.trim()).path.orEmpty()
+            val uri = URI.create(url.trim())
+            val path = uri.path.orEmpty()
+            if (uri.host?.lowercase() in YOUTUBE_HOSTS && path == YOUTUBE_VIDEO_PATH) return MediaType.VIDEO
             val extension = path.substringAfterLast('/').substringAfterLast('.', missingDelimiterValue = "").lowercase()
             return requireNotNull(TYPES_BY_EXTENSION[extension]) { "Unsupported media extension in $url" }
         }
