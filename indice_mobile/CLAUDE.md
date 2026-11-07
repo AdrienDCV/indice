@@ -26,7 +26,7 @@ Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format
 | Navigation | `go_router` |
 | Appels à l'API | `dio` |
 | Variables d'environnement | `flutter_dotenv` |
-| Lecture vidéo | `video_player` |
+| Lecture des vidéos YouTube (lecteur intégré) | `webview_flutter` |
 | Graphiques | `fl_chart` |
 | Stockage local (cache) | `path_provider` |
 
