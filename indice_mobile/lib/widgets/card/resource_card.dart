@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/resource/resource_type.dart';
+import '../favourite/favourite_icon.dart';
 import '../resource_thumbnail.dart';
 
 class ResourceCard extends StatelessWidget {
@@ -81,10 +82,11 @@ class ResourceCard extends StatelessWidget {
                           tooltip: isFavourite
                               ? 'Retirer des favoris'
                               : 'Ajouter aux favoris',
-                          icon: Icon(
-                            isFavourite
-                                ? Icons.bookmark
-                                : Icons.bookmark_border,
+                          style: IconButton.styleFrom(
+                            overlayColor: Colors.transparent,
+                          ),
+                          icon: FavouriteIcon(
+                            isFavourite: isFavourite,
                             color: Theme.of(context).colorScheme.primary,
                           ),
                         ),

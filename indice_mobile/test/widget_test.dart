@@ -53,8 +53,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(feesArticle.title), findsOneWidget);
     expect(find.text('7\u00A0min'), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark_border), findsOneWidget);
-    expect(find.byIcon(Icons.bookmark), findsOneWidget);
+    expect(find.byIcon(Icons.star_border), findsOneWidget);
+    expect(find.byIcon(Icons.star), findsOneWidget);
   });
 
   testWidgets('opens the learn page from the navigation bar', (
