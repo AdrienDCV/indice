@@ -24,7 +24,10 @@ const diversificationVideo = ResourceData(
   type: ResourceType.video,
   durationMinutes: 4,
   level: ResourceLevel.intermediate,
-  media: MediaData(url: 'https://example.com/bee.mp4', type: MediaType.video),
+  media: MediaData(
+    url: 'https://www.youtube.com/watch?v=eq537XjLofw',
+    type: MediaType.video,
+  ),
   favourite: true,
 );
 

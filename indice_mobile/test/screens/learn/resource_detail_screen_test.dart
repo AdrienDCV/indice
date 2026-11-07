@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
 import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/models/resource/media_data.dart';
@@ -13,6 +14,7 @@ import 'package:indice_mobile/widgets/video_player.dart';
 
 import '../../fakes/fake_etf_repository.dart' show apiError;
 import '../../fakes/fake_resource_repository.dart';
+import '../../fakes/fake_webview_platform.dart';
 
 Future<ResourceCatalogStore> pumpDetailScreen(
   WidgetTester tester,
@@ -23,6 +25,7 @@ Future<ResourceCatalogStore> pumpDetailScreen(
   tester.view.physicalSize = const Size(1170, 2532);
   tester.view.devicePixelRatio = 3;
   addTearDown(tester.view.reset);
+  WebViewPlatform.instance = FakeWebViewPlatform();
   getIt.registerSingleton<ResourceRepository>(repository);
   addTearDown(getIt.reset);
   final catalogStore = ResourceCatalogStore(repository);
