@@ -20,6 +20,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   final ResourceRepository _resourceRepository;
   Timer? _searchTimer;
   int _request = 0;
+  final Set<String> _pendingFavourites = {};
 
   Future<void> init() => _loadFirstPage();
 
@@ -75,28 +76,25 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
 
   Future<void> toggleFavourite(String id) async {
     final index = state.resources.indexWhere((resource) => resource.id == id);
-    if (index == -1) return;
-    final resource = state.resources[index];
-    final favourite = !resource.favourite;
-    emit(
-      state.copyWith(
-        resources: _withFavourite(resource, favourite, index),
-        favouriteErrorKey: null,
-      ),
-    );
+    if (index == -1 || _pendingFavourites.contains(id)) return;
+    _pendingFavourites.add(id);
+    final favourite = !state.resources[index].favourite;
+    emit(state.copyWith(favouriteErrorKey: null));
     try {
       if (favourite) {
         await _resourceRepository.addFavourite(id);
       } else {
         await _resourceRepository.removeFavourite(id);
       }
+      favouriteChanged(id, favourite);
     } catch (error) {
       emit(
         state.copyWith(
-          resources: _withFavourite(resource, !favourite, index),
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
         ),
       );
+    } finally {
+      _pendingFavourites.remove(id);
     }
   }
 

@@ -73,7 +73,26 @@ void main() {
     expect(repository.removedFavourites, [diversificationVideo.id]);
   });
 
-  test('restores the favourite when the api call fails', () async {
+  test('pins the resource only once the api has saved it', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+      onAddFavourite: (_) => confirmation.future,
+    );
+    final store = ResourceDetailStore(repository, feesArticle.id);
+    await store.init();
+
+    final toggling = store.toggleFavourite();
+
+    expect(store.state.resource?.favourite, isFalse);
+    expect(await store.toggleFavourite(), isNull);
+    confirmation.complete();
+    expect(await toggling, isTrue);
+    expect(store.state.resource?.favourite, isTrue);
+    expect(repository.addedFavourites, [feesArticle.id]);
+  });
+
+  test('keeps the favourite unchanged when the api call fails', () async {
     final store = ResourceDetailStore(
       FakeResourceRepository(
         onRetrieveResource: (_) async => buildResourceDetail(),

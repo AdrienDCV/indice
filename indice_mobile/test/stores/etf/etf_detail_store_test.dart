@@ -86,16 +86,43 @@ void main() {
     expect(store.state, const EtfDetailState(errorKey: 'error.unexpected'));
   });
 
-  test('pins its etf right away and returns the confirmed state', () async {
-    final repository = repositoryWith((_) async => buildEtfDetail());
+  test('pins its etf only once the api has saved it', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onRetrieveEtf: (_) async => buildEtfDetail(),
+      onAddFavourite: (_) => confirmation.future,
+    );
     final store = EtfDetailStore(repository, 'SPY');
     await store.init();
 
     final saving = store.toggleFavourite();
 
-    expect(store.state.etf?.favourite, isTrue);
+    expect(store.state.etf?.favourite, isFalse);
+    confirmation.complete();
     expect(await saving, isTrue);
+    expect(store.state.etf?.favourite, isTrue);
     expect(repository.addedFavourites, ['SPY']);
+  });
+
+  test('ignores a second tap while the api is saving the favourite', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onRetrieveEtf: (_) async => buildEtfDetail(),
+      onAddFavourite: (_) => confirmation.future,
+    );
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+
+    final saving = store.toggleFavourite();
+    expect(await store.toggleFavourite(), isNull);
+    confirmation.complete();
+    await saving;
+
+    expect(repository.addedFavourites, ['SPY']);
+    expect(repository.removedFavourites, isEmpty);
+    expect(store.state.etf?.favourite, isTrue);
   });
 
   test('unpins its etf', () async {
@@ -110,7 +137,7 @@ void main() {
     expect(repository.removedFavourites, ['SPY']);
   });
 
-  test('restores the star when the api cannot save the favourite', () async {
+  test('keeps the star when the api cannot save the favourite', () async {
     final repository = FakeEtfRepository(
       () async => buildCatalog(),
       onRetrieveEtf: (_) async => buildEtfDetail(),

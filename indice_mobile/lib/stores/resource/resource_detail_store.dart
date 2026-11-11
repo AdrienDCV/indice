@@ -10,6 +10,7 @@ class ResourceDetailStore extends Cubit<ResourceDetailState> {
     : super(const ResourceDetailState());
 
   final ResourceRepository _resourceRepository;
+  bool _favouritePending = false;
   final String _id;
 
   Future<void> init() async {
@@ -30,29 +31,31 @@ class ResourceDetailStore extends Cubit<ResourceDetailState> {
   /// Renvoie le nouvel état de favori une fois confirmé par l'API, ou `null`.
   Future<bool?> toggleFavourite() async {
     final resource = state.resource;
-    if (resource == null) return null;
+    if (resource == null || _favouritePending) return null;
+    _favouritePending = true;
     final favourite = !resource.favourite;
-    emit(
-      state.copyWith(
-        resource: resource.copyWith(favourite: favourite),
-        favouriteErrorKey: null,
-      ),
-    );
+    emit(state.copyWith(favouriteErrorKey: null));
     try {
       if (favourite) {
         await _resourceRepository.addFavourite(resource.id);
       } else {
         await _resourceRepository.removeFavourite(resource.id);
       }
+      emit(
+        state.copyWith(
+          resource: state.resource?.copyWith(favourite: favourite),
+        ),
+      );
       return favourite;
     } catch (error) {
       emit(
         state.copyWith(
-          resource: state.resource?.copyWith(favourite: !favourite),
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
         ),
       );
       return null;
+    } finally {
+      _favouritePending = false;
     }
   }
 }
