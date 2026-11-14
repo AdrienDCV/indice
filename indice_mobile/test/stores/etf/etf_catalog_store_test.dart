@@ -21,6 +21,10 @@ Future<void> waitForSearch() => Future<void>.delayed(
   EtfCatalogStore.searchDelay + const Duration(milliseconds: 50),
 );
 
+const reconnectDelay = Duration(milliseconds: 20);
+
+Future<void> waitForReconnect() => Future<void>.delayed(reconnectDelay * 3);
+
 void main() {
   test('starts without etf', () {
     final store = EtfCatalogStore(
@@ -372,5 +376,64 @@ void main() {
     await store.init();
 
     expect(repository.syncFavouriteDownloadsCalls, 0);
+  });
+
+  test('loads the whole catalog once the api answers again', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      catalogOffline: true,
+    );
+    final store = EtfCatalogStore(repository, reconnectDelay: reconnectDelay);
+    await store.init();
+
+    repository.catalogOffline = false;
+    await waitForReconnect();
+
+    expect(store.state.offline, isFalse);
+    expect(store.state.favouritesOnly, isFalse);
+    expect(repository.catalogRequests.last.favouritesOnly, isFalse);
+    await store.close();
+  });
+
+  test('keeps trying while the api does not answer', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      catalogOffline: true,
+    );
+    final store = EtfCatalogStore(repository, reconnectDelay: reconnectDelay);
+    await store.init();
+
+    await waitForReconnect();
+    await waitForReconnect();
+
+    expect(repository.retrieveEtfsCalls, greaterThan(2));
+    expect(store.state.offline, isTrue);
+    expect(store.state.favouritesOnly, isTrue);
+    await store.close();
+  });
+
+  test('does not load the catalog again while online', () async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    final store = EtfCatalogStore(repository, reconnectDelay: reconnectDelay);
+    await store.init();
+
+    await waitForReconnect();
+
+    expect(repository.retrieveEtfsCalls, 1);
+    await store.close();
+  });
+
+  test('stops trying once closed', () async {
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      catalogOffline: true,
+    );
+    final store = EtfCatalogStore(repository, reconnectDelay: reconnectDelay);
+    await store.init();
+
+    await store.close();
+    await waitForReconnect();
+
+    expect(repository.retrieveEtfsCalls, 1);
   });
 }

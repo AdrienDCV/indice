@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../errors/error_messages.dart';
@@ -6,18 +8,30 @@ import '../../repositories/etf_repository.dart';
 import 'etf_detail_state.dart';
 
 class EtfDetailStore extends Cubit<EtfDetailState> {
-  EtfDetailStore(this._etfRepository, this._ticker)
-    : super(const EtfDetailState());
+  EtfDetailStore(
+    this._etfRepository,
+    this._ticker, {
+    this._reconnectDelay = const Duration(seconds: 15),
+  }) : super(const EtfDetailState());
 
   final EtfRepository _etfRepository;
   final String _ticker;
+  final Duration _reconnectDelay;
+  Timer? _reconnectTimer;
   bool _favouritePending = false;
 
   Future<void> init() => _load(showLoading: true);
 
   Future<void> refresh() => _load(showLoading: false);
 
+  @override
+  Future<void> close() {
+    _reconnectTimer?.cancel();
+    return super.close();
+  }
+
   Future<void> _load({required bool showLoading}) async {
+    _reconnectTimer?.cancel();
     emit(state.copyWith(isLoading: showLoading, errorKey: null));
     try {
       final result = await _etfRepository.retrieveEtf(_ticker);
@@ -28,6 +42,9 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
           isLoading: false,
         ),
       );
+      if (result.cachedAt != null && !isClosed) {
+        _reconnectTimer = Timer(_reconnectDelay, refresh);
+      }
     } catch (error) {
       emit(
         state.copyWith(

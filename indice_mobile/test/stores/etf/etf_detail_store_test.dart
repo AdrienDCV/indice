@@ -17,6 +17,10 @@ FakeEtfRepository repositoryWith(
   );
 }
 
+const reconnectDelay = Duration(milliseconds: 20);
+
+Future<void> waitForReconnect() => Future<void>.delayed(reconnectDelay * 3);
+
 void main() {
   test('starts without etf', () {
     final store = EtfDetailStore(
@@ -175,5 +179,53 @@ void main() {
     await store.init();
 
     expect(store.state.cachedAt, cachedAt);
+  });
+
+  test('loads its etf from the api once it answers again', () async {
+    final repository = repositoryWith((_) async => buildEtfDetail())
+      ..detailCachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+    final store = EtfDetailStore(
+      repository,
+      'SPY',
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    repository.detailCachedAt = null;
+    await waitForReconnect();
+
+    expect(store.state.cachedAt, isNull);
+    await store.close();
+  });
+
+  test('does not load its etf again while online', () async {
+    final repository = repositoryWith((_) async => buildEtfDetail());
+    final store = EtfDetailStore(
+      repository,
+      'SPY',
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await waitForReconnect();
+
+    expect(repository.retrievedTickers, ['SPY']);
+    await store.close();
+  });
+
+  test('stops trying once closed', () async {
+    final repository = repositoryWith((_) async => buildEtfDetail())
+      ..detailCachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+    final store = EtfDetailStore(
+      repository,
+      'SPY',
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await store.close();
+    await waitForReconnect();
+
+    expect(repository.retrievedTickers, ['SPY']);
   });
 }
