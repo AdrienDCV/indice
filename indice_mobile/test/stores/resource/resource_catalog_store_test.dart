@@ -177,7 +177,7 @@ void main() {
     expect(store.state.resources, [diversificationVideo]);
   });
 
-  test('pins a resource immediately, then confirms it', () async {
+  test('pins a resource only once the api has saved it', () async {
     final confirmation = Completer<void>();
     final repository = FakeResourceRepository(
       onAddFavourite: (_) => confirmation.future,
@@ -187,7 +187,7 @@ void main() {
 
     final toggling = store.toggleFavourite(feesArticle.id);
 
-    expect(store.state.resources.first.favourite, isTrue);
+    expect(store.state.resources.first.favourite, isFalse);
 
     confirmation.complete();
     await toggling;
@@ -195,6 +195,24 @@ void main() {
     expect(repository.addedFavourites, [feesArticle.id]);
     expect(store.state.resources.first.favourite, isTrue);
     expect(store.state.favouriteErrorKey, isNull);
+  });
+
+  test('ignores a second tap while the api is saving the favourite', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeResourceRepository(
+      onAddFavourite: (_) => confirmation.future,
+    );
+    final store = ResourceCatalogStore(repository);
+    await store.init();
+
+    final toggling = store.toggleFavourite(feesArticle.id);
+    await store.toggleFavourite(feesArticle.id);
+    confirmation.complete();
+    await toggling;
+
+    expect(repository.addedFavourites, [feesArticle.id]);
+    expect(repository.removedFavourites, isEmpty);
+    expect(store.state.resources.first.favourite, isTrue);
   });
 
   test('unpins a favourite', () async {
@@ -208,7 +226,7 @@ void main() {
     expect(store.state.resources.last.favourite, isFalse);
   });
 
-  test('restores the favourite when the api call fails', () async {
+  test('keeps the favourite unchanged when the api call fails', () async {
     final store = ResourceCatalogStore(
       FakeResourceRepository(
         onAddFavourite: (_) async => throw apiError('error.unexpected'),

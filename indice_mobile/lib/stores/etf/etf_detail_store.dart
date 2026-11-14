@@ -11,6 +11,7 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
 
   final EtfRepository _etfRepository;
   final String _ticker;
+  bool _favouritePending = false;
 
   Future<void> init() => _load(showLoading: true);
 
@@ -39,29 +40,27 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
 
   Future<bool?> toggleFavourite() async {
     final etf = state.etf;
-    if (etf == null) return null;
+    if (etf == null || _favouritePending) return null;
+    _favouritePending = true;
     final favourite = !etf.favourite;
-    emit(
-      state.copyWith(
-        etf: etf.copyWith(favourite: favourite),
-        favouriteErrorKey: null,
-      ),
-    );
+    emit(state.copyWith(favouriteErrorKey: null));
     try {
       if (favourite) {
         await _etfRepository.addFavourite(etf.ticker);
       } else {
         await _etfRepository.removeFavourite(etf.ticker);
       }
+      emit(state.copyWith(etf: state.etf?.copyWith(favourite: favourite)));
       return favourite;
     } catch (error) {
       emit(
         state.copyWith(
-          etf: state.etf?.copyWith(favourite: !favourite),
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
         ),
       );
       return null;
+    } finally {
+      _favouritePending = false;
     }
   }
 }

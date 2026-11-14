@@ -19,6 +19,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   final EtfRepository _etfRepository;
   Timer? _searchTimer;
   int _request = 0;
+  final Set<String> _pendingFavourites = {};
   bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
@@ -71,28 +72,25 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
 
   Future<void> toggleFavourite(String ticker) async {
     final index = state.etfs.indexWhere((etf) => etf.ticker == ticker);
-    if (index == -1) return;
-    final etf = state.etfs[index];
-    final favourite = !etf.favourite;
-    emit(
-      state.copyWith(
-        etfs: _withFavourite(state.etfs, etf, favourite, index),
-        favouriteErrorKey: null,
-      ),
-    );
+    if (index == -1 || _pendingFavourites.contains(ticker)) return;
+    _pendingFavourites.add(ticker);
+    final favourite = !state.etfs[index].favourite;
+    emit(state.copyWith(favouriteErrorKey: null));
     try {
       if (favourite) {
         await _etfRepository.addFavourite(ticker);
       } else {
         await _etfRepository.removeFavourite(ticker);
       }
+      favouriteChanged(ticker, favourite);
     } catch (error) {
       emit(
         state.copyWith(
-          etfs: _withFavourite(state.etfs, etf, !favourite, index),
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
         ),
       );
+    } finally {
+      _pendingFavourites.remove(ticker);
     }
   }
 

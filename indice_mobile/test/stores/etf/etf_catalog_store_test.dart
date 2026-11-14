@@ -188,17 +188,42 @@ void main() {
     expect(store.state.etfs, [qqq]);
   });
 
-  test('pins an etf right away and asks the api to save it', () async {
-    final repository = FakeEtfRepository(() async => buildCatalog());
+  test('pins an etf only once the api has saved it', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onAddFavourite: (_) => confirmation.future,
+    );
     final store = EtfCatalogStore(repository);
     await store.init();
 
     final saving = store.toggleFavourite('SPY');
 
-    expect(store.state.etfs.first.favourite, isTrue);
+    expect(store.state.etfs.first.favourite, isFalse);
+    confirmation.complete();
     await saving;
     expect(repository.addedFavourites, ['SPY']);
+    expect(store.state.etfs.first.favourite, isTrue);
     expect(store.state.favouriteErrorKey, isNull);
+  });
+
+  test('ignores a second tap while the api is saving the favourite', () async {
+    final confirmation = Completer<void>();
+    final repository = FakeEtfRepository(
+      () async => buildCatalog(),
+      onAddFavourite: (_) => confirmation.future,
+    );
+    final store = EtfCatalogStore(repository);
+    await store.init();
+
+    final saving = store.toggleFavourite('SPY');
+    await store.toggleFavourite('SPY');
+    confirmation.complete();
+    await saving;
+
+    expect(repository.addedFavourites, ['SPY']);
+    expect(repository.removedFavourites, isEmpty);
+    expect(store.state.etfs.first.favourite, isTrue);
   });
 
   test('unpins a favourite', () async {
@@ -214,7 +239,7 @@ void main() {
     expect(repository.removedFavourites, ['SPY']);
   });
 
-  test('restores the star when the api cannot save the favourite', () async {
+  test('keeps the star when the api cannot save the favourite', () async {
     final repository = FakeEtfRepository(
       () async => buildCatalog(),
       onAddFavourite: (_) async => throw apiError('error.unexpected'),
