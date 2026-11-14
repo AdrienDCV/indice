@@ -86,7 +86,10 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
 
-      expect(find.text('Choisis deux ETF pour les comparer.'), findsOneWidget);
+      expect(
+        find.text('Choisissez deux ETF pour les comparer.'),
+        findsOneWidget,
+      );
       expect(repository.comparedPairs, isEmpty);
     },
   );
@@ -100,7 +103,7 @@ void main() {
     expect(isEnabled(tester, 'Premier ETF'), isTrue);
     expect(isEnabled(tester, 'Second ETF'), isTrue);
     expect(find.text('SPY'), findsNothing);
-    expect(find.text('Choisis deux ETF pour les comparer.'), findsOneWidget);
+    expect(find.text('Choisissez deux ETF pour les comparer.'), findsOneWidget);
     expect(repository.comparedPairs, isEmpty);
   });
 

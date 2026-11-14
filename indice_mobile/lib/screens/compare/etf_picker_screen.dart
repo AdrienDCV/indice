@@ -12,6 +12,7 @@ import '../../widgets/app_search_bar.dart';
 import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/card/etf_card.dart';
 import '../../widgets/error/error_view.dart';
+import '../../widgets/info/info_message.dart';
 import '../../widgets/list/list_caption.dart';
 import '../../widgets/list/load_more_footer.dart';
 
@@ -113,7 +114,11 @@ class _EtfPickerListState extends State<_EtfPickerList> {
     final errorKey = state.errorKey;
 
     if (errorKey != null) {
-      return ErrorView(message: errorMessage(errorKey), onRetry: store.init);
+      return ErrorView(
+        icon: errorIcon(errorKey),
+        message: errorMessage(errorKey),
+        onRetry: store.init,
+      );
     }
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
@@ -126,7 +131,12 @@ class _EtfPickerListState extends State<_EtfPickerList> {
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
       children: [
-        if (etfs.isEmpty)
+        if (etfs.isEmpty && state.offline)
+          const InfoMessage(
+            icon: Icons.cloud_off,
+            message: _offlineEmptyMessage,
+          )
+        else if (etfs.isEmpty)
           Padding(
             padding: const EdgeInsets.all(32),
             child: Text(_emptyMessage(state), textAlign: TextAlign.center),
@@ -157,8 +167,9 @@ class _EtfPickerListState extends State<_EtfPickerList> {
   }
 }
 
+const _offlineEmptyMessage = 'Aucun favori disponible hors ligne.';
+
 String _emptyMessage(EtfCatalogState state) {
-  if (state.offline) return 'Aucun favori disponible hors ligne.';
   final search = state.search;
   return search.isEmpty
       ? 'Aucun ETF disponible pour le moment.'

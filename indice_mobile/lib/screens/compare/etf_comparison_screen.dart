@@ -183,14 +183,19 @@ class _ComparisonResult extends StatelessWidget {
     if (etfA == null || etfB == null) {
       return const InfoMessage(
         icon: Icons.compare_arrows,
-        message: 'Choisis deux ETF pour les comparer.',
+        message: 'Choisissez deux ETF pour les comparer.',
       );
     }
     if (errorKey != null) {
       return InfoMessage(
-        icon: Icons.info_outline,
+        icon: errorKey == networkErrorKey
+            ? Icons.cloud_off
+            : Icons.info_outline,
         message: errorMessage(errorKey, params: {'etfA': etfA, 'etfB': etfB}),
-        action: errorKey == unexpectedErrorKey
+        action:
+            errorKey == unexpectedErrorKey ||
+                errorKey == networkErrorKey ||
+                errorKey == serverTimeoutErrorKey
             ? FilledButton(
                 onPressed: context.read<EtfComparisonStore>().retry,
                 child: const Text('Réessayer'),

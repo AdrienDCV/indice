@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -234,8 +235,20 @@ void main() {
     );
 
     expect(find.byType(VideoPlayer), findsNothing);
-    expect(find.byType(ResourceThumbnail), findsOneWidget);
-    expect(find.text('La vidéo demande une connexion.'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ResourceThumbnail),
+        matching: find.text('La vidéo demande une connexion.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(ResourceThumbnail),
+        matching: find.byIcon(Icons.cloud_off),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Texte complet de l’article.'), findsOneWidget);
   });
 
@@ -251,5 +264,28 @@ void main() {
     );
 
     expect(find.text('La vidéo demande une connexion.'), findsNothing);
+  });
+
+  testWidgets('tells that the connection failed for a resource not '
+      'downloaded', (WidgetTester tester) async {
+    await pumpDetailScreen(
+      tester,
+      FakeResourceRepository(
+        onRetrieveResource: (_) async => throw DioException.connectionError(
+          requestOptions: RequestOptions(path: '/resources/fees'),
+          reason: 'Connection refused',
+        ),
+      ),
+    );
+
+    expect(
+      find.text(
+        'Connexion impossible pour le moment. '
+        'Vérifiez votre connexion puis réessayez.',
+      ),
+      findsOneWidget,
+    );
+    expect(find.byIcon(Icons.cloud_off), findsOneWidget);
+    expect(find.text('Réessayer'), findsOneWidget);
   });
 }

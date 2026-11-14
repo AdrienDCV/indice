@@ -130,7 +130,7 @@ void main() {
 
     expect(
       find.text(
-        'Une erreur inattendue est survenue. Réessaie dans quelques instants.',
+        'Une erreur inattendue est survenue. Réessayez dans quelques instants.',
       ),
       findsOneWidget,
     );
@@ -227,5 +227,6 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.cloud_off), findsNWidgets(2));
   });
 }

@@ -20,6 +20,7 @@ class InfoMessage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         spacing: 12,
         children: [
           Icon(icon, size: 48, color: theme.colorScheme.primary),

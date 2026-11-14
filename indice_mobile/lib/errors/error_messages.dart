@@ -1,11 +1,21 @@
+import 'package:flutter/material.dart';
+
 const _genericMessage =
-    'Une erreur est survenue. Réessaie dans quelques instants.';
+    'Une erreur est survenue. Réessayez dans quelques instants.';
 
 const unexpectedErrorKey = 'error.unexpected';
+const networkErrorKey = 'error.network.unreachable';
+const serverTimeoutErrorKey = 'error.server.timeout';
 
 const _messages = {
   unexpectedErrorKey:
-      'Une erreur inattendue est survenue. Réessaie dans quelques instants.',
+      'Une erreur inattendue est survenue. Réessayez dans quelques instants.',
+  networkErrorKey:
+      'Connexion impossible pour le moment. '
+      'Vérifiez votre connexion puis réessayez.',
+  serverTimeoutErrorKey:
+      'Le serveur met trop de temps à répondre. '
+      'Réessayez dans quelques instants.',
   'error.etfs.etf-not-found': 'Cet ETF est introuvable.',
   'error.etfs.invalid-ticker': 'Ce code d’ETF n’est pas valide.',
   'error.etfs.etf-a-insufficient-data':
@@ -17,11 +27,14 @@ const _messages = {
   'error.etfs.etfs-insufficient-data':
       'Comparaison impossible : {etfA} et {etfB} n’ont pas assez '
       'd’historique en commun (au moins un an est nécessaire).',
-  'error.etfs.same-etf-comparison': 'Choisis deux ETF différents.',
-  'error.request.missing-parameter': 'Choisis deux ETF pour les comparer.',
+  'error.etfs.same-etf-comparison': 'Choisissez deux ETF différents.',
+  'error.request.missing-parameter': 'Choisissez deux ETF pour les comparer.',
   'error.request.invalid-parameter': 'Cette demande n’est pas valide.',
   'error.resources.resource-not-found': 'Cette ressource est introuvable.',
 };
+
+IconData errorIcon(String key) =>
+    key == networkErrorKey ? Icons.cloud_off : Icons.error_outline;
 
 String errorMessage(String key, {Map<String, String> params = const {}}) {
   final message = _messages[key] ?? _genericMessage;

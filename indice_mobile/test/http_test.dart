@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:indice_mobile/errors/error_messages.dart';
 import 'package:indice_mobile/http.dart';
 
 DioException badResponse(Object? data) {
@@ -38,13 +39,31 @@ void main() {
     );
   });
 
-  test('extracts nothing when the api is unreachable', () {
+  test('tells when the connection cannot be opened', () {
     final error = DioException.connectionError(
       requestOptions: RequestOptions(path: '/etfs'),
       reason: 'Connection refused',
     );
 
-    expect(extractErrorMessage(error), isNull);
+    expect(extractErrorMessage(error), networkErrorKey);
+  });
+
+  test('tells when the connection takes too long to open', () {
+    final error = DioException.connectionTimeout(
+      timeout: const Duration(seconds: 10),
+      requestOptions: RequestOptions(path: '/etfs'),
+    );
+
+    expect(extractErrorMessage(error), networkErrorKey);
+  });
+
+  test('tells when the api takes too long to answer', () {
+    final error = DioException.receiveTimeout(
+      timeout: const Duration(seconds: 20),
+      requestOptions: RequestOptions(path: '/etfs'),
+    );
+
+    expect(extractErrorMessage(error), serverTimeoutErrorKey);
   });
 
   test('extracts nothing from an error that does not come from dio', () {

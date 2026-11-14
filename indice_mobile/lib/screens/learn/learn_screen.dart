@@ -14,6 +14,7 @@ import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/card/resource_card.dart';
 import '../../widgets/error/error_view.dart';
 import '../../widgets/filter_toggle.dart';
+import '../../widgets/info/info_message.dart';
 import '../../widgets/list/load_more_footer.dart';
 
 const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
@@ -126,14 +127,23 @@ class _ResourcesViewState extends State<_ResourcesView> {
         ),
         const SizedBox(height: 16),
         if (errorKey != null)
-          ErrorView(message: errorMessage(errorKey), onRetry: store.init)
+          ErrorView(
+            icon: errorIcon(errorKey),
+            message: errorMessage(errorKey),
+            onRetry: store.init,
+          )
         else if (state.isLoading)
           const Padding(
             padding: EdgeInsets.only(top: 32),
             child: Center(child: CircularProgressIndicator()),
           )
         else ...[
-          if (state.resources.isEmpty)
+          if (state.resources.isEmpty && offline)
+            const InfoMessage(
+              icon: Icons.cloud_off,
+              message: _offlineEmptyMessage,
+            )
+          else if (state.resources.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 32),
               child: Text(_emptyMessage(state), textAlign: TextAlign.center),
@@ -161,11 +171,11 @@ class _ResourcesViewState extends State<_ResourcesView> {
   }
 }
 
+const _offlineEmptyMessage =
+    'Aucun favori disponible hors ligne. '
+    'Épinglez une ressource pour la retrouver sans connexion.';
+
 String _emptyMessage(ResourceCatalogState state) {
-  if (state.offline) {
-    return 'Aucun favori disponible hors ligne. '
-        'Épinglez une ressource pour la retrouver sans connexion.';
-  }
   final search = state.search;
   if (search.isNotEmpty) return 'Aucune ressource ne correspond à « $search ».';
   if (state.levels.isNotEmpty) {

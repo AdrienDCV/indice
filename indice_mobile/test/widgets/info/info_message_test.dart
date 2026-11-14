@@ -12,13 +12,13 @@ void main() {
         home: Scaffold(
           body: InfoMessage(
             icon: Icons.compare_arrows,
-            message: 'Choisis deux ETF pour les comparer.',
+            message: 'Choisissez deux ETF pour les comparer.',
           ),
         ),
       ),
     );
 
-    expect(find.text('Choisis deux ETF pour les comparer.'), findsOneWidget);
+    expect(find.text('Choisissez deux ETF pour les comparer.'), findsOneWidget);
     expect(find.byIcon(Icons.compare_arrows), findsOneWidget);
     expect(find.byType(FilledButton), findsNothing);
   });
