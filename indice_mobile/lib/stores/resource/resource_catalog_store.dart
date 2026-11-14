@@ -30,6 +30,8 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
 
   Future<void> init() => _loadFirstPage();
 
+  Future<void> refresh() => _loadFirstPage(showLoading: false);
+
   void searchChanged(String text) {
     _searchTimer?.cancel();
     _searchTimer = Timer(searchDelay, () {
@@ -126,13 +128,16 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     return super.close();
   }
 
-  Future<void> _loadFirstPage({bool? favouritesOnly}) async {
+  Future<void> _loadFirstPage({
+    bool showLoading = true,
+    bool? favouritesOnly,
+  }) async {
     _reconnectTimer?.cancel();
     final request = ++_request;
     final favourites = favouritesOnly ?? state.favouritesOnly;
     emit(
       state.copyWith(
-        isLoading: true,
+        isLoading: showLoading,
         errorKey: null,
         isLoadingMore: false,
         loadMoreErrorKey: null,
