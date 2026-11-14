@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../errors/error_messages.dart';
 import '../../injection.dart';
+import '../../models/resource/media_data.dart';
 import '../../models/resource/media_type.dart';
 import '../../models/resource/resource_detail_data.dart';
 import '../../repositories/resource_repository.dart';
@@ -119,9 +120,6 @@ class _DetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final media = resource.media;
-    final isVideo = media != null && media.type == MediaType.video;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -129,14 +127,18 @@ class _DetailView extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: isVideo && !offline
-                ? VideoPlayer(url: media.url)
-                : ResourceThumbnail(type: resource.type, iconSize: 64),
+            child: switch (resource.media) {
+              MediaData(type: MediaType.video, :final url) when !offline =>
+                VideoPlayer(url: url),
+              MediaData(type: MediaType.video) => ResourceThumbnail(
+                type: resource.type,
+                iconSize: 64,
+                icon: Icons.cloud_off,
+                message: _videoOfflineMessage,
+              ),
+              _ => ResourceThumbnail(type: resource.type, iconSize: 64),
+            },
           ),
-          if (isVideo && offline) ...[
-            const SizedBox(height: 8),
-            const Text(_videoOfflineMessage, textAlign: TextAlign.center),
-          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

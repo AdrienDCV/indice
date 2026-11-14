@@ -13,6 +13,7 @@ import '../../widgets/banner/stale_data_banner.dart';
 import '../../widgets/card/etf_card.dart';
 import '../../widgets/error/error_view.dart';
 import '../../widgets/field/search_with_filter.dart';
+import '../../widgets/info/info_message.dart';
 import '../../widgets/info/info_note.dart';
 import '../../widgets/list/load_more_footer.dart';
 
@@ -133,7 +134,12 @@ class _CatalogViewState extends State<_CatalogView> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: StaleDataBanner(message: _staleMessage(state.fetchedAt)),
               ),
-            if (state.etfs.isEmpty)
+            if (state.etfs.isEmpty && offline)
+              const InfoMessage(
+                icon: Icons.cloud_off,
+                message: _offlineEmptyMessage,
+              )
+            else if (state.etfs.isEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 32),
                 child: Text(_emptyMessage(state), textAlign: TextAlign.center),
@@ -168,11 +174,11 @@ String _staleMessage(DateTime? fetchedAt) => fetchedAt == null
     : 'Le catalogue n’a pas pu être mis à jour. '
           'Dernière mise à jour le ${fetchedAt.toFrenchDate()}.';
 
+const _offlineEmptyMessage =
+    'Aucun favori disponible hors ligne. '
+    'Épinglez un ETF pour le retrouver sans connexion.';
+
 String _emptyMessage(EtfCatalogState state) {
-  if (state.offline) {
-    return 'Aucun favori disponible hors ligne. '
-        'Épinglez un ETF pour le retrouver sans connexion.';
-  }
   final search = state.search;
   return switch ((search.isEmpty, state.favouritesOnly)) {
     (true, false) => 'Aucun ETF disponible pour le moment.',

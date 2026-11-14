@@ -372,5 +372,6 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.byIcon(Icons.cloud_off), findsNWidgets(2));
   });
 }

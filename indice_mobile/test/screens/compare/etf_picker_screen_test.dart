@@ -164,6 +164,19 @@ void main() {
     );
   });
 
+  testWidgets('tells when no favourite is available offline', (
+    WidgetTester tester,
+  ) async {
+    await pumpScreen(
+      tester,
+      onRetrieveEtfs: () async => buildCatalog(etfs: const []),
+      catalogOffline: true,
+    );
+
+    expect(find.text('Aucun favori disponible hors ligne.'), findsOneWidget);
+    expect(find.byIcon(Icons.cloud_off), findsNWidgets(2));
+  });
+
   testWidgets('offers to retry when the catalog cannot be loaded', (
     WidgetTester tester,
   ) async {

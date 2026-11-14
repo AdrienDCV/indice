@@ -234,8 +234,20 @@ void main() {
     );
 
     expect(find.byType(VideoPlayer), findsNothing);
-    expect(find.byType(ResourceThumbnail), findsOneWidget);
-    expect(find.text('La vidéo demande une connexion.'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(ResourceThumbnail),
+        matching: find.text('La vidéo demande une connexion.'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(ResourceThumbnail),
+        matching: find.byIcon(Icons.cloud_off),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Texte complet de l’article.'), findsOneWidget);
   });
 
