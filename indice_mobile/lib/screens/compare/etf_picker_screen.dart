@@ -7,6 +7,7 @@ import '../../injection.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_catalog_state.dart';
 import '../../stores/etf/etf_catalog_store.dart';
+import '../../utils/offline_message.dart';
 import '../../widgets/app_search_bar.dart';
 import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/card/etf_card.dart';
@@ -14,8 +15,6 @@ import '../../widgets/error/error_view.dart';
 import '../../widgets/list/list_caption.dart';
 import '../../widgets/list/load_more_footer.dart';
 
-const _offlineMessage =
-    'Hors ligne · seuls vos favoris téléchargés sont disponibles';
 const _loadMoreDistance = 300.0;
 
 enum EtfSlot {
@@ -49,7 +48,8 @@ class EtfPickerScreen extends StatelessWidget {
         body: BlocBuilder<EtfCatalogStore, EtfCatalogState>(
           builder: (context, state) => Column(
             children: [
-              if (state.offline) const OfflineBar(message: _offlineMessage),
+              if (state.offline)
+                const OfflineBar(message: offlineFavouritesMessage),
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
                 child: Hero(

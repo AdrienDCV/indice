@@ -22,7 +22,7 @@ class ResourceCard extends StatelessWidget {
   final ResourceType type;
   final bool isFavourite;
   final VoidCallback onTap;
-  final VoidCallback onFavouriteTap;
+  final VoidCallback? onFavouriteTap;
 
   @override
   Widget build(BuildContext context) {

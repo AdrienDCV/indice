@@ -7,20 +7,26 @@ import '../../http.dart';
 import '../../models/common/paginated_data.dart';
 import '../../models/resource/resource_data.dart';
 import '../../models/resource/resource_level.dart';
+import '../../repositories/cached_result.dart';
 import '../../repositories/resource_repository.dart';
 import 'resource_catalog_state.dart';
 
 class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
-  ResourceCatalogStore(this._resourceRepository)
-    : super(const ResourceCatalogState());
+  ResourceCatalogStore(
+    this._resourceRepository, {
+    this._reconnectDelay = const Duration(seconds: 15),
+  }) : super(const ResourceCatalogState());
 
   static const pageSize = 20;
   static const searchDelay = Duration(milliseconds: 300);
 
   final ResourceRepository _resourceRepository;
+  final Duration _reconnectDelay;
   Timer? _searchTimer;
+  Timer? _reconnectTimer;
   int _request = 0;
   final Set<String> _pendingFavourites = {};
+  bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
 
@@ -49,11 +55,16 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   }
 
   Future<void> loadMore() async {
-    if (!state.hasMore || state.isLoading || state.isLoadingMore) return;
+    if (!state.hasMore ||
+        state.isLoading ||
+        state.isLoadingMore ||
+        state.offline) {
+      return;
+    }
     final request = _request;
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
-      final page = await _retrievePage(state.nextPage);
+      final page = (await _retrievePage(state.nextPage)).data;
       if (request != _request) return;
       emit(
         state.copyWith(
@@ -111,11 +122,14 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   @override
   Future<void> close() {
     _searchTimer?.cancel();
+    _reconnectTimer?.cancel();
     return super.close();
   }
 
-  Future<void> _loadFirstPage() async {
+  Future<void> _loadFirstPage({bool? favouritesOnly}) async {
+    _reconnectTimer?.cancel();
     final request = ++_request;
+    final favourites = favouritesOnly ?? state.favouritesOnly;
     emit(
       state.copyWith(
         isLoading: true,
@@ -125,16 +139,29 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
       ),
     );
     try {
-      final page = await _retrievePage(0);
+      final result = await _retrievePage(0, favouritesOnly: favourites);
       if (request != _request) return;
+      final page = result.data;
       emit(
         state.copyWith(
           resources: page.content,
           nextPage: 1,
           hasMore: _hasMore(page),
+          offline: result.offline,
+          favouritesOnly: result.offline || favourites,
           isLoading: false,
         ),
       );
+      if (result.offline && !isClosed) {
+        _reconnectTimer = Timer(
+          _reconnectDelay,
+          () => _loadFirstPage(favouritesOnly: false),
+        );
+      }
+      if (!result.offline && !_downloadsSynced) {
+        _downloadsSynced = true;
+        unawaited(_resourceRepository.syncFavouriteDownloads());
+      }
     } catch (error) {
       if (request != _request) return;
       emit(
@@ -148,13 +175,16 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     }
   }
 
-  Future<PaginatedData<ResourceData>> _retrievePage(int page) {
+  Future<CachedResult<PaginatedData<ResourceData>>> _retrievePage(
+    int page, {
+    bool? favouritesOnly,
+  }) {
     return _resourceRepository.retrieveResources(
       page: page,
       size: pageSize,
       search: state.search,
       levels: state.levels,
-      favouritesOnly: state.favouritesOnly,
+      favouritesOnly: favouritesOnly ?? state.favouritesOnly,
     );
   }
 

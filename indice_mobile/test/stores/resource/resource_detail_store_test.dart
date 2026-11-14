@@ -7,6 +7,10 @@ import 'package:indice_mobile/stores/resource/resource_detail_store.dart';
 import '../../fakes/fake_etf_repository.dart' show apiError;
 import '../../fakes/fake_resource_repository.dart';
 
+const reconnectDelay = Duration(milliseconds: 20);
+
+Future<void> waitForReconnect() => Future<void>.delayed(reconnectDelay * 3);
+
 void main() {
   test('loads the resource', () async {
     final response = Completer<void>();
@@ -107,5 +111,96 @@ void main() {
     expect(favourite, isNull);
     expect(store.state.resource?.favourite, isFalse);
     expect(store.state.favouriteErrorKey, 'error.unexpected');
+  });
+
+  test('tells when the resource comes from the device', () async {
+    final cachedAt = DateTime.utc(2026, 10, 30, 13, 5);
+    final store = ResourceDetailStore(
+      FakeResourceRepository(
+        onRetrieveResource: (_) async => buildResourceDetail(),
+        detailCachedAt: cachedAt,
+      ),
+      feesArticle.id,
+    );
+
+    await store.init();
+
+    expect(store.state.cachedAt, cachedAt);
+    await store.close();
+  });
+
+  test('refreshes the resource without showing the loading state', () async {
+    final response = Completer<void>();
+    var calls = 0;
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async {
+        if (++calls == 2) await response.future;
+        return buildResourceDetail();
+      },
+    );
+    final store = ResourceDetailStore(repository, feesArticle.id);
+    await store.init();
+
+    final refreshing = store.refresh();
+
+    expect(store.state.isLoading, isFalse);
+    expect(store.state.resource, buildResourceDetail());
+    response.complete();
+    await refreshing;
+    expect(repository.retrievedIds, [feesArticle.id, feesArticle.id]);
+  });
+
+  test('loads the resource from the api once it answers again', () async {
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+      detailCachedAt: DateTime.utc(2026, 10, 30, 13, 5),
+    );
+    final store = ResourceDetailStore(
+      repository,
+      feesArticle.id,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    repository.detailCachedAt = null;
+    await waitForReconnect();
+
+    expect(store.state.cachedAt, isNull);
+    await store.close();
+  });
+
+  test('does not load the resource again while online', () async {
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+    );
+    final store = ResourceDetailStore(
+      repository,
+      feesArticle.id,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await waitForReconnect();
+
+    expect(repository.retrievedIds, [feesArticle.id]);
+    await store.close();
+  });
+
+  test('stops trying once closed', () async {
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+      detailCachedAt: DateTime.utc(2026, 10, 30, 13, 5),
+    );
+    final store = ResourceDetailStore(
+      repository,
+      feesArticle.id,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await store.close();
+    await waitForReconnect();
+
+    expect(repository.retrievedIds, [feesArticle.id]);
   });
 }

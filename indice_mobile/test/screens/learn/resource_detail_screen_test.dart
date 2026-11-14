@@ -9,6 +9,8 @@ import 'package:indice_mobile/models/resource/media_type.dart';
 import 'package:indice_mobile/repositories/resource_repository.dart';
 import 'package:indice_mobile/screens/learn/resource_detail_screen.dart';
 import 'package:indice_mobile/stores/resource/resource_catalog_store.dart';
+import 'package:indice_mobile/widgets/banner/offline_bar.dart';
+import 'package:indice_mobile/widgets/favourite/favourite_icon.dart';
 import 'package:indice_mobile/widgets/resource_thumbnail.dart';
 import 'package:indice_mobile/widgets/video_player.dart';
 
@@ -185,5 +187,69 @@ void main() {
 
     expect(find.text('Impossible de modifier les favoris.'), findsOneWidget);
     expect(find.byTooltip('Ajouter aux favoris'), findsOneWidget);
+  });
+
+  testWidgets('shows the downloaded resource offline, with its date', (
+    WidgetTester tester,
+  ) async {
+    await pumpDetailScreen(
+      tester,
+      FakeResourceRepository(
+        onRetrieveResource: (_) async =>
+            buildResourceDetail(resource: diversificationVideo),
+        detailCachedAt: DateTime(2026, 11, 2, 21, 17),
+      ),
+      id: diversificationVideo.id,
+    );
+
+    expect(find.byType(OfflineBar), findsOneWidget);
+    expect(
+      find.text('Hors ligne · données du 02/11/2026 à 21:17'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<IconButton>(
+            find.ancestor(
+              of: find.byType(FavouriteIcon),
+              matching: find.byType(IconButton),
+            ),
+          )
+          .onPressed,
+      isNull,
+    );
+  });
+
+  testWidgets('replaces the video by its thumbnail offline', (
+    WidgetTester tester,
+  ) async {
+    await pumpDetailScreen(
+      tester,
+      FakeResourceRepository(
+        onRetrieveResource: (_) async =>
+            buildResourceDetail(resource: diversificationVideo),
+        detailCachedAt: DateTime(2026, 11, 2, 21, 17),
+      ),
+      id: diversificationVideo.id,
+    );
+
+    expect(find.byType(VideoPlayer), findsNothing);
+    expect(find.byType(ResourceThumbnail), findsOneWidget);
+    expect(find.text('La vidéo demande une connexion.'), findsOneWidget);
+    expect(find.text('Texte complet de l’article.'), findsOneWidget);
+  });
+
+  testWidgets('says nothing about the network for an offline article', (
+    WidgetTester tester,
+  ) async {
+    await pumpDetailScreen(
+      tester,
+      FakeResourceRepository(
+        onRetrieveResource: (_) async => buildResourceDetail(),
+        detailCachedAt: DateTime(2026, 11, 2, 21, 17),
+      ),
+    );
+
+    expect(find.text('La vidéo demande une connexion.'), findsNothing);
   });
 }
