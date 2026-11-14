@@ -5,6 +5,7 @@ import 'package:indice_mobile/models/resource/resource_data.dart';
 import 'package:indice_mobile/models/resource/resource_detail_data.dart';
 import 'package:indice_mobile/models/resource/resource_level.dart';
 import 'package:indice_mobile/models/resource/resource_type.dart';
+import 'package:indice_mobile/repositories/cached_result.dart';
 import 'package:indice_mobile/repositories/resource_repository.dart';
 
 const feesArticle = ResourceData(
@@ -84,25 +85,29 @@ class FakeResourceRepository implements ResourceRepository {
     this.onRetrieveResource = _unexpectedRetrieveResource,
     this.onAddFavourite = _succeed,
     this.onRemoveFavourite = _succeed,
+    this.catalogOffline = false,
+    this.detailCachedAt,
   });
 
   Future<PaginatedData<ResourceData>> Function() onRetrieveResources;
   Future<ResourceDetailData> Function(String id) onRetrieveResource;
   Future<void> Function(String id) onAddFavourite;
   Future<void> Function(String id) onRemoveFavourite;
+  bool catalogOffline;
+  DateTime? detailCachedAt;
   final requests = <ResourceRequest>[];
   final retrievedIds = <String>[];
   final addedFavourites = <String>[];
   final removedFavourites = <String>[];
 
   @override
-  Future<PaginatedData<ResourceData>> retrieveResources({
+  Future<CachedResult<PaginatedData<ResourceData>>> retrieveResources({
     int page = 0,
     int size = 20,
     String search = '',
     Set<ResourceLevel> levels = const {},
     bool favouritesOnly = false,
-  }) {
+  }) async {
     requests.add((
       page: page,
       size: size,
@@ -110,13 +115,17 @@ class FakeResourceRepository implements ResourceRepository {
       levels: levels,
       favouritesOnly: favouritesOnly,
     ));
-    return onRetrieveResources();
+    return CachedResult(await onRetrieveResources(), offline: catalogOffline);
   }
 
   @override
-  Future<ResourceDetailData> retrieveResource(String id) {
+  Future<CachedResult<ResourceDetailData>> retrieveResource(String id) async {
     retrievedIds.add(id);
-    return onRetrieveResource(id);
+    return CachedResult(
+      await onRetrieveResource(id),
+      offline: detailCachedAt != null,
+      cachedAt: detailCachedAt,
+    );
   }
 
   @override
@@ -129,5 +138,12 @@ class FakeResourceRepository implements ResourceRepository {
   Future<void> removeFavourite(String id) {
     removedFavourites.add(id);
     return onRemoveFavourite(id);
+  }
+
+  int syncFavouriteDownloadsCalls = 0;
+
+  @override
+  Future<void> syncFavouriteDownloads() async {
+    syncFavouriteDownloadsCalls++;
   }
 }

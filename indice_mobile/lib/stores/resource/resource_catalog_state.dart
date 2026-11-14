@@ -14,6 +14,7 @@ abstract class ResourceCatalogState with _$ResourceCatalogState {
     @Default(false) bool favouritesOnly,
     @Default(0) int nextPage,
     @Default(false) bool hasMore,
+    @Default(false) bool offline,
     @Default(false) bool isLoading,
     String? errorKey,
     @Default(false) bool isLoadingMore,

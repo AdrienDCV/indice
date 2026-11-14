@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../errors/error_messages.dart';
@@ -6,18 +8,43 @@ import '../../repositories/resource_repository.dart';
 import 'resource_detail_state.dart';
 
 class ResourceDetailStore extends Cubit<ResourceDetailState> {
-  ResourceDetailStore(this._resourceRepository, this._id)
-    : super(const ResourceDetailState());
+  ResourceDetailStore(
+    this._resourceRepository,
+    this._id, {
+    this._reconnectDelay = const Duration(seconds: 15),
+  }) : super(const ResourceDetailState());
 
   final ResourceRepository _resourceRepository;
+  final Duration _reconnectDelay;
+  Timer? _reconnectTimer;
   bool _favouritePending = false;
   final String _id;
 
-  Future<void> init() async {
-    emit(state.copyWith(isLoading: true, errorKey: null));
+  Future<void> init() => _load(showLoading: true);
+
+  Future<void> refresh() => _load(showLoading: false);
+
+  @override
+  Future<void> close() {
+    _reconnectTimer?.cancel();
+    return super.close();
+  }
+
+  Future<void> _load({required bool showLoading}) async {
+    _reconnectTimer?.cancel();
+    emit(state.copyWith(isLoading: showLoading, errorKey: null));
     try {
-      final resource = await _resourceRepository.retrieveResource(_id);
-      emit(state.copyWith(resource: resource, isLoading: false));
+      final result = await _resourceRepository.retrieveResource(_id);
+      emit(
+        state.copyWith(
+          resource: result.data,
+          cachedAt: result.cachedAt,
+          isLoading: false,
+        ),
+      );
+      if (result.cachedAt != null && !isClosed) {
+        _reconnectTimer = Timer(_reconnectDelay, refresh);
+      }
     } catch (error) {
       emit(
         state.copyWith(

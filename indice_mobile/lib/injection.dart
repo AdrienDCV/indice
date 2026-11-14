@@ -11,5 +11,5 @@ final getIt = GetIt.instance;
 void configureDependencies(Directory apiCacheDirectory) {
   getIt.registerLazySingleton(() => ApiCache(apiCacheDirectory));
   getIt.registerLazySingleton(() => EtfRepository(getIt<ApiCache>()));
-  getIt.registerLazySingleton(ResourceRepository.new);
+  getIt.registerLazySingleton(() => ResourceRepository(getIt<ApiCache>()));
 }

@@ -38,3 +38,4 @@ Chaque dossier a sa propre numérotation. Pour citer une ADR hors de son dossier
 | N° | Titre | Statut |
 |---|---|---|
 | [0001](0001-favoris-consultables-hors-ligne.md) | Favoris consultables hors ligne, enregistrés en fichiers locaux | Acceptée |
+| [0002](0002-ressources-favorites-consultables-hors-ligne.md) | Ressources favorites consultables hors ligne | Acceptée |

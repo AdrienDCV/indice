@@ -13,6 +13,10 @@ Future<void> waitForSearch() => Future<void>.delayed(
   ResourceCatalogStore.searchDelay + const Duration(milliseconds: 50),
 );
 
+const reconnectDelay = Duration(milliseconds: 20);
+
+Future<void> waitForReconnect() => Future<void>.delayed(reconnectDelay * 3);
+
 void main() {
   test('starts without resource', () {
     final store = ResourceCatalogStore(FakeResourceRepository());
@@ -279,5 +283,113 @@ void main() {
     store.favouriteChanged(feesArticle.id, true);
 
     expect(store.state.resources.first.favourite, isTrue);
+  });
+
+  test('tells when the resources come from the device', () async {
+    final store = ResourceCatalogStore(
+      FakeResourceRepository(catalogOffline: true),
+    );
+
+    await store.init();
+
+    expect(store.state.offline, isTrue);
+    expect(store.state.favouritesOnly, isTrue);
+    expect(store.state.resources, [feesArticle, diversificationVideo]);
+    await store.close();
+  });
+
+  test('does not load more while showing the downloaded resources', () async {
+    final repository = FakeResourceRepository(
+      onRetrieveResources: () async => buildResourcePage(totalPages: 2),
+      catalogOffline: true,
+    );
+    final store = ResourceCatalogStore(repository);
+    await store.init();
+
+    await store.loadMore();
+
+    expect(repository.requests, hasLength(1));
+    await store.close();
+  });
+
+  test('loads all the resources once the api answers again', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    repository.catalogOffline = false;
+    await waitForReconnect();
+
+    expect(store.state.offline, isFalse);
+    expect(store.state.favouritesOnly, isFalse);
+    expect(repository.requests.last.favouritesOnly, isFalse);
+    await store.close();
+  });
+
+  test('keeps trying while the api does not answer', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await waitForReconnect();
+    await waitForReconnect();
+
+    expect(repository.requests.length, greaterThan(2));
+    expect(store.state.offline, isTrue);
+    await store.close();
+  });
+
+  test('does not load the resources again while online', () async {
+    final repository = FakeResourceRepository();
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await waitForReconnect();
+
+    expect(repository.requests, hasLength(1));
+    await store.close();
+  });
+
+  test('stops trying once closed', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+
+    await store.close();
+    await waitForReconnect();
+
+    expect(repository.requests, hasLength(1));
+  });
+
+  test('syncs the favourite downloads once, after loading online', () async {
+    final repository = FakeResourceRepository();
+    final store = ResourceCatalogStore(repository);
+
+    await store.init();
+    await store.favouritesOnlyChanged(true);
+
+    expect(repository.syncFavouriteDownloadsCalls, 1);
+  });
+
+  test('does not sync the favourite downloads offline', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(repository);
+
+    await store.init();
+
+    expect(repository.syncFavouriteDownloadsCalls, 0);
+    await store.close();
   });
 }
