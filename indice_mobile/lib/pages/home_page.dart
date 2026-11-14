@@ -8,7 +8,10 @@ import '../theme/module_colors.dart';
 import '../utils/page_padding.dart';
 import '../utils/resource_formatting.dart';
 import '../widgets/card/resource_card.dart';
+import '../widgets/info/info_message.dart';
 import '../widgets/module_button.dart';
+
+const _offlineMessage = 'Hors ligne : retrouvez vos favoris dans Apprendre.';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -44,18 +47,24 @@ class HomePage extends StatelessWidget {
           BlocBuilder<ResourceCatalogStore, ResourceCatalogState>(
             builder: (context, state) => Column(
               children: [
-                for (final resource in state.resources)
-                  ResourceCard(
-                    title: resource.title,
-                    description: resource.description,
-                    duration: resource.durationMinutes.toFrenchDuration(),
-                    type: resource.type,
-                    isFavourite: resource.favourite,
-                    onTap: () => context.push('/resource/${resource.id}'),
-                    onFavouriteTap: () => context
-                        .read<ResourceCatalogStore>()
-                        .toggleFavourite(resource.id),
-                  ),
+                if (state.offline)
+                  const InfoMessage(
+                    icon: Icons.cloud_off,
+                    message: _offlineMessage,
+                  )
+                else
+                  for (final resource in state.resources)
+                    ResourceCard(
+                      title: resource.title,
+                      description: resource.description,
+                      duration: resource.durationMinutes.toFrenchDuration(),
+                      type: resource.type,
+                      isFavourite: resource.favourite,
+                      onTap: () => context.push('/resource/${resource.id}'),
+                      onFavouriteTap: () => context
+                          .read<ResourceCatalogStore>()
+                          .toggleFavourite(resource.id),
+                    ),
               ],
             ),
           ),

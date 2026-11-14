@@ -6,9 +6,11 @@ import '../../errors/error_messages.dart';
 import '../../models/resource/resource_level.dart';
 import '../../stores/resource/resource_catalog_state.dart';
 import '../../stores/resource/resource_catalog_store.dart';
+import '../../utils/offline_message.dart';
 import '../../utils/page_padding.dart';
 import '../../utils/resource_formatting.dart';
 import '../../widgets/app_search_bar.dart';
+import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/card/resource_card.dart';
 import '../../widgets/error/error_view.dart';
 import '../../widgets/filter_toggle.dart';
@@ -31,7 +33,22 @@ class LearnScreen extends StatelessWidget {
           context,
         ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
         child: BlocBuilder<ResourceCatalogStore, ResourceCatalogState>(
-          builder: (context, state) => _ResourcesView(state: state),
+          builder: (context, state) {
+            final offline = state.offline;
+            return Column(
+              children: [
+                if (offline)
+                  const OfflineBar(message: offlineFavouritesMessage),
+                Expanded(
+                  child: MediaQuery.removePadding(
+                    context: context,
+                    removeTop: offline,
+                    child: _ResourcesView(state: state),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -73,6 +90,7 @@ class _ResourcesViewState extends State<_ResourcesView> {
     final state = widget.state;
     final store = context.read<ResourceCatalogStore>();
     final errorKey = state.errorKey;
+    final offline = state.offline;
 
     return ListView(
       controller: _scrollController,
@@ -81,6 +99,7 @@ class _ResourcesViewState extends State<_ResourcesView> {
         AppSearchBar(
           hintText: 'Rechercher une vidéo ou un article',
           onChanged: store.searchChanged,
+          enabled: !offline,
         ),
         const SizedBox(height: 16),
         SingleChildScrollView(
@@ -92,14 +111,15 @@ class _ResourcesViewState extends State<_ResourcesView> {
                 label: 'Favoris',
                 icon: Icons.star,
                 isSelected: state.favouritesOnly,
-                onSelected: store.favouritesOnlyChanged,
+                onSelected: offline ? null : store.favouritesOnlyChanged,
               ),
               for (final level in ResourceLevel.values)
                 FilterToggle(
                   label: level.label,
                   isSelected: state.levels.contains(level),
-                  onSelected: (isSelected) =>
-                      store.levelToggled(level, isSelected),
+                  onSelected: offline
+                      ? null
+                      : (isSelected) => store.levelToggled(level, isSelected),
                 ),
             ],
           ),
@@ -126,7 +146,9 @@ class _ResourcesViewState extends State<_ResourcesView> {
               type: resource.type,
               isFavourite: resource.favourite,
               onTap: () => context.push('/resource/${resource.id}'),
-              onFavouriteTap: () => store.toggleFavourite(resource.id),
+              onFavouriteTap: offline
+                  ? null
+                  : () => store.toggleFavourite(resource.id),
             ),
           LoadMoreFooter(
             isLoading: state.isLoadingMore,
@@ -140,6 +162,10 @@ class _ResourcesViewState extends State<_ResourcesView> {
 }
 
 String _emptyMessage(ResourceCatalogState state) {
+  if (state.offline) {
+    return 'Aucun favori disponible hors ligne. '
+        'Épinglez une ressource pour la retrouver sans connexion.';
+  }
   final search = state.search;
   if (search.isNotEmpty) return 'Aucune ressource ne correspond à « $search ».';
   if (state.levels.isNotEmpty) {

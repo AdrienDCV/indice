@@ -9,7 +9,9 @@ import '../../repositories/resource_repository.dart';
 import '../../stores/resource/resource_catalog_store.dart';
 import '../../stores/resource/resource_detail_state.dart';
 import '../../stores/resource/resource_detail_store.dart';
+import '../../utils/offline_message.dart';
 import '../../utils/resource_formatting.dart';
+import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/error/error_view.dart';
 import '../../widgets/favourite/favourite_icon.dart';
 import '../../widgets/info/info_item.dart';
@@ -17,6 +19,7 @@ import '../../widgets/resource_thumbnail.dart';
 import '../../widgets/video_player.dart';
 
 const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
+const _videoOfflineMessage = 'La vidéo demande une connexion.';
 
 class ResourceDetailScreen extends StatelessWidget {
   const ResourceDetailScreen({super.key, required this.id});
@@ -55,7 +58,19 @@ class ResourceDetailScreen extends StatelessWidget {
               if (state.isLoading || resource == null) {
                 return const Center(child: CircularProgressIndicator());
               }
-              return _DetailView(resource: resource);
+              final cachedAt = state.cachedAt;
+              return Column(
+                children: [
+                  if (cachedAt != null)
+                    OfflineBar(message: offlineMessage(cachedAt)),
+                  Expanded(
+                    child: _DetailView(
+                      resource: resource,
+                      offline: cachedAt != null,
+                    ),
+                  ),
+                ],
+              );
             },
           ),
         ),
@@ -82,7 +97,9 @@ class _FavouriteButton extends StatelessWidget {
         final resource = state.resource;
         if (resource == null) return const SizedBox.shrink();
         return IconButton(
-          onPressed: () => _toggle(context, resource.id),
+          onPressed: state.cachedAt == null
+              ? () => _toggle(context, resource.id)
+              : null,
           tooltip: resource.favourite
               ? 'Retirer des favoris'
               : 'Ajouter aux favoris',
@@ -95,13 +112,15 @@ class _FavouriteButton extends StatelessWidget {
 }
 
 class _DetailView extends StatelessWidget {
-  const _DetailView({required this.resource});
+  const _DetailView({required this.resource, required this.offline});
 
   final ResourceDetailData resource;
+  final bool offline;
 
   @override
   Widget build(BuildContext context) {
     final media = resource.media;
+    final isVideo = media != null && media.type == MediaType.video;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -110,10 +129,14 @@ class _DetailView extends StatelessWidget {
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: media != null && media.type == MediaType.video
+            child: isVideo && !offline
                 ? VideoPlayer(url: media.url)
                 : ResourceThumbnail(type: resource.type, iconSize: 64),
           ),
+          if (isVideo && offline) ...[
+            const SizedBox(height: 8),
+            const Text(_videoOfflineMessage, textAlign: TextAlign.center),
+          ],
           const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,

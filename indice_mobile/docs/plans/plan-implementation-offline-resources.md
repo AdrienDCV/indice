@@ -73,7 +73,7 @@ Les erreurs 4xx ne lisent jamais les fichiers.
 - `lib/utils/offline_message.dart` : le message « Hors ligne · seuls vos favoris téléchargés sont disponibles », aujourd'hui dupliqué dans le catalogue et le sélecteur d'ETF, y est rangé pour servir une troisième fois.
 - `ResourceCard` : `onFavouriteTap` devient facultatif (`null` désactive l'étoile), comme `EtfCard`.
 - `LearnScreen` : `OfflineBar` en haut, recherche et filtres désactivés, étoiles désactivées. Liste vide hors ligne : « Aucun favori disponible hors ligne. Épinglez une ressource pour la retrouver sans connexion. »
-- `HomePage` : hors ligne, la section « Nouveauté pédagogique » affiche « Hors ligne : retrouvez vos favoris dans Apprendre. » ; ses étoiles sont désactivées.
+- `HomePage` : hors ligne, la section « Nouveauté pédagogique » affiche « Hors ligne : retrouvez vos favoris dans Apprendre. » à la place des cartes.
 - `ResourceDetailScreen` : `OfflineBar(offlineMessage(cachedAt))` si `cachedAt` est renseigné ; étoile désactivée ; à la place du lecteur vidéo, `ResourceThumbnail` et « La vidéo demande une connexion. ».
 
 ## 7. Documentation
@@ -90,6 +90,7 @@ Les erreurs 4xx ne lisent jamais les fichiers.
 | `test/stores/resource/resource_detail_store_test.dart` | `cachedAt` hors ligne ; `refresh()` ; retour en ligne après le délai ; aucune tentative en ligne ni après `close()` |
 | `test/screens/learn/learn_screen_test.dart` | Bandeau, commandes désactivées, message sans favori téléchargé |
 | `test/screens/learn/resource_detail_screen_test.dart` | Bandeau daté, étoile désactivée, vignette et message à la place de la vidéo |
+| `test/pages/home_page_test.dart` | Cartes en ligne ; message à la place des cartes hors ligne |
 | Tests existants | Doivent rester verts |
 
 ## 9. Découpage en commits

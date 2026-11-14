@@ -9,6 +9,8 @@ import 'package:indice_mobile/repositories/resource_repository.dart';
 import 'package:indice_mobile/screens/learn/learn_screen.dart';
 import 'package:indice_mobile/screens/learn/resource_detail_screen.dart';
 import 'package:indice_mobile/stores/resource/resource_catalog_store.dart';
+import 'package:indice_mobile/widgets/banner/offline_bar.dart';
+import 'package:indice_mobile/widgets/card/resource_card.dart';
 import 'package:indice_mobile/widgets/filter_toggle.dart';
 
 import '../../fakes/fake_etf_repository.dart' show apiError;
@@ -179,5 +181,51 @@ void main() {
 
     expect(find.byType(ResourceDetailScreen), findsOneWidget);
     expect(repository.retrievedIds, [feesArticle.id]);
+  });
+
+  testWidgets('shows the downloaded favourites offline, without search, '
+      'filter nor star', (WidgetTester tester) async {
+    await pumpLearnScreen(tester, FakeResourceRepository(catalogOffline: true));
+
+    expect(
+      find.text('Hors ligne · seuls vos favoris téléchargés sont disponibles'),
+      findsOneWidget,
+    );
+    expect(find.byType(OfflineBar), findsOneWidget);
+    expect(find.byType(ResourceCard), findsNWidgets(2));
+    expect(tester.widget<SearchBar>(find.byType(SearchBar)).enabled, isFalse);
+    expect(
+      tester
+          .widgetList<FilterChip>(find.byType(FilterChip))
+          .every((chip) => chip.onSelected == null),
+      isTrue,
+    );
+    expect(tester.widget<FilterToggle>(filter('Favoris')).isSelected, isTrue);
+    expect(
+      tester
+          .widgetList<ResourceCard>(find.byType(ResourceCard))
+          .every((card) => card.onFavouriteTap == null),
+      isTrue,
+    );
+  });
+
+  testWidgets('tells when no favourite is available offline', (
+    WidgetTester tester,
+  ) async {
+    await pumpLearnScreen(
+      tester,
+      FakeResourceRepository(
+        onRetrieveResources: () async => buildResourcePage(resources: []),
+        catalogOffline: true,
+      ),
+    );
+
+    expect(
+      find.text(
+        'Aucun favori disponible hors ligne. '
+        'Épinglez une ressource pour la retrouver sans connexion.',
+      ),
+      findsOneWidget,
+    );
   });
 }

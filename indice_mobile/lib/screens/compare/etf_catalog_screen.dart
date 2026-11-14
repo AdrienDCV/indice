@@ -6,6 +6,7 @@ import '../../errors/error_messages.dart';
 import '../../stores/etf/etf_catalog_state.dart';
 import '../../stores/etf/etf_catalog_store.dart';
 import '../../utils/date_formatting.dart';
+import '../../utils/offline_message.dart';
 import '../../utils/page_padding.dart';
 import '../../widgets/banner/offline_bar.dart';
 import '../../widgets/banner/stale_data_banner.dart';
@@ -19,8 +20,6 @@ const _leverageInfo =
     'Certains ETF amplifient (effet de levier) ou inversent les variations '
     'd’un indice : ils sont conçus pour des opérations de très court terme. '
     'Ceux repérés d’après leur nom portent une étiquette.';
-const _offlineMessage =
-    'Hors ligne · seuls vos favoris téléchargés sont disponibles';
 const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
 const _loadMoreDistance = 300.0;
 
@@ -42,7 +41,8 @@ class EtfCatalogScreen extends StatelessWidget {
             final offline = state.offline;
             return Column(
               children: [
-                if (offline) const OfflineBar(message: _offlineMessage),
+                if (offline)
+                  const OfflineBar(message: offlineFavouritesMessage),
                 Expanded(
                   child: MediaQuery.removePadding(
                     context: context,
