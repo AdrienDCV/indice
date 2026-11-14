@@ -93,80 +93,84 @@ class _ResourcesViewState extends State<_ResourcesView> {
     final errorKey = state.errorKey;
     final offline = state.offline;
 
-    return ListView(
-      controller: _scrollController,
-      padding: pagePadding(context),
-      children: [
-        AppSearchBar(
-          hintText: 'Rechercher une vidéo ou un article',
-          onChanged: store.searchChanged,
-          enabled: !offline,
-        ),
-        const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            spacing: 8,
-            children: [
-              FilterToggle(
-                label: 'Favoris',
-                icon: Icons.star,
-                isSelected: state.favouritesOnly,
-                onSelected: offline ? null : store.favouritesOnlyChanged,
-              ),
-              for (final level in ResourceLevel.values)
+    return RefreshIndicator(
+      onRefresh: store.refresh,
+      child: ListView(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: pagePadding(context),
+        children: [
+          AppSearchBar(
+            hintText: 'Rechercher une vidéo ou un article',
+            onChanged: store.searchChanged,
+            enabled: !offline,
+          ),
+          const SizedBox(height: 16),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              spacing: 8,
+              children: [
                 FilterToggle(
-                  label: level.label,
-                  isSelected: state.levels.contains(level),
-                  onSelected: offline
-                      ? null
-                      : (isSelected) => store.levelToggled(level, isSelected),
+                  label: 'Favoris',
+                  icon: Icons.star,
+                  isSelected: state.favouritesOnly,
+                  onSelected: offline ? null : store.favouritesOnlyChanged,
                 ),
-            ],
+                for (final level in ResourceLevel.values)
+                  FilterToggle(
+                    label: level.label,
+                    isSelected: state.levels.contains(level),
+                    onSelected: offline
+                        ? null
+                        : (isSelected) => store.levelToggled(level, isSelected),
+                  ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        if (errorKey != null)
-          ErrorView(
-            icon: errorIcon(errorKey),
-            message: errorMessage(errorKey),
-            onRetry: store.init,
-          )
-        else if (state.isLoading)
-          const Padding(
-            padding: EdgeInsets.only(top: 32),
-            child: Center(child: CircularProgressIndicator()),
-          )
-        else ...[
-          if (state.resources.isEmpty && offline)
-            const InfoMessage(
-              icon: Icons.cloud_off,
-              message: _offlineEmptyMessage,
+          const SizedBox(height: 16),
+          if (errorKey != null)
+            ErrorView(
+              icon: errorIcon(errorKey),
+              message: errorMessage(errorKey),
+              onRetry: store.init,
             )
-          else if (state.resources.isEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 32),
-              child: Text(_emptyMessage(state), textAlign: TextAlign.center),
+          else if (state.isLoading)
+            const Padding(
+              padding: EdgeInsets.only(top: 32),
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else ...[
+            if (state.resources.isEmpty && offline)
+              const InfoMessage(
+                icon: Icons.cloud_off,
+                message: _offlineEmptyMessage,
+              )
+            else if (state.resources.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 32),
+                child: Text(_emptyMessage(state), textAlign: TextAlign.center),
+              ),
+            for (final resource in state.resources)
+              ResourceCard(
+                title: resource.title,
+                description: resource.description,
+                duration: resource.durationMinutes.toFrenchDuration(),
+                type: resource.type,
+                isFavourite: resource.favourite,
+                onTap: () => context.push('/resource/${resource.id}'),
+                onFavouriteTap: offline
+                    ? null
+                    : () => store.toggleFavourite(resource.id),
+              ),
+            LoadMoreFooter(
+              isLoading: state.isLoadingMore,
+              hasError: state.loadMoreErrorKey != null,
+              onRetry: store.loadMore,
             ),
-          for (final resource in state.resources)
-            ResourceCard(
-              title: resource.title,
-              description: resource.description,
-              duration: resource.durationMinutes.toFrenchDuration(),
-              type: resource.type,
-              isFavourite: resource.favourite,
-              onTap: () => context.push('/resource/${resource.id}'),
-              onFavouriteTap: offline
-                  ? null
-                  : () => store.toggleFavourite(resource.id),
-            ),
-          LoadMoreFooter(
-            isLoading: state.isLoadingMore,
-            hasError: state.loadMoreErrorKey != null,
-            onRetry: store.loadMore,
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 }

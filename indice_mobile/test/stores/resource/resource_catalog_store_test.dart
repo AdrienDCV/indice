@@ -285,6 +285,24 @@ void main() {
     expect(store.state.resources.first.favourite, isTrue);
   });
 
+  test('refreshes the first page without showing the loading state', () async {
+    final repository = FakeResourceRepository(
+      onRetrieveResources: () async =>
+          buildResourcePage(resources: [feesArticle]),
+    );
+    final store = ResourceCatalogStore(repository);
+    await store.init();
+    repository.onRetrieveResources = () async => buildResourcePage();
+
+    final refreshing = store.refresh();
+
+    expect(store.state.isLoading, isFalse);
+    expect(store.state.resources, [feesArticle]);
+    await refreshing;
+    expect(store.state.resources, [feesArticle, diversificationVideo]);
+    expect(repository.requests.last.page, 0);
+  });
+
   test('tells when the resources come from the device', () async {
     final store = ResourceCatalogStore(
       FakeResourceRepository(catalogOffline: true),

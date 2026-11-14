@@ -24,7 +24,7 @@ Il y a 6 ressources : 3 articles, dont le contenu est du texte, entièrement lis
 - La lecture d'une vidéo hors ligne : une vidéo YouTube ne se télécharge pas (conditions d'utilisation de YouTube) et le lecteur intégré demande le réseau.
 - Les ressources non favorites, la recherche et les filtres de niveau hors ligne.
 - Le backend et le contrat d'API : inchangés.
-- Un *pull-to-refresh* sur l'onglet Apprendre ou la fiche d'une ressource.
+- Un *pull-to-refresh* sur l'onglet Apprendre ou la fiche d'une ressource. Ils ont été ajoutés ensuite : voir `plan-implementation-resources-pull-to-refresh.md`.
 
 ## 3. Décisions issues du cadrage
 

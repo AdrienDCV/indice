@@ -142,6 +142,26 @@ void main() {
     expect(find.byType(VideoPlayer, skipOffstage: false), findsOneWidget);
   });
 
+  testWidgets('reloads the resource when pulled down', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeResourceRepository(
+      onRetrieveResource: (_) async => buildResourceDetail(),
+    );
+    await pumpDetailScreen(tester, repository);
+    repository.onRetrieveResource = (_) async =>
+        buildResourceDetail(content: 'Texte mis à jour.');
+
+    await tester.fling(
+      find.text('Comprendre les frais'),
+      const Offset(0, 300),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Texte mis à jour.'), findsOneWidget);
+  });
+
   testWidgets('shows the error of the api', (WidgetTester tester) async {
     await pumpDetailScreen(
       tester,

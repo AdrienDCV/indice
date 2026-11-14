@@ -142,6 +142,27 @@ void main() {
     expect(find.text('Comprendre les frais'), findsOneWidget);
   });
 
+  testWidgets('reloads the resources when pulled down', (
+    WidgetTester tester,
+  ) async {
+    final repository = FakeResourceRepository(
+      onRetrieveResources: () async =>
+          buildResourcePage(resources: [feesArticle]),
+    );
+    await pumpLearnScreen(tester, repository);
+    repository.onRetrieveResources = () async => buildResourcePage();
+
+    await tester.fling(
+      find.text('Comprendre les frais'),
+      const Offset(0, 300),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.requests, hasLength(2));
+    expect(find.text('La diversification'), findsOneWidget);
+  });
+
   testWidgets('pins a resource from its card', (WidgetTester tester) async {
     final repository = FakeResourceRepository();
     await pumpLearnScreen(tester, repository);

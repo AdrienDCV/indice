@@ -66,9 +66,12 @@ class ResourceDetailScreen extends StatelessWidget {
                   if (cachedAt != null)
                     OfflineBar(message: offlineMessage(cachedAt)),
                   Expanded(
-                    child: _DetailView(
-                      resource: resource,
-                      offline: cachedAt != null,
+                    child: RefreshIndicator(
+                      onRefresh: context.read<ResourceDetailStore>().refresh,
+                      child: _DetailView(
+                        resource: resource,
+                        offline: cachedAt != null,
+                      ),
                     ),
                   ),
                 ],
@@ -122,6 +125,7 @@ class _DetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
