@@ -52,6 +52,7 @@ class ResourceDetailScreen extends StatelessWidget {
               final resource = state.resource;
               if (errorKey != null) {
                 return ErrorView(
+                  icon: errorIcon(errorKey),
                   message: errorMessage(errorKey),
                   onRetry: context.read<ResourceDetailStore>().init,
                 );

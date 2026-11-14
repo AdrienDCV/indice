@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/errors/error_messages.dart';
@@ -10,10 +11,32 @@ void main() {
     );
   });
 
+  test('explains a connection failure', () {
+    expect(
+      errorMessage(networkErrorKey),
+      'Connexion impossible pour le moment. '
+      'Vérifiez votre connexion puis réessayez.',
+    );
+  });
+
+  test('explains a server that takes too long to answer', () {
+    expect(
+      errorMessage(serverTimeoutErrorKey),
+      'Le serveur met trop de temps à répondre. '
+      'Réessayez dans quelques instants.',
+    );
+  });
+
+  test('shows a cloud for a connection failure, a warning otherwise', () {
+    expect(errorIcon(networkErrorKey), Icons.cloud_off);
+    expect(errorIcon(serverTimeoutErrorKey), Icons.error_outline);
+    expect(errorIcon(unexpectedErrorKey), Icons.error_outline);
+  });
+
   test('falls back to a generic message for an unknown key', () {
     expect(
       errorMessage('error.unknown'),
-      'Une erreur est survenue. Réessaie dans quelques instants.',
+      'Une erreur est survenue. Réessayez dans quelques instants.',
     );
   });
 

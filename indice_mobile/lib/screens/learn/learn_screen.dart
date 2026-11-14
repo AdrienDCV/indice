@@ -127,7 +127,11 @@ class _ResourcesViewState extends State<_ResourcesView> {
         ),
         const SizedBox(height: 16),
         if (errorKey != null)
-          ErrorView(message: errorMessage(errorKey), onRetry: store.init)
+          ErrorView(
+            icon: errorIcon(errorKey),
+            message: errorMessage(errorKey),
+            onRetry: store.init,
+          )
         else if (state.isLoading)
           const Padding(
             padding: EdgeInsets.only(top: 32),

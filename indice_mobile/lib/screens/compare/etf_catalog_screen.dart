@@ -122,7 +122,11 @@ class _CatalogViewState extends State<_CatalogView> {
           const InfoNote(text: _leverageInfo),
           const SizedBox(height: 12),
           if (errorKey != null)
-            ErrorView(message: errorMessage(errorKey), onRetry: store.init)
+            ErrorView(
+              icon: errorIcon(errorKey),
+              message: errorMessage(errorKey),
+              onRetry: store.init,
+            )
           else if (state.isLoading)
             const Padding(
               padding: EdgeInsets.only(top: 32),

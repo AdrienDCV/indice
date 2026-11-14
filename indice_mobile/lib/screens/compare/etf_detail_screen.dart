@@ -85,6 +85,7 @@ class EtfDetailScreen extends StatelessWidget {
               final etf = state.etf;
               if (errorKey != null) {
                 return ErrorView(
+                  icon: errorIcon(errorKey),
                   message: errorMessage(errorKey),
                   onRetry: context.read<EtfDetailStore>().init,
                 );

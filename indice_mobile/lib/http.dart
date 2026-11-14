@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import 'environment.dart';
+import 'errors/error_messages.dart';
 
 final http = Dio();
 
@@ -82,7 +83,16 @@ class LoggingInterceptor extends Interceptor {
 
 String? extractErrorMessage(Object error) {
   if (error is! DioException) return null;
-  final data = error.response?.data;
+  return switch (error.type) {
+    DioExceptionType.connectionError ||
+    DioExceptionType.connectionTimeout ||
+    DioExceptionType.sendTimeout => networkErrorKey,
+    DioExceptionType.receiveTimeout => serverTimeoutErrorKey,
+    _ => _apiErrorKey(error.response?.data),
+  };
+}
+
+String? _apiErrorKey(Object? data) {
   if (data is List && data.isNotEmpty && data.first is Map<String, dynamic>) {
     return (data.first as Map<String, dynamic>)['message'] as String?;
   }

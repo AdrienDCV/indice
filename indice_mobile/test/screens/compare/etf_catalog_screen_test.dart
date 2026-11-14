@@ -127,7 +127,7 @@ void main() {
 
     expect(
       find.text(
-        'Une erreur inattendue est survenue. Réessaie dans quelques instants.',
+        'Une erreur inattendue est survenue. Réessayez dans quelques instants.',
       ),
       findsOneWidget,
     );

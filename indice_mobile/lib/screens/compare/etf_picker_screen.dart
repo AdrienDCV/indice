@@ -114,7 +114,11 @@ class _EtfPickerListState extends State<_EtfPickerList> {
     final errorKey = state.errorKey;
 
     if (errorKey != null) {
-      return ErrorView(message: errorMessage(errorKey), onRetry: store.init);
+      return ErrorView(
+        icon: errorIcon(errorKey),
+        message: errorMessage(errorKey),
+        onRetry: store.init,
+      );
     }
     if (state.isLoading) {
       return const Center(child: CircularProgressIndicator());
