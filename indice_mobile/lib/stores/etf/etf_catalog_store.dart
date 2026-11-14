@@ -11,13 +11,18 @@ import '../../repositories/etf_repository.dart';
 import 'etf_catalog_state.dart';
 
 class EtfCatalogStore extends Cubit<EtfCatalogState> {
-  EtfCatalogStore(this._etfRepository) : super(const EtfCatalogState());
+  EtfCatalogStore(
+    this._etfRepository, {
+    this._reconnectDelay = const Duration(seconds: 15),
+  }) : super(const EtfCatalogState());
 
   static const pageSize = 50;
   static const searchDelay = Duration(milliseconds: 300);
 
   final EtfRepository _etfRepository;
+  final Duration _reconnectDelay;
   Timer? _searchTimer;
+  Timer? _reconnectTimer;
   int _request = 0;
   final Set<String> _pendingFavourites = {};
   bool _downloadsSynced = false;
@@ -107,11 +112,17 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   @override
   Future<void> close() {
     _searchTimer?.cancel();
+    _reconnectTimer?.cancel();
     return super.close();
   }
 
-  Future<void> _loadFirstPage({bool showLoading = true}) async {
+  Future<void> _loadFirstPage({
+    bool showLoading = true,
+    bool? favouritesOnly,
+  }) async {
+    _reconnectTimer?.cancel();
     final request = ++_request;
+    final favourites = favouritesOnly ?? state.favouritesOnly;
     emit(
       state.copyWith(
         isLoading: showLoading,
@@ -121,7 +132,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
       ),
     );
     try {
-      final result = await _retrievePage(0);
+      final result = await _retrievePage(0, favouritesOnly: favourites);
       if (request != _request) return;
       final catalog = result.data;
       emit(
@@ -132,10 +143,16 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
           fetchedAt: catalog.fetchedAt,
           stale: catalog.stale,
           offline: result.offline,
-          favouritesOnly: result.offline || state.favouritesOnly,
+          favouritesOnly: result.offline || favourites,
           isLoading: false,
         ),
       );
+      if (result.offline && !isClosed) {
+        _reconnectTimer = Timer(
+          _reconnectDelay,
+          () => _loadFirstPage(showLoading: false, favouritesOnly: false),
+        );
+      }
       if (!result.offline && !_downloadsSynced) {
         _downloadsSynced = true;
         unawaited(_etfRepository.syncFavouriteDownloads());
@@ -153,12 +170,15 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     }
   }
 
-  Future<CachedResult<EtfCatalogData>> _retrievePage(int page) {
+  Future<CachedResult<EtfCatalogData>> _retrievePage(
+    int page, {
+    bool? favouritesOnly,
+  }) {
     return _etfRepository.retrieveEtfs(
       page: page,
       size: pageSize,
       search: state.search,
-      favouritesOnly: state.favouritesOnly,
+      favouritesOnly: favouritesOnly ?? state.favouritesOnly,
     );
   }
 
