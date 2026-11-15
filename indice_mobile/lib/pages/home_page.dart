@@ -4,14 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../stores/resource/resource_catalog_state.dart';
 import '../stores/resource/resource_catalog_store.dart';
+import '../texts/home_texts.dart';
 import '../theme/module_colors.dart';
 import '../utils/page_padding.dart';
 import '../utils/resource_formatting.dart';
 import '../widgets/card/resource_card.dart';
 import '../widgets/info/info_message.dart';
 import '../widgets/module_button.dart';
-
-const _offlineMessage = 'Hors ligne : retrouvez vos favoris dans Apprendre.';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -50,7 +49,7 @@ class HomePage extends StatelessWidget {
                 if (state.offline)
                   const InfoMessage(
                     icon: Icons.cloud_off,
-                    message: _offlineMessage,
+                    message: HomeTexts.offlineMessage,
                   )
                 else
                   for (final resource in state.resources)

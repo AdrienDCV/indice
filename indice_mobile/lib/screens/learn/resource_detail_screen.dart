@@ -10,6 +10,8 @@ import '../../repositories/resource_repository.dart';
 import '../../stores/resource/resource_catalog_store.dart';
 import '../../stores/resource/resource_detail_state.dart';
 import '../../stores/resource/resource_detail_store.dart';
+import '../../texts/common_texts.dart';
+import '../../texts/learn_texts.dart';
 import '../../utils/offline_message.dart';
 import '../../utils/resource_formatting.dart';
 import '../../widgets/banner/offline_bar.dart';
@@ -18,9 +20,6 @@ import '../../widgets/favourite/favourite_icon.dart';
 import '../../widgets/info/info_item.dart';
 import '../../widgets/resource_thumbnail.dart';
 import '../../widgets/video_player.dart';
-
-const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
-const _videoOfflineMessage = 'La vidéo demande une connexion.';
 
 class ResourceDetailScreen extends StatelessWidget {
   const ResourceDetailScreen({super.key, required this.id});
@@ -43,9 +42,9 @@ class ResourceDetailScreen extends StatelessWidget {
           listenWhen: (previous, current) =>
               current.favouriteErrorKey != null &&
               previous.favouriteErrorKey != current.favouriteErrorKey,
-          listener: (context, _) => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
+          listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(CommonTexts.favouriteErrorMessage)),
+          ),
           child: BlocBuilder<ResourceDetailStore, ResourceDetailState>(
             builder: (context, state) {
               final errorKey = state.errorKey;
@@ -139,7 +138,7 @@ class _DetailView extends StatelessWidget {
                 type: resource.type,
                 iconSize: 64,
                 icon: Icons.cloud_off,
-                message: _videoOfflineMessage,
+                message: ResourceDetailTexts.videoOfflineMessage,
               ),
               _ => ResourceThumbnail(type: resource.type, iconSize: 64),
             },

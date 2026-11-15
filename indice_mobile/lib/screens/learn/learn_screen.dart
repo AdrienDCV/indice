@@ -6,6 +6,8 @@ import '../../errors/error_messages.dart';
 import '../../models/resource/resource_level.dart';
 import '../../stores/resource/resource_catalog_state.dart';
 import '../../stores/resource/resource_catalog_store.dart';
+import '../../texts/common_texts.dart';
+import '../../texts/learn_texts.dart';
 import '../../utils/offline_message.dart';
 import '../../utils/page_padding.dart';
 import '../../utils/resource_formatting.dart';
@@ -17,7 +19,6 @@ import '../../widgets/filter_toggle.dart';
 import '../../widgets/info/info_message.dart';
 import '../../widgets/list/load_more_footer.dart';
 
-const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
 const _loadMoreDistance = 300.0;
 
 class LearnScreen extends StatelessWidget {
@@ -30,9 +31,9 @@ class LearnScreen extends StatelessWidget {
         listenWhen: (previous, current) =>
             current.favouriteErrorKey != null &&
             previous.favouriteErrorKey != current.favouriteErrorKey,
-        listener: (context, _) => ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
+        listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(CommonTexts.favouriteErrorMessage)),
+        ),
         child: BlocBuilder<ResourceCatalogStore, ResourceCatalogState>(
           builder: (context, state) {
             final offline = state.offline;
@@ -144,7 +145,7 @@ class _ResourcesViewState extends State<_ResourcesView> {
             if (state.resources.isEmpty && offline)
               const InfoMessage(
                 icon: Icons.cloud_off,
-                message: _offlineEmptyMessage,
+                message: LearnTexts.offlineEmptyMessage,
               )
             else if (state.resources.isEmpty)
               Padding(
@@ -175,19 +176,14 @@ class _ResourcesViewState extends State<_ResourcesView> {
   }
 }
 
-const _offlineEmptyMessage =
-    'Aucun favori disponible hors ligne. '
-    'Épinglez une ressource pour la retrouver sans connexion.';
-
 String _emptyMessage(ResourceCatalogState state) {
   final search = state.search;
-  if (search.isNotEmpty) return 'Aucune ressource ne correspond à « $search ».';
+  if (search.isNotEmpty) return LearnTexts.noResourceMatchingMessage(search);
   if (state.levels.isNotEmpty) {
-    return 'Aucune ressource ne correspond à ces filtres.';
+    return LearnTexts.noResourceMatchingFiltersMessage;
   }
   if (state.favouritesOnly) {
-    return 'Aucun favori pour le moment. Touchez le marque-page d’une '
-        'ressource pour l’ajouter.';
+    return LearnTexts.noFavouriteMessage;
   }
-  return 'Aucune ressource disponible pour le moment.';
+  return LearnTexts.noResourceMessage;
 }

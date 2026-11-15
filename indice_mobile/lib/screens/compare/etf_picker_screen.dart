@@ -7,6 +7,7 @@ import '../../injection.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_catalog_state.dart';
 import '../../stores/etf/etf_catalog_store.dart';
+import '../../texts/compare_texts.dart';
 import '../../utils/offline_message.dart';
 import '../../widgets/app_search_bar.dart';
 import '../../widgets/banner/offline_bar.dart';
@@ -134,7 +135,7 @@ class _EtfPickerListState extends State<_EtfPickerList> {
         if (etfs.isEmpty && state.offline)
           const InfoMessage(
             icon: Icons.cloud_off,
-            message: _offlineEmptyMessage,
+            message: EtfPickerTexts.offlineEmptyMessage,
           )
         else if (etfs.isEmpty)
           Padding(
@@ -167,11 +168,9 @@ class _EtfPickerListState extends State<_EtfPickerList> {
   }
 }
 
-const _offlineEmptyMessage = 'Aucun favori disponible hors ligne.';
-
 String _emptyMessage(EtfCatalogState state) {
   final search = state.search;
   return search.isEmpty
-      ? 'Aucun ETF disponible pour le moment.'
-      : 'Aucun ETF ne correspond à « $search ».';
+      ? EtfPickerTexts.noEtfMessage
+      : EtfPickerTexts.noEtfMatchingMessage(search);
 }
