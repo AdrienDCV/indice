@@ -6,6 +6,7 @@ import '../../errors/error_messages.dart';
 import '../../injection.dart';
 import '../../models/etf/compared_etf_data.dart';
 import '../../models/etf/etf_comparison_data.dart';
+import '../../models/etf/performance_data.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_comparison_state.dart';
 import '../../stores/etf/etf_comparison_store.dart';
@@ -283,68 +284,47 @@ class _ComparisonView extends StatelessWidget {
         ),
         ContentCard(
           title: 'Indicateurs',
-          child: ComparisonTable(
+          child: ComparisonTable<PerformanceData>(
             columns: [
               for (final (index, etf) in etfs.indexed)
-                (label: etf.ticker, color: colors[index]),
+                (
+                  label: etf.ticker,
+                  color: colors[index],
+                  item: etf.performance,
+                ),
             ],
             rows: [
-              (
+              ComparisonTableRow(
                 label: 'Rendement total',
                 infoText: _totalReturnInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.totalReturn.toFrenchSignedPercent(),
-                      trend: etf.performance.totalReturn.trend,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.totalReturn.toFrenchSignedPercent(),
+                trend: (performance) => performance.totalReturn.trend,
               ),
-              (
+              ComparisonTableRow(
                 label: 'Rendement annualisé',
                 infoText: _annualizedReturnInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.annualizedReturn
-                          .toFrenchSignedPercent(),
-                      trend: etf.performance.annualizedReturn.trend,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.annualizedReturn.toFrenchSignedPercent(),
+                trend: (performance) => performance.annualizedReturn.trend,
               ),
-              (
+              ComparisonTableRow(
                 label: 'Volatilité',
                 infoText: _volatilityInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.volatility.toFrenchPercent(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.volatility.toFrenchPercent(),
               ),
-              (
+              ComparisonTableRow(
                 label: 'Ratio rendement/risque',
                 infoText: _returnToRiskRatioInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.returnToRiskRatio.toFrenchDecimal(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.returnToRiskRatio.toFrenchDecimal(),
               ),
-              (
+              ComparisonTableRow(
                 label: 'Perte maximale',
                 infoText: _maxDrawdownInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.maxDrawdown.value
-                          .toFrenchSignedPercent(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.maxDrawdown.value.toFrenchSignedPercent(),
               ),
             ],
           ),
