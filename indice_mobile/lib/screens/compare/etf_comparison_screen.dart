@@ -31,16 +31,20 @@ const _commonPeriodInfo =
     'Les indicateurs sont calculés sur les dates où les deux ETF ont un '
     'cours, pour les comparer sur la même période.';
 const _totalReturnInfo =
-    'Gain ou perte sur toute la période, dividendes réinvestis.';
+    'Hausse ou baisse de la valeur de l’ETF entre le premier et le dernier '
+    'jour de la période commune aux deux ETF. Les dividendes, la part des '
+    'bénéfices versée par les entreprises, sont comptés comme s’ils avaient '
+    'été réinvestis dans l’ETF. Par exemple, +20 % : 100 € placés au début '
+    'vaudraient 120 € à la fin.';
 const _annualizedReturnInfo =
-    'Rendement moyen par an sur la période. Il permet de comparer des durées '
-    'différentes.';
+    'Gain ou perte moyen par an sur la période commune aux deux ETF : c’est '
+    'le taux qui, appliqué chaque année, donne le même rendement total. Par '
+    'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
+    '15 %.';
 const _volatilityInfo =
     'Ampleur habituelle des variations du prix sur un an. Plus elle est '
     'élevée, plus le prix bouge fort, à la hausse comme à la baisse.';
-const _returnToRiskRatioInfo =
-    'Rendement obtenu pour une unité de volatilité. Il ne dit pas quel ETF '
-    'choisir : chacun juge selon sa tolérance aux variations.';
+const _returnToRiskRatioInfo = 'Rendement obtenu pour une unité de volatilité.';
 const _maxDrawdownInfo =
     'Plus forte baisse entre un sommet et le creux qui a suivi. Elle montre '
     'ce qu’un investisseur aurait pu perdre au pire moment.';

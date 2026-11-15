@@ -37,10 +37,17 @@ const _leverageInfo =
 const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
 const _noHistoryMessage =
     'Aucun historique de cours disponible pour le moment.';
-const _returnInfo = 'Gain ou perte sur la période, dividendes réinvestis.';
+const _returnInfo =
+    'Hausse ou baisse de la valeur de l’ETF sur 1, 3 et 5 ans, jusqu’au '
+    'dernier cours. Les dividendes, la part des bénéfices versée par les '
+    'entreprises, sont comptés comme s’ils avaient été réinvestis dans '
+    'l’ETF. Par exemple, +20 % sur 5 ans : 100 € placés il y a 5 ans '
+    'vaudraient 120 € aujourd’hui.';
 const _annualizedReturnInfo =
-    'Rendement moyen par an sur 5 ans. Il permet de comparer des durées '
-    'différentes.';
+    'Gain ou perte moyen par an sur les 5 dernières années : c’est le taux '
+    'qui, appliqué chaque année, donne le même rendement qu’en 5 ans. Par '
+    'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
+    '15 %.';
 const _volatilityInfo =
     'Ampleur habituelle des variations du prix sur un an. Plus elle est '
     'élevée, plus le prix bouge fort, à la hausse comme à la baisse.';
