@@ -79,6 +79,7 @@ lib/
 ├── router.dart             # routes go_router
 ├── theme/                  # ThemeData : couleurs, TextTheme
 ├── errors/                 # traduction des clés d'erreur de l'API en messages français
+├── texts/                  # textes explicatifs des écrans, par module : compare_texts.dart…
 ├── models/                 # models des données reçues de l'API, par notion
 │   ├── common/             # paginated_data.dart
 │   ├── etf/                # etf_data.dart, etf_comparison_data.dart…
@@ -226,6 +227,13 @@ lib/
 
 - `lib/errors/` contient une table **clé → message français** (`'error.etfs.etf-not-found': 'Cet ETF est introuvable.'`), avec un message générique pour toute clé inconnue, et la constante `unexpectedErrorKey` (`error.unexpected`), utilisée par les stores quand `extractErrorMessage` ne trouve pas de clé.
 - Toute nouvelle clé d'erreur du backend y est ajoutée.
+
+## Textes affichés
+
+- Les **textes explicatifs** (bulles « i », notes, messages vides, hors ligne ou de données périmées) sont dans `lib/texts/<module>_texts.dart`, une classe `abstract final class <Écran>Texts` par écran (`EtfComparisonTexts.volatilityInfo`). Un texte qui dépend d'une valeur est une méthode statique (`EtfDetailTexts.staleMessage(date)`) ; le choix du texte selon l'état reste dans le screen.
+- Un texte partagé par plusieurs modules va dans `CommonTexts` (`lib/texts/common_texts.dart`).
+- Les **libellés courts** (titres, boutons, noms d'indicateurs, placeholders) restent à côté de leur widget.
+- L'application est uniquement en français : pas de `gen-l10n` ni de fichiers ARB.
 
 ## Configuration (`.env`)
 

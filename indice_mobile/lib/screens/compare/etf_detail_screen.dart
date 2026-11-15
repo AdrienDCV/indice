@@ -10,6 +10,8 @@ import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_catalog_store.dart';
 import '../../stores/etf/etf_detail_state.dart';
 import '../../stores/etf/etf_detail_store.dart';
+import '../../texts/common_texts.dart';
+import '../../texts/compare_texts.dart';
 import '../../utils/axis_scale.dart';
 import '../../utils/date_formatting.dart';
 import '../../utils/number_formatting.dart';
@@ -29,43 +31,6 @@ import '../../widgets/indicator/returns_table.dart';
 import '../../widgets/info/info_note.dart';
 import '../../widgets/info/info_tooltip_button.dart';
 
-const _leverageInfo =
-    'D’après son nom, cet ETF amplifie (effet de levier) ou inverse les '
-    'variations d’un indice, chaque jour. Sur plusieurs jours, sa performance '
-    'peut fortement s’écarter de celle de l’indice. Il est conçu pour des '
-    'opérations de très court terme.';
-const _favouriteErrorMessage = 'Impossible de modifier les favoris.';
-const _noHistoryMessage =
-    'Aucun historique de cours disponible pour le moment.';
-const _returnInfo =
-    'Hausse ou baisse de la valeur de l’ETF sur 1, 3 et 5 ans, jusqu’au '
-    'dernier cours. Les dividendes, la part des bénéfices versée par les '
-    'entreprises, sont comptés comme s’ils avaient été réinvestis dans '
-    'l’ETF. Par exemple, +20 % sur 5 ans : 100 € placés il y a 5 ans '
-    'vaudraient 120 € aujourd’hui.';
-const _annualizedReturnInfo =
-    'Gain ou perte moyen par an sur les 5 dernières années : c’est le taux '
-    'qui, appliqué chaque année, donne le même rendement qu’en 5 ans. Par '
-    'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
-    '15 %.';
-const _volatilityInfo =
-    'Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la '
-    'dernière année. Plus elle est élevée, plus le prix bouge fort, à la '
-    'hausse comme à la baisse.';
-const _maxDrawdownInfo =
-    'Plus forte baisse entre un sommet et le creux qui a suivi, sur 5 ans. '
-    'Elle montre ce qu’un investisseur aurait pu perdre au pire moment.';
-const _priceRangeInfo =
-    'Plus bas et plus haut cours de clôture de la dernière année. Le curseur '
-    'situe le dernier cours dans cette fourchette.';
-
-String _priceChartInfo(DateTime historyStartDate) =>
-    'Cours de clôture de chaque jour de bourse, ajustés des dividendes '
-    'réinvestis : les cours passés sont corrigés pour rester comparables à '
-    'celui d’aujourd’hui, ils peuvent donc différer du prix affiché à '
-    'l’époque. Le pourcentage indique la variation depuis le '
-    '${historyStartDate.toFrenchDate()}, début de l’historique.';
-
 class EtfDetailScreen extends StatelessWidget {
   const EtfDetailScreen({super.key, required this.ticker});
 
@@ -84,9 +49,9 @@ class EtfDetailScreen extends StatelessWidget {
           listenWhen: (previous, current) =>
               current.favouriteErrorKey != null &&
               previous.favouriteErrorKey != current.favouriteErrorKey,
-          listener: (context, _) => ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text(_favouriteErrorMessage))),
+          listener: (context, _) => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(CommonTexts.favouriteErrorMessage)),
+          ),
           child: BlocBuilder<EtfDetailStore, EtfDetailState>(
             builder: (context, state) {
               final errorKey = state.errorKey;
@@ -178,7 +143,7 @@ class _DetailView extends StatelessWidget {
               Flexible(child: LeverageBadge()),
               InfoTooltipButton(
                 title: 'Effet de levier ou inverse',
-                text: _leverageInfo,
+                text: EtfDetailTexts.leverageInfo,
               ),
             ],
           ),
@@ -198,7 +163,7 @@ class _DetailView extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (marketData == null)
-          const Text(_noHistoryMessage)
+          const Text(EtfDetailTexts.noHistoryMessage)
         else
           _MarketDataView(
             marketData: marketData,
@@ -207,11 +172,7 @@ class _DetailView extends StatelessWidget {
             stale: etf.stale && cachedAt == null,
           ),
         const SizedBox(height: 12),
-        const InfoNote(
-          text:
-              'Les performances passées ne préjugent pas des performances '
-              'futures.',
-        ),
+        const InfoNote(text: EtfDetailTexts.pastPerformanceNote),
       ],
     );
   }
@@ -253,15 +214,13 @@ class _MarketDataView extends StatelessWidget {
       children: [
         if (stale)
           StaleDataBanner(
-            message:
-                'Données au ${marketData.lastCloseDate.toFrenchDate()}, '
-                'mise à jour impossible.',
+            message: EtfDetailTexts.staleMessage(marketData.lastCloseDate),
           ),
         ContentCard(
           title: 'Évolution du cours',
-          infoText: _priceChartInfo(marketData.historyStartDate),
+          infoText: EtfDetailTexts.priceChartInfo(marketData.historyStartDate),
           child: marketData.pricePoints.length < 2
-              ? const Text(_noHistoryMessage)
+              ? const Text(EtfDetailTexts.noHistoryMessage)
               : PriceChart(
                   series: [
                     (
@@ -288,7 +247,7 @@ class _MarketDataView extends StatelessWidget {
         ),
         ContentCard(
           title: 'Rendements',
-          infoText: _returnInfo,
+          infoText: EtfDetailTexts.returnInfo,
           child: Column(
             spacing: 8,
             children: [
@@ -314,7 +273,7 @@ class _MarketDataView extends StatelessWidget {
               IndicatorTile(
                 label: 'Annualisé sur 5 ans',
                 value: returns.fiveYearsAnnualized.toFrenchSignedPercent(),
-                infoText: _annualizedReturnInfo,
+                infoText: EtfDetailTexts.annualizedReturnInfo,
                 trend: returns.fiveYearsAnnualized.trend,
               ),
             ],
@@ -328,12 +287,12 @@ class _MarketDataView extends StatelessWidget {
               IndicatorTile(
                 label: 'Volatilité sur 1 an',
                 value: marketData.volatilityOneYear.toFrenchPercent(),
-                infoText: _volatilityInfo,
+                infoText: EtfDetailTexts.volatilityInfo,
               ),
               IndicatorTile(
                 label: 'Perte maximale sur 5 ans',
                 value: maxDrawdown?.value.toFrenchSignedPercent() ?? '—',
-                infoText: _maxDrawdownInfo,
+                infoText: EtfDetailTexts.maxDrawdownInfo,
                 detail: maxDrawdown == null
                     ? null
                     : 'Du ${maxDrawdown.peakDate.toFrenchDate()} '
@@ -344,7 +303,7 @@ class _MarketDataView extends StatelessWidget {
         ),
         ContentCard(
           title: 'Fourchette sur 52 semaines',
-          infoText: _priceRangeInfo,
+          infoText: EtfDetailTexts.priceRangeInfo,
           child: fiftyTwoWeekRange == null
               ? const Text('—')
               : PriceRangeBar(
@@ -354,10 +313,7 @@ class _MarketDataView extends StatelessWidget {
                 ),
         ),
         if (_hasMissingIndicator)
-          Text(
-            'Historique disponible depuis le '
-            '${marketData.historyStartDate.toFrenchDate()}.',
-          ),
+          Text(EtfDetailTexts.historyStartMessage(marketData.historyStartDate)),
       ],
     );
   }
