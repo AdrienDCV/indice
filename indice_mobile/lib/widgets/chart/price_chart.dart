@@ -26,7 +26,7 @@ class PriceChart extends StatefulWidget {
 
 class _PriceChartState extends State<PriceChart> {
   static const _pointsPerVisibleWindow = 252;
-  static const _leftTitlesWidth = 40.0;
+  static const _leftTitlesSpacing = 8.0;
   static const _bottomTitlesHeight = 28.0;
 
   TransformationController? _transformationController;
@@ -53,6 +53,34 @@ class _PriceChartState extends State<PriceChart> {
   bool _startsNewYear(int index) =>
       index == 0 || _dates[index].date.year != _dates[index - 1].date.year;
 
+  double _leftTitlesWidthOf(AxisScale yScale, TextStyle? style) {
+    final labelCount =
+        ((yScale.max - yScale.min) / yScale.interval).round() + 1;
+    final labelWidths = [
+      for (var index = 0; index < labelCount; index++)
+        _textWidthOf(
+          widget.axisLabel(
+            yScale.min + index * yScale.interval,
+            yScale.interval,
+          ),
+          style,
+        ),
+    ];
+    return labelWidths.reduce(max).ceilToDouble() + _leftTitlesSpacing;
+  }
+
+  double _textWidthOf(String text, TextStyle? style) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -64,6 +92,7 @@ class _PriceChartState extends State<PriceChart> {
       for (final series in widget.series)
         for (final point in series.points) point.value,
     ]);
+    final leftTitlesWidth = _leftTitlesWidthOf(yScale, titleStyle);
 
     return Column(
       spacing: 8,
@@ -101,10 +130,11 @@ class _PriceChartState extends State<PriceChart> {
                   leftTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
-                      reservedSize: _leftTitlesWidth,
+                      reservedSize: leftTitlesWidth,
                       interval: yScale.interval,
                       getTitlesWidget: (value, meta) => SideTitleWidget(
                         meta: meta,
+                        space: _leftTitlesSpacing,
                         child: Text(
                           widget.axisLabel(value, yScale.interval),
                           style: titleStyle,
@@ -156,7 +186,7 @@ class _PriceChartState extends State<PriceChart> {
                 maxScale: _initialScale,
                 scaleEnabled: false,
                 transformationController: _transformationControllerFor(
-                  constraints.maxWidth - _leftTitlesWidth,
+                  constraints.maxWidth - leftTitlesWidth,
                 ),
               ),
             ),
