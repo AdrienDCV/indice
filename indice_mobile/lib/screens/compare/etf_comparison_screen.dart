@@ -6,6 +6,7 @@ import '../../errors/error_messages.dart';
 import '../../injection.dart';
 import '../../models/etf/compared_etf_data.dart';
 import '../../models/etf/etf_comparison_data.dart';
+import '../../models/etf/performance_data.dart';
 import '../../repositories/etf_repository.dart';
 import '../../stores/etf/etf_comparison_state.dart';
 import '../../stores/etf/etf_comparison_store.dart';
@@ -31,23 +32,33 @@ const _commonPeriodInfo =
     'Les indicateurs sont calculés sur les dates où les deux ETF ont un '
     'cours, pour les comparer sur la même période.';
 const _totalReturnInfo =
-    'Gain ou perte sur toute la période, dividendes réinvestis.';
+    'Hausse ou baisse de la valeur de l’ETF entre le premier et le dernier '
+    'jour de la période commune aux deux ETF. Les dividendes, la part des '
+    'bénéfices versée par les entreprises, sont comptés comme s’ils avaient '
+    'été réinvestis dans l’ETF. Par exemple, +20 % : 100 € placés au début '
+    'vaudraient 120 € à la fin.';
 const _annualizedReturnInfo =
-    'Rendement moyen par an sur la période. Il permet de comparer des durées '
-    'différentes.';
+    'Gain ou perte moyen par an sur la période commune aux deux ETF : c’est '
+    'le taux qui, appliqué chaque année, donne le même rendement total. Par '
+    'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
+    '15 %.';
 const _volatilityInfo =
-    'Ampleur habituelle des variations du prix sur un an. Plus elle est '
+    'Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la '
+    'période commune aux deux ETF, exprimée pour une année. Plus elle est '
     'élevée, plus le prix bouge fort, à la hausse comme à la baisse.';
 const _returnToRiskRatioInfo =
-    'Rendement obtenu pour une unité de volatilité. Il ne dit pas quel ETF '
-    'choisir : chacun juge selon sa tolérance aux variations.';
+    'Rendement annualisé divisé par la volatilité. Il indique le rendement '
+    'obtenu pour chaque point de variation du prix : plus il est élevé, moins '
+    'le prix a varié pour obtenir ce rendement. Par exemple, un rendement '
+    'annualisé de 10 % avec une volatilité de 20 % donne un ratio de 0,5.';
 const _maxDrawdownInfo =
     'Plus forte baisse entre un sommet et le creux qui a suivi. Elle montre '
     'ce qu’un investisseur aurait pu perdre au pire moment.';
 const _correlationInfo =
-    'Entre −1 et 1. Proche de 1 : les deux ETF montent et baissent souvent '
-    'les mêmes jours, et se protègent peu l’un l’autre. Proche de 0 : leurs '
-    'mouvements sont peu liés.';
+    'Entre −1 et 1, elle indique si les deux ETF évoluent ensemble. Proche de '
+    '1 : ils montent et baissent souvent les mêmes jours, donc détenir les '
+    'deux réduit peu les variations. Proche de 0 : leurs mouvements sont peu '
+    'liés. Proche de −1 : quand l’un monte, l’autre a tendance à baisser.';
 
 List<Color> _etfColors(BuildContext context) {
   final colorScheme = Theme.of(context).colorScheme;
@@ -279,68 +290,47 @@ class _ComparisonView extends StatelessWidget {
         ),
         ContentCard(
           title: 'Indicateurs',
-          child: ComparisonTable(
+          child: ComparisonTable<PerformanceData>(
             columns: [
               for (final (index, etf) in etfs.indexed)
-                (label: etf.ticker, color: colors[index]),
+                (
+                  label: etf.ticker,
+                  color: colors[index],
+                  item: etf.performance,
+                ),
             ],
             rows: [
-              (
+              ComparisonTableRow(
                 label: 'Rendement total',
                 infoText: _totalReturnInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.totalReturn.toFrenchSignedPercent(),
-                      trend: etf.performance.totalReturn.trend,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.totalReturn.toFrenchSignedPercent(),
+                trend: (performance) => performance.totalReturn.trend,
               ),
-              (
+              ComparisonTableRow(
                 label: 'Rendement annualisé',
                 infoText: _annualizedReturnInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.annualizedReturn
-                          .toFrenchSignedPercent(),
-                      trend: etf.performance.annualizedReturn.trend,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.annualizedReturn.toFrenchSignedPercent(),
+                trend: (performance) => performance.annualizedReturn.trend,
               ),
-              (
+              ComparisonTableRow(
                 label: 'Volatilité',
                 infoText: _volatilityInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.volatility.toFrenchPercent(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.volatility.toFrenchPercent(),
               ),
-              (
+              ComparisonTableRow(
                 label: 'Ratio rendement/risque',
                 infoText: _returnToRiskRatioInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.returnToRiskRatio.toFrenchDecimal(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.returnToRiskRatio.toFrenchDecimal(),
               ),
-              (
+              ComparisonTableRow(
                 label: 'Perte maximale',
                 infoText: _maxDrawdownInfo,
-                values: [
-                  for (final etf in etfs)
-                    (
-                      text: etf.performance.maxDrawdown.value
-                          .toFrenchSignedPercent(),
-                      trend: ValueTrend.neutral,
-                    ),
-                ],
+                value: (performance) =>
+                    performance.maxDrawdown.value.toFrenchSignedPercent(),
               ),
             ],
           ),

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/models/etf/etf_comparison_data.dart';
+import 'package:indice_mobile/models/etf/performance_data.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/chart/price_chart.dart';
@@ -165,7 +166,7 @@ void main() {
       findsOneWidget,
     );
     expect(find.byType(PriceChart), findsOneWidget);
-    expect(find.byType(ComparisonTable), findsOneWidget);
+    expect(find.byType(ComparisonTable<PerformanceData>), findsOneWidget);
     expect(find.text('+81,23\u00A0%'), findsOneWidget);
     expect(find.text('-5,00\u00A0%'), findsOneWidget);
     expect(find.text('0,74'), findsNWidgets(2));
@@ -244,7 +245,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.comparedPairs, [('SPY', 'QQQ'), ('SPY', 'QQQ')]);
-    expect(find.byType(ComparisonTable), findsOneWidget);
+    expect(find.byType(ComparisonTable<PerformanceData>), findsOneWidget);
   });
 
   testWidgets('shows a dash and no gauge without correlation', (

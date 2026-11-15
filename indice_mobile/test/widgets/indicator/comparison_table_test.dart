@@ -17,27 +17,30 @@ void main() {
       MaterialApp(
         theme: theme,
         home: Scaffold(
-          body: ComparisonTable(
+          body: ComparisonTable<({double? totalReturn, double? volatility})>(
             columns: [
-              (label: 'SPY', color: Colors.green),
-              (label: 'QQQ', color: Colors.teal),
-            ],
-            rows: [
               (
-                label: 'Rendement total',
-                infoText: 'Gain ou perte sur toute la période.',
-                values: [
-                  (text: '+81,23 %', trend: ValueTrend.gain),
-                  (text: '-5,00 %', trend: ValueTrend.loss),
-                ],
+                label: 'SPY',
+                color: Colors.green,
+                item: (totalReturn: 0.8123, volatility: 0.1712),
               ),
               (
+                label: 'QQQ',
+                color: Colors.teal,
+                item: (totalReturn: -0.05, volatility: null),
+              ),
+            ],
+            rows: [
+              ComparisonTableRow(
+                label: 'Rendement total',
+                infoText: 'Gain ou perte sur toute la période.',
+                value: (item) => item.totalReturn.toFrenchSignedPercent(),
+                trend: (item) => item.totalReturn.trend,
+              ),
+              ComparisonTableRow(
                 label: 'Volatilité',
                 infoText: 'Ampleur habituelle des variations.',
-                values: [
-                  (text: '17,12 %', trend: ValueTrend.neutral),
-                  (text: '—', trend: ValueTrend.neutral),
-                ],
+                value: (item) => item.volatility.toFrenchPercent(),
               ),
             ],
           ),
@@ -53,8 +56,8 @@ void main() {
     expect(find.text('Rendement total'), findsOneWidget);
     expect(find.text('Volatilité'), findsOneWidget);
     expect(find.byType(InfoTooltipButton), findsNWidgets(2));
-    expect(colorOf('+81,23 %'), colors.gain);
-    expect(colorOf('-5,00 %'), colors.loss);
-    expect(colorOf('17,12 %'), isNot(anyOf(colors.gain, colors.loss)));
+    expect(colorOf('+81,23\u00A0%'), colors.gain);
+    expect(colorOf('-5,00\u00A0%'), colors.loss);
+    expect(colorOf('17,12\u00A0%'), isNot(anyOf(colors.gain, colors.loss)));
   });
 }

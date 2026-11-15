@@ -13,6 +13,7 @@ Future<void> pumpChart(
   WidgetTester tester,
   List<({DateTime date, double value})> points, {
   String Function(int index)? tooltipLabel,
+  String Function(double value, double interval)? axisLabel,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -20,7 +21,7 @@ Future<void> pumpChart(
         body: PriceChart(
           series: [(label: 'SPY', color: Colors.green, points: points)],
           tooltipLabel: tooltipLabel ?? (index) => 'Point $index',
-          axisLabel: (value, interval) => value.toStringAsFixed(0),
+          axisLabel: axisLabel ?? (value, interval) => value.toStringAsFixed(0),
         ),
       ),
     ),
@@ -69,6 +70,20 @@ void main() {
       expect(find.text(label), findsOneWidget);
     }
     expect(find.text('199'), findsNothing);
+  });
+
+  testWidgets('keeps long axis labels on a single line', (
+    WidgetTester tester,
+  ) async {
+    await pumpChart(
+      tester,
+      dailyPoints(100),
+      axisLabel: (value, interval) => '+${value.toStringAsFixed(0)},00\u00A0%',
+    );
+
+    final lineHeight = tester.getSize(find.text('2022')).height;
+
+    expect(tester.getSize(find.text('+200,00\u00A0%')).height, lineHeight);
   });
 
   testWidgets('asks the tooltip label of the point held down', (
