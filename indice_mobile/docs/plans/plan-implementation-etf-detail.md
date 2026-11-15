@@ -199,7 +199,7 @@ Adaptés du §9.1 du plan backend de la comparaison, neutres et sans jugement :
 | Courbe | Cours de clôture de chaque jour de bourse, ajustés des dividendes réinvestis : les cours passés sont corrigés pour rester comparables à celui d'aujourd'hui, ils peuvent donc différer du prix affiché à l'époque. Le pourcentage indique la variation depuis le JJ/MM/AAAA, début de l'historique. |
 | Rendement (1, 3, 5 ans) | Hausse ou baisse de la valeur de l’ETF sur 1, 3 et 5 ans, jusqu’au dernier cours. Les dividendes, la part des bénéfices versée par les entreprises, sont comptés comme s’ils avaient été réinvestis dans l’ETF. Par exemple, +20 % sur 5 ans : 100 € placés il y a 5 ans vaudraient 120 € aujourd’hui. |
 | Rendement annualisé | Gain ou perte moyen par an sur les 5 dernières années : c’est le taux qui, appliqué chaque année, donne le même rendement qu’en 5 ans. Par exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ 15 %. |
-| Volatilité | Ampleur habituelle des variations du prix sur un an. Plus elle est élevée, plus le prix bouge fort, à la hausse comme à la baisse. |
+| Volatilité | Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la dernière année. Plus elle est élevée, plus le prix bouge fort, à la hausse comme à la baisse. |
 | Perte maximale | Plus forte baisse entre un sommet et le creux qui a suivi, sur 5 ans. Elle montre ce qu'un investisseur aurait pu perdre au pire moment. |
 | Fourchette sur 52 semaines | Plus bas et plus haut cours de clôture de la dernière année. Le curseur situe le dernier cours dans cette fourchette. |
 

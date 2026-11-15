@@ -43,16 +43,22 @@ const _annualizedReturnInfo =
     'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
     '15 %.';
 const _volatilityInfo =
-    'Ampleur habituelle des variations du prix sur un an. Plus elle est '
+    'Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la '
+    'période commune aux deux ETF, exprimée pour une année. Plus elle est '
     'élevée, plus le prix bouge fort, à la hausse comme à la baisse.';
-const _returnToRiskRatioInfo = 'Rendement obtenu pour une unité de volatilité.';
+const _returnToRiskRatioInfo =
+    'Rendement annualisé divisé par la volatilité. Il indique le rendement '
+    'obtenu pour chaque point de variation du prix : plus il est élevé, moins '
+    'le prix a varié pour obtenir ce rendement. Par exemple, un rendement '
+    'annualisé de 10 % avec une volatilité de 20 % donne un ratio de 0,5.';
 const _maxDrawdownInfo =
     'Plus forte baisse entre un sommet et le creux qui a suivi. Elle montre '
     'ce qu’un investisseur aurait pu perdre au pire moment.';
 const _correlationInfo =
-    'Entre −1 et 1. Proche de 1 : les deux ETF montent et baissent souvent '
-    'les mêmes jours, et se protègent peu l’un l’autre. Proche de 0 : leurs '
-    'mouvements sont peu liés.';
+    'Entre −1 et 1, elle indique si les deux ETF évoluent ensemble. Proche de '
+    '1 : ils montent et baissent souvent les mêmes jours, donc détenir les '
+    'deux réduit peu les variations. Proche de 0 : leurs mouvements sont peu '
+    'liés. Proche de −1 : quand l’un monte, l’autre a tendance à baisser.';
 
 List<Color> _etfColors(BuildContext context) {
   final colorScheme = Theme.of(context).colorScheme;

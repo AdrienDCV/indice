@@ -173,10 +173,10 @@ Repris du §9.1 du plan backend de la comparaison, neutres :
 | Courbe | Cours de clôture ajustés des dividendes réinvestis. Les pourcentages indiquent la variation de chaque ETF depuis le JJ/MM/AAAA, début de la période commune : les deux courbes partent de 0 %. |
 | Rendement total | Hausse ou baisse de la valeur de l’ETF entre le premier et le dernier jour de la période commune aux deux ETF. Les dividendes, la part des bénéfices versée par les entreprises, sont comptés comme s’ils avaient été réinvestis dans l’ETF. Par exemple, +20 % : 100 € placés au début vaudraient 120 € à la fin. |
 | Rendement annualisé | Gain ou perte moyen par an sur la période commune aux deux ETF : c’est le taux qui, appliqué chaque année, donne le même rendement total. Par exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ 15 %. |
-| Volatilité | Ampleur habituelle des variations du prix sur un an. Plus elle est élevée, plus le prix bouge fort, à la hausse comme à la baisse. |
-| Ratio rendement/risque | Rendement obtenu pour une unité de volatilité. |
+| Volatilité | Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la période commune aux deux ETF, exprimée pour une année. Plus elle est élevée, plus le prix bouge fort, à la hausse comme à la baisse. |
+| Ratio rendement/risque | Rendement annualisé divisé par la volatilité. Il indique le rendement obtenu pour chaque point de variation du prix : plus il est élevé, moins le prix a varié pour obtenir ce rendement. Par exemple, un rendement annualisé de 10 % avec une volatilité de 20 % donne un ratio de 0,5. |
 | Perte maximale | Plus forte baisse entre un sommet et le creux qui a suivi. Elle montre ce qu'un investisseur aurait pu perdre au pire moment. |
-| Corrélation | Entre −1 et 1. Proche de 1 : les deux ETF montent et baissent souvent les mêmes jours, et se protègent peu l'un l'autre. Proche de 0 : leurs mouvements sont peu liés. |
+| Corrélation | Entre −1 et 1, elle indique si les deux ETF évoluent ensemble. Proche de 1 : ils montent et baissent souvent les mêmes jours, donc détenir les deux réduit peu les variations. Proche de 0 : leurs mouvements sont peu liés. Proche de −1 : quand l’un monte, l’autre a tendance à baisser. |
 
 ## 10. Écran (`lib/screens/compare/etf_comparison_screen.dart`)
 

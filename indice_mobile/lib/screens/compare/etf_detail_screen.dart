@@ -49,8 +49,9 @@ const _annualizedReturnInfo =
     'exemple, un ETF qui double en 5 ans a un rendement annualisé d’environ '
     '15 %.';
 const _volatilityInfo =
-    'Ampleur habituelle des variations du prix sur un an. Plus elle est '
-    'élevée, plus le prix bouge fort, à la hausse comme à la baisse.';
+    'Mesure à quel point le prix monte et descend d’un jour à l’autre, sur la '
+    'dernière année. Plus elle est élevée, plus le prix bouge fort, à la '
+    'hausse comme à la baisse.';
 const _maxDrawdownInfo =
     'Plus forte baisse entre un sommet et le creux qui a suivi, sur 5 ans. '
     'Elle montre ce qu’un investisseur aurait pu perdre au pire moment.';
