@@ -1,6 +1,7 @@
 package com.fisa.indice.etf.services
 
 import com.fisa.indice.etf.clients.TwelveDataClient
+import com.fisa.indice.etf.entities.EtfClosingPriceEntity
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.mappers.toEntity
 import com.fisa.indice.etf.mappers.toModel
@@ -27,17 +28,18 @@ class ClosingPriceService(
     @Transactional
     fun retrievePrices(etf: Etf): EtfPrices {
         val now = Instant.now(clock)
-        val fetchedAt = etfClosingPriceRepository.findFirstByEtfIdOrderByFetchedAtDesc(etf.id)?.fetchedAt
-        if (!ClosingPriceHistory.isStale(fetchedAt, now)) return retrieveStoredPrices(etf, fetchedAt, stale = false)
+        val storedPrices = etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id)
+        val fetchedAt = storedPrices.maxOfOrNull { it.fetchedAt }
+        if (!ClosingPriceHistory.isStale(fetchedAt, now)) return pricesOf(storedPrices, fetchedAt, stale = false)
 
-        val prices = fetchClosingPrices(etf, now) ?: return retrieveStoredPrices(etf, fetchedAt, stale = true)
+        val prices = fetchClosingPrices(etf, now) ?: return pricesOf(storedPrices, fetchedAt, stale = true)
         val history = ClosingPriceHistory.fromUnsorted(prices)
         replaceClosingPrices(etf, history.prices, now)
         return EtfPrices(history, now, stale = false)
     }
 
-    private fun retrieveStoredPrices(etf: Etf, fetchedAt: Instant?, stale: Boolean): EtfPrices {
-        val prices = etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id).map { it.toModel() }
+    private fun pricesOf(storedPrices: List<EtfClosingPriceEntity>, fetchedAt: Instant?, stale: Boolean): EtfPrices {
+        val prices = storedPrices.map { it.toModel() }
         val history = prices.takeIf { it.isNotEmpty() }?.let { ClosingPriceHistory.fromUnsorted(it) }
         return EtfPrices(history, fetchedAt, stale)
     }

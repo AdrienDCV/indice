@@ -41,7 +41,6 @@ class ClosingPriceServiceTest {
         EtfClosingPriceEntity(etf.id, LocalDate.parse(date), BigDecimal(close), fetchedAt)
 
     private fun givenStoredPrices(vararg prices: EtfClosingPriceEntity) {
-        every { etfClosingPriceRepository.findFirstByEtfIdOrderByFetchedAtDesc(etf.id) } returns prices.maxByOrNull { it.fetchedAt }
         every { etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id) } returns prices.toList()
     }
 
@@ -63,6 +62,7 @@ class ClosingPriceServiceTest {
 
         // Then
         verify(exactly = 0) { twelveDataClient.fetchDailyClosingPrices(any(), any()) }
+        verify(exactly = 1) { etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id) }
         assertEquals(2, prices.history?.prices?.size)
         assertEquals(fetchedAt, prices.fetchedAt)
         assertFalse(prices.stale)
@@ -106,7 +106,7 @@ class ClosingPriceServiceTest {
         // Then
         verify(exactly = 1) { twelveDataClient.fetchDailyClosingPrices("SPY", LocalDate.parse("2021-10-13")) }
         verify(exactly = 1) { etfClosingPriceRepository.deleteAllByEtfId(etf.id) }
-        verify(exactly = 0) { etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(any()) }
+        verify(exactly = 1) { etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id) }
         assertEquals(2, saved.captured.size)
         assertTrue(saved.captured.all { it.fetchedAt == now && it.etfId == etf.id })
         assertEquals(LocalDate.parse("2025-10-17"), prices.history?.historyStartDate())
@@ -127,6 +127,7 @@ class ClosingPriceServiceTest {
         // Then
         verify(exactly = 0) { etfClosingPriceRepository.deleteAllByEtfId(any()) }
         verify(exactly = 0) { etfClosingPriceRepository.saveAll(any<List<EtfClosingPriceEntity>>()) }
+        verify(exactly = 1) { etfClosingPriceRepository.findAllByEtfIdOrderByTradingDateAsc(etf.id) }
         assertNotNull(prices.history)
         assertEquals(lastWeek, prices.fetchedAt)
         assertTrue(prices.stale)

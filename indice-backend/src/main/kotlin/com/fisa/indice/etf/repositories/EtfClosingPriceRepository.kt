@@ -11,8 +11,6 @@ interface EtfClosingPriceRepository : JpaRepository<EtfClosingPriceEntity, UUID>
 
     fun findAllByEtfIdOrderByTradingDateAsc(etfId: UUID): List<EtfClosingPriceEntity>
 
-    fun findFirstByEtfIdOrderByFetchedAtDesc(etfId: UUID): EtfClosingPriceEntity?
-
     @Modifying
     @Query("delete from EtfClosingPriceEntity c where c.etfId = :etfId")
     fun deleteAllByEtfId(@Param("etfId") etfId: UUID): Int
