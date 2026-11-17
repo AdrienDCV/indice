@@ -52,6 +52,7 @@ indice/
 | ✨ | Nouvelle fonctionnalité |
 | 🐛 | Correction de bug |
 | ♻️ | Refactoring sans changement de comportement |
+| ⚡ | Amélioration des performances |
 | 🔧 | Configuration (fichiers de config, dépendances, `CLAUDE.md`…) |
 | ✅ | Ajout ou modification de tests uniquement |
 | 📝 | Documentation (`docs/`, README…) |

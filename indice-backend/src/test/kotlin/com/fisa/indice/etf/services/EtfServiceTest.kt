@@ -5,11 +5,7 @@ import com.fisa.indice.etf.config.EtfCatalogProperties
 import com.fisa.indice.etf.dtos.twelvedata.TwelveDataEtfDto
 import com.fisa.indice.etf.entities.EtfEntity
 import com.fisa.indice.etf.entities.FavouriteEtfEntity
-import com.fisa.indice.etf.exceptions.EtfNotFoundException
-import com.fisa.indice.etf.exceptions.InvalidTickerException
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
-import com.fisa.indice.etf.models.Etf
-import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.repositories.EtfRepository
 import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import io.mockk.CapturingSlot
@@ -19,7 +15,6 @@ import io.mockk.mockk
 import io.mockk.slot
 import io.mockk.verify
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.Clock
@@ -47,20 +42,12 @@ class EtfServiceTest {
     private val favouriteEtfRepository = mockk<FavouriteEtfRepository> {
         every { findAllById(any()) } returns emptyList()
     }
-    private val etfDetailService = mockk<EtfDetailService>()
-    private val pinnedDetail = EtfDetail(
-        Etf(first, "NYSE", "ETF $first", "USD", now, favourite = true),
-        marketData = null,
-        closingPricesFetchedAt = null,
-        stale = true,
-    )
     private val etfService = EtfService(
         etfRepository,
         twelveDataClient,
         Clock.fixed(now, ZoneOffset.UTC),
         EtfCatalogProperties(country),
         favouriteEtfRepository,
-        etfDetailService,
     )
 
     private fun entity(ticker: String, fetchedAt: Instant) =
@@ -220,65 +207,5 @@ class EtfServiceTest {
 
         // Then
         assertEquals(mapOf(first to true, second to false), result.etfs.content.associate { it.ticker to it.favourite })
-    }
-
-    @Test
-    fun `should pin an etf that was not a favourite yet`() {
-        // Given
-        every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
-        every { favouriteEtfRepository.existsById(first) } returns false
-        every { favouriteEtfRepository.save(FavouriteEtfEntity(first)) } returns FavouriteEtfEntity(first)
-        every { etfDetailService.retrieveEtf(first) } returns pinnedDetail
-
-        // When
-        val detail = etfService.addFavourite(" spy ")
-
-        // Then
-        assertEquals(pinnedDetail, detail)
-        verify(exactly = 1) { favouriteEtfRepository.save(FavouriteEtfEntity(first)) }
-    }
-
-    @Test
-    fun `should not pin an etf twice`() {
-        // Given
-        every { etfRepository.findByTicker(first) } returns entity(first, yesterday)
-        every { favouriteEtfRepository.existsById(first) } returns true
-        every { etfDetailService.retrieveEtf(first) } returns pinnedDetail
-
-        // When
-        val detail = etfService.addFavourite(first)
-
-        // Then
-        assertEquals(pinnedDetail, detail)
-        verify(exactly = 0) { favouriteEtfRepository.save(any()) }
-    }
-
-    @Test
-    fun `should throw EtfNotFoundException when pinning an etf outside the catalog`() {
-        every { etfRepository.findByTicker("ARKK") } returns null
-
-        assertThrows<EtfNotFoundException> { etfService.addFavourite("ARKK") }
-    }
-
-    @Test
-    fun `should throw InvalidTickerException when pinning an invalid ticker`() {
-        assertThrows<InvalidTickerException> { etfService.addFavourite("SP Y") }
-    }
-
-    @Test
-    fun `should unpin an etf`() {
-        // Given
-        justRun { favouriteEtfRepository.deleteById(first) }
-
-        // When
-        etfService.removeFavourite(" spy ")
-
-        // Then
-        verify(exactly = 1) { favouriteEtfRepository.deleteById(first) }
-    }
-
-    @Test
-    fun `should throw InvalidTickerException when unpinning an invalid ticker`() {
-        assertThrows<InvalidTickerException> { etfService.removeFavourite("SP Y") }
     }
 }

@@ -226,7 +226,7 @@ class EtfControllerTest(
 
     @Test
     fun `should return the etf detail when an etf is pinned`() {
-        every { etfService.addFavourite("SPY") } returns EtfDetail(etf.copy(favourite = true), null, fetchedAt, stale = false)
+        every { etfDetailService.addFavourite("SPY") } returns EtfDetail(etf.copy(favourite = true), null, fetchedAt, stale = false)
 
         mockMvc.put("/etfs/SPY/favourite").andExpect {
             status { isOk() }
@@ -238,7 +238,7 @@ class EtfControllerTest(
 
     @Test
     fun `should return not found when pinning an etf outside the catalog`() {
-        every { etfService.addFavourite("ARKK") } throws EtfNotFoundException()
+        every { etfDetailService.addFavourite("ARKK") } throws EtfNotFoundException()
 
         mockMvc.put("/etfs/ARKK/favourite").andExpect {
             status { isNotFound() }
@@ -248,14 +248,14 @@ class EtfControllerTest(
 
     @Test
     fun `should return no content when an etf is unpinned`() {
-        justRun { etfService.removeFavourite("SPY") }
+        justRun { etfDetailService.removeFavourite("SPY") }
 
         mockMvc.delete("/etfs/SPY/favourite").andExpect { status { isNoContent() } }
     }
 
     @Test
     fun `should return bad request when unpinning an invalid ticker`() {
-        every { etfService.removeFavourite("SPY$") } throws InvalidTickerException()
+        every { etfDetailService.removeFavourite("SPY$") } throws InvalidTickerException()
 
         mockMvc.delete("/etfs/SPY$/favourite").andExpect {
             status { isBadRequest() }

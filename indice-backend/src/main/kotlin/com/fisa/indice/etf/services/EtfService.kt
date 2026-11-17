@@ -2,14 +2,11 @@ package com.fisa.indice.etf.services
 
 import com.fisa.indice.etf.clients.TwelveDataClient
 import com.fisa.indice.etf.config.EtfCatalogProperties
-import com.fisa.indice.etf.entities.FavouriteEtfEntity
-import com.fisa.indice.etf.exceptions.EtfNotFoundException
 import com.fisa.indice.etf.exceptions.TwelveDataUnavailableException
 import com.fisa.indice.etf.mappers.toEntity
 import com.fisa.indice.etf.mappers.toModel
 import com.fisa.indice.etf.models.Etf
 import com.fisa.indice.etf.models.EtfCatalog
-import com.fisa.indice.etf.models.EtfDetail
 import com.fisa.indice.etf.models.RetrievedEtfCatalog
 import com.fisa.indice.etf.repositories.EtfRepository
 import com.fisa.indice.etf.repositories.FavouriteEtfRepository
@@ -28,35 +25,24 @@ class EtfService(
     private val clock: Clock,
     private val etfCatalogProperties: EtfCatalogProperties,
     private val favouriteEtfRepository: FavouriteEtfRepository,
-    private val etfDetailService: EtfDetailService,
 ) {
 
     @Transactional
     fun retrieveEtfs(pageable: Pageable, search: String?, favouritesOnly: Boolean): RetrievedEtfCatalog {
         val now = Instant.now(clock)
-        val lastSynchronizedAt = etfRepository.findFirstByOrderByFetchedAtDesc()?.fetchedAt
+        val lastSynchronizedAt = synchronizeIfStale(now)
         val normalizedSearch = search?.trim()?.lowercase().orEmpty()
-        if (!EtfCatalog.isStale(lastSynchronizedAt, now)) {
-            return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), lastSynchronizedAt, stale = false)
-        }
+        val page = retrievePage(pageable, normalizedSearch, favouritesOnly)
+        return RetrievedEtfCatalog(page, lastSynchronizedAt, stale = EtfCatalog.isStale(lastSynchronizedAt, now))
+    }
 
-        val source = fetchSource(now)
-            ?: return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), lastSynchronizedAt, stale = true)
+    private fun synchronizeIfStale(now: Instant): Instant? {
+        val lastSynchronizedAt = etfRepository.findFirstByOrderByFetchedAtDesc()?.fetchedAt
+        if (!EtfCatalog.isStale(lastSynchronizedAt, now)) return lastSynchronizedAt
+
+        val source = fetchSource(now) ?: return lastSynchronizedAt
         synchronize(source)
-        return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), now, stale = false)
-    }
-
-    @Transactional
-    fun addFavourite(ticker: String): EtfDetail {
-        val normalizedTicker = Etf.normalizeTicker(ticker)
-        if (etfRepository.findByTicker(normalizedTicker) == null) throw EtfNotFoundException()
-        if (!favouriteEtfRepository.existsById(normalizedTicker)) favouriteEtfRepository.save(FavouriteEtfEntity(normalizedTicker))
-        return etfDetailService.retrieveEtf(normalizedTicker)
-    }
-
-    @Transactional
-    fun removeFavourite(ticker: String) {
-        favouriteEtfRepository.deleteById(Etf.normalizeTicker(ticker))
+        return now
     }
 
     private fun retrievePage(pageable: Pageable, search: String, favouritesOnly: Boolean): Page<Etf> {

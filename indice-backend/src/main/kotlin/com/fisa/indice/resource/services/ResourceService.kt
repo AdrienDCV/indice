@@ -41,7 +41,7 @@ class ResourceService(
     @Transactional
     fun addFavourite(id: UUID): RessourcePedagogique {
         val resource = findResource(id)
-        if (!favouriteResourceRepository.existsById(id)) favouriteResourceRepository.save(FavouriteResourceEntity(id))
+        favouriteResourceRepository.save(FavouriteResourceEntity(id))
         return resource.toModel(favourite = true)
     }
 

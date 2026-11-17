@@ -125,10 +125,9 @@ class ResourceServiceTest {
     }
 
     @Test
-    fun `should pin a resource that was not a favourite`() {
+    fun `should pin a resource`() {
         // Given
         every { resourceRepository.findById(fees.id) } returns Optional.of(fees)
-        every { favouriteResourceRepository.existsById(fees.id) } returns false
         every { favouriteResourceRepository.save(any()) } answers { firstArg() }
 
         // When
@@ -137,20 +136,6 @@ class ResourceServiceTest {
         // Then
         assertTrue(resource.favourite)
         verify(exactly = 1) { favouriteResourceRepository.save(FavouriteResourceEntity(fees.id)) }
-    }
-
-    @Test
-    fun `should not save a resource that is already a favourite`() {
-        // Given
-        every { resourceRepository.findById(fees.id) } returns Optional.of(fees)
-        every { favouriteResourceRepository.existsById(fees.id) } returns true
-
-        // When
-        val resource = resourceService.addFavourite(fees.id)
-
-        // Then
-        assertTrue(resource.favourite)
-        verify(exactly = 0) { favouriteResourceRepository.save(any()) }
     }
 
     @Test
