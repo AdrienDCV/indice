@@ -65,7 +65,7 @@ com.fisa.indice
 │   ├── dtos/responses/     # ErrorResponseDto
 │   └── exceptions/         # BusinessException
 ├── etf/
-│   ├── controllers/        # EtfController, EtfComparisonController…
+│   ├── controllers/        # EtfController (un controller par racine d'URL)
 │   ├── services/           # EtfService, EtfComparisonService…
 │   ├── repositories/       # EtfRepository, EtfPerformanceRepository…
 │   ├── models/             # Etf, EtfPerformance… (objets métier, portent la logique)
@@ -121,6 +121,7 @@ com.fisa.indice
 - Expose uniquement des DTOs : ne reçoit ni ne renvoie **jamais** une entité JPA ou un objet métier dans la requête ou la réponse HTTP.
 - Pas de `try/catch` : les erreurs sont gérées par le `@RestControllerAdvice` global.
 - Routes REST en kebab-case et au pluriel : `/etfs`, `/etfs/{ticker}`, `/etfs/compare?etfA=...&etfB=...`, `/resources`.
+- La racine de l'URL est déclarée une seule fois par `@RequestMapping("/etfs")` sur la classe, sous `@RestController` ; les méthodes ne portent que la suite du chemin (`@GetMapping`, `@GetMapping("/{ticker}")`).
 
 ### Pagination
 
