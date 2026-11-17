@@ -1,6 +1,7 @@
 package com.fisa.indice.etf.services
 
 import com.fisa.indice.etf.entities.EtfEntity
+import com.fisa.indice.etf.entities.FavouriteEtfEntity
 import com.fisa.indice.etf.exceptions.EtfNotFoundException
 import com.fisa.indice.etf.exceptions.InvalidTickerException
 import com.fisa.indice.etf.models.ClosingPrice
@@ -9,6 +10,7 @@ import com.fisa.indice.etf.models.EtfPrices
 import com.fisa.indice.etf.repositories.EtfRepository
 import com.fisa.indice.etf.repositories.FavouriteEtfRepository
 import io.mockk.every
+import io.mockk.justRun
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.jupiter.api.Test
@@ -95,5 +97,64 @@ class EtfDetailServiceTest {
 
         // Then
         assertTrue(detail.etf.favourite)
+    }
+
+    @Test
+    fun `should pin an etf that was not a favourite yet`() {
+        // Given
+        every { etfRepository.findByTicker("SPY") } returns etf
+        every { favouriteEtfRepository.save(FavouriteEtfEntity("SPY")) } returns FavouriteEtfEntity("SPY")
+        every { closingPriceService.retrievePrices(any()) } returns EtfPrices(null, null, stale = true)
+
+        // When
+        val detail = etfDetailService.addFavourite(" spy ")
+
+        // Then
+        assertTrue(detail.etf.favourite)
+        verify(exactly = 1) { favouriteEtfRepository.save(FavouriteEtfEntity("SPY")) }
+    }
+
+    @Test
+    fun `should not pin an etf twice`() {
+        // Given
+        every { etfRepository.findByTicker("SPY") } returns etf
+        every { favouriteEtfRepository.existsById("SPY") } returns true
+        every { closingPriceService.retrievePrices(any()) } returns EtfPrices(null, null, stale = true)
+
+        // When
+        val detail = etfDetailService.addFavourite("SPY")
+
+        // Then
+        assertTrue(detail.etf.favourite)
+        verify(exactly = 0) { favouriteEtfRepository.save(any()) }
+    }
+
+    @Test
+    fun `should throw EtfNotFoundException when pinning an etf outside the catalog`() {
+        every { etfRepository.findByTicker("ARKK") } returns null
+
+        assertThrows<EtfNotFoundException> { etfDetailService.addFavourite("ARKK") }
+    }
+
+    @Test
+    fun `should throw InvalidTickerException when pinning an invalid ticker`() {
+        assertThrows<InvalidTickerException> { etfDetailService.addFavourite("SP Y") }
+    }
+
+    @Test
+    fun `should unpin an etf`() {
+        // Given
+        justRun { favouriteEtfRepository.deleteById("SPY") }
+
+        // When
+        etfDetailService.removeFavourite(" spy ")
+
+        // Then
+        verify(exactly = 1) { favouriteEtfRepository.deleteById("SPY") }
+    }
+
+    @Test
+    fun `should throw InvalidTickerException when unpinning an invalid ticker`() {
+        assertThrows<InvalidTickerException> { etfDetailService.removeFavourite("SP Y") }
     }
 }

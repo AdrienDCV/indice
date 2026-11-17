@@ -45,9 +45,9 @@ class EtfController(
 
     @PutMapping("/{ticker}/favourite")
     fun addFavourite(@PathVariable ticker: String): EtfDetailResponseDto =
-        etfService.addFavourite(ticker).toDto()
+        etfDetailService.addFavourite(ticker).toDto()
 
     @DeleteMapping("/{ticker}/favourite")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    fun removeFavourite(@PathVariable ticker: String) = etfService.removeFavourite(ticker)
+    fun removeFavourite(@PathVariable ticker: String) = etfDetailService.removeFavourite(ticker)
 }
