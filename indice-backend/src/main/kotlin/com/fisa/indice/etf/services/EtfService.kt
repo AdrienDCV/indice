@@ -30,16 +30,19 @@ class EtfService(
     @Transactional
     fun retrieveEtfs(pageable: Pageable, search: String?, favouritesOnly: Boolean): RetrievedEtfCatalog {
         val now = Instant.now(clock)
-        val lastSynchronizedAt = etfRepository.findFirstByOrderByFetchedAtDesc()?.fetchedAt
+        val lastSynchronizedAt = synchronizeIfStale(now)
         val normalizedSearch = search?.trim()?.lowercase().orEmpty()
-        if (!EtfCatalog.isStale(lastSynchronizedAt, now)) {
-            return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), lastSynchronizedAt, stale = false)
-        }
+        val page = retrievePage(pageable, normalizedSearch, favouritesOnly)
+        return RetrievedEtfCatalog(page, lastSynchronizedAt, stale = EtfCatalog.isStale(lastSynchronizedAt, now))
+    }
 
-        val source = fetchSource(now)
-            ?: return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), lastSynchronizedAt, stale = true)
+    private fun synchronizeIfStale(now: Instant): Instant? {
+        val lastSynchronizedAt = etfRepository.findFirstByOrderByFetchedAtDesc()?.fetchedAt
+        if (!EtfCatalog.isStale(lastSynchronizedAt, now)) return lastSynchronizedAt
+
+        val source = fetchSource(now) ?: return lastSynchronizedAt
         synchronize(source)
-        return RetrievedEtfCatalog(retrievePage(pageable, normalizedSearch, favouritesOnly), now, stale = false)
+        return now
     }
 
     private fun retrievePage(pageable: Pageable, search: String, favouritesOnly: Boolean): Page<Etf> {
