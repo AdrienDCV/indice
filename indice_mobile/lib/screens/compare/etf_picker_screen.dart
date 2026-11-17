@@ -16,8 +16,7 @@ import '../../widgets/error/error_view.dart';
 import '../../widgets/info/info_message.dart';
 import '../../widgets/list/list_caption.dart';
 import '../../widgets/list/load_more_footer.dart';
-
-const _loadMoreDistance = 300.0;
+import '../../widgets/list/paginated_list_view.dart';
 
 enum EtfSlot {
   first('Choisir le premier ETF'),
@@ -77,40 +76,14 @@ class EtfPickerScreen extends StatelessWidget {
   }
 }
 
-class _EtfPickerList extends StatefulWidget {
+class _EtfPickerList extends StatelessWidget {
   const _EtfPickerList({required this.state, required this.excludedTicker});
 
   final EtfCatalogState state;
   final String? excludedTicker;
 
   @override
-  State<_EtfPickerList> createState() => _EtfPickerListState();
-}
-
-class _EtfPickerListState extends State<_EtfPickerList> {
-  final _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreNearTheEnd);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _loadMoreNearTheEnd() {
-    if (_scrollController.position.extentAfter < _loadMoreDistance) {
-      context.read<EtfCatalogStore>().loadMore();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     final store = context.read<EtfCatalogStore>();
     final errorKey = state.errorKey;
 
@@ -126,12 +99,12 @@ class _EtfPickerListState extends State<_EtfPickerList> {
     }
     final etfs = [
       for (final etf in state.etfs)
-        if (etf.ticker != widget.excludedTicker) etf,
+        if (etf.ticker != excludedTicker) etf,
     ];
-    return ListView(
-      controller: _scrollController,
+    return PaginatedListView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
-      children: [
+      onLoadMore: store.loadMore,
+      header: [
         if (etfs.isEmpty && state.offline)
           const InfoMessage(
             icon: Icons.cloud_off,
@@ -142,28 +115,30 @@ class _EtfPickerListState extends State<_EtfPickerList> {
             padding: const EdgeInsets.all(32),
             child: Text(_emptyMessage(state), textAlign: TextAlign.center),
           )
-        else ...[
+        else
           ListCaption(
             text: state.search.isEmpty ? 'Tous les ETF · par nom' : 'Résultats',
           ),
-          for (final etf in etfs)
-            EtfCard(
-              name: etf.name,
-              ticker: etf.ticker,
-              exchange: etf.exchange,
-              currency: etf.currency,
-              isFavourite: etf.favourite,
-              isLeveragedOrInverse: etf.leveragedOrInverse,
-              onFavouriteTap: null,
-              onTap: () => context.pop(etf.ticker),
-            ),
-        ],
-        LoadMoreFooter(
-          isLoading: state.isLoadingMore,
-          hasError: state.loadMoreErrorKey != null,
-          onRetry: store.loadMore,
-        ),
       ],
+      itemCount: etfs.length,
+      itemBuilder: (context, index) {
+        final etf = etfs[index];
+        return EtfCard(
+          name: etf.name,
+          ticker: etf.ticker,
+          exchange: etf.exchange,
+          currency: etf.currency,
+          isFavourite: etf.favourite,
+          isLeveragedOrInverse: etf.leveragedOrInverse,
+          onFavouriteTap: null,
+          onTap: () => context.pop(etf.ticker),
+        );
+      },
+      footer: LoadMoreFooter(
+        isLoading: state.isLoadingMore,
+        hasError: state.loadMoreErrorKey != null,
+        onRetry: store.loadMore,
+      ),
     );
   }
 }

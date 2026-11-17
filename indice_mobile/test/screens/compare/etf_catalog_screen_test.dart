@@ -12,6 +12,7 @@ import 'package:indice_mobile/utils/date_formatting.dart';
 import 'package:indice_mobile/widgets/banner/offline_bar.dart';
 import 'package:indice_mobile/widgets/banner/stale_data_banner.dart';
 import 'package:indice_mobile/widgets/card/etf_card.dart';
+import 'package:indice_mobile/widgets/list/paginated_list_view.dart';
 
 import '../../fakes/fake_etf_repository.dart';
 
@@ -44,7 +45,10 @@ List<EtfData> manyEtfs(int count, {int from = 0}) => [
 ];
 
 final catalogList = find
-    .descendant(of: find.byType(ListView), matching: find.byType(Scrollable))
+    .descendant(
+      of: find.byType(PaginatedListView),
+      matching: find.byType(Scrollable),
+    )
     .first;
 
 Future<void> search(WidgetTester tester, String text) async {
@@ -258,7 +262,7 @@ void main() {
     repository.onRetrieveEtfs = () async =>
         buildCatalog(etfs: manyEtfs(1, from: 50), page: 1, totalPages: 2);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -10000));
+    await tester.drag(find.byType(PaginatedListView), const Offset(0, -10000));
     await tester.pumpAndSettle();
 
     expect(repository.catalogRequests.last.page, 1);
@@ -280,7 +284,7 @@ void main() {
     await tester.pump();
     repository.onRetrieveEtfs = () async => throw apiError('error.unexpected');
 
-    await tester.drag(find.byType(ListView), const Offset(0, -10000));
+    await tester.drag(find.byType(PaginatedListView), const Offset(0, -10000));
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
@@ -309,7 +313,11 @@ void main() {
     await pumpScreen(tester, repository);
     await tester.pump();
 
-    await tester.fling(find.byType(ListView), const Offset(0, 400), 1000);
+    await tester.fling(
+      find.byType(PaginatedListView),
+      const Offset(0, 400),
+      1000,
+    );
     await tester.pumpAndSettle();
 
     expect(repository.retrieveEtfsCalls, 2);
