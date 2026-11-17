@@ -10,16 +10,20 @@ class InfoItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       spacing: 4,
       children: [
-        Icon(icon, size: 18, color: const Color(0xFF336C4C)),
+        Icon(icon, size: 18, color: theme.colorScheme.primary),
         Flexible(
           child: Text(
             text,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, color: Colors.black87),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface,
+            ),
           ),
         ),
       ],

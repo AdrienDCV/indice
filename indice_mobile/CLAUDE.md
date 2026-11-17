@@ -13,8 +13,6 @@ Contraintes non négociables :
 
 Vocabulaire financier et métier : `../indice-backend/docs/glossaire.md`. Format exact des réponses de l'API : les DTOs de `../indice-backend/src/main/kotlin/com/fisa/indice/<domaine>/dtos/responses/`.
 
-> **Migration en cours** : le code actuel (`lib/pages/`, `lib/data/`, les fichiers à la racine de `lib/models/`, couleurs en dur) ne suit pas encore ce document. Il sera aligné par un refactoring dédié ; tout nouveau code suit d'emblée les règles ci-dessous.
-
 ## Stack
 
 | Besoin | Paquet |
@@ -212,6 +210,7 @@ lib/
 ## Thème
 
 - Couleurs, tailles et styles de texte définis une seule fois dans le `ThemeData` (`lib/theme/`) et lus avec `Theme.of(context)`. Pas de `Color(0x...)` ni de `TextStyle` codés en dur dans un widget.
+- Un widget peut ajuster un style du thème (`textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)`). Seules exceptions aux couleurs du thème : `Colors.transparent` (absence de couleur) et le fond noir du lecteur vidéo, avec son texte blanc.
 
 ## Navigation
 

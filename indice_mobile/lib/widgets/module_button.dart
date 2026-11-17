@@ -45,10 +45,13 @@ class _ModuleButtonState extends State<ModuleButton>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final contentColor = theme.colorScheme.onPrimary;
+
     return ScaleTransition(
       scale: _scale,
       child: Material(
-        color: widget.color ?? Theme.of(context).colorScheme.primary,
+        color: widget.color ?? theme.colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -66,25 +69,22 @@ class _ModuleButtonState extends State<ModuleButton>
                     children: [
                       Text(
                         widget.title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w600,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: contentColor,
                         ),
                       ),
                       const SizedBox(height: 5),
                       Text(
                         widget.subtitle,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: contentColor,
                         ),
                       ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 45),
-                const Icon(Icons.arrow_forward, color: Colors.white, size: 45),
+                Icon(Icons.arrow_forward, color: contentColor, size: 45),
               ],
             ),
           ),

@@ -20,11 +20,12 @@ class ResourceThumbnail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final message = this.message;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(12),
       child: ColoredBox(
-        color: Theme.of(context).colorScheme.secondary,
+        color: colorScheme.secondary,
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -37,7 +38,7 @@ class ResourceThumbnail extends StatelessWidget {
                       (type == ResourceType.video
                           ? Icons.play_circle_outline
                           : Icons.article_outlined),
-                  color: Colors.white,
+                  color: colorScheme.onSecondary,
                   size: iconSize,
                 ),
                 if (message != null)
@@ -45,7 +46,7 @@ class ResourceThumbnail extends StatelessWidget {
                     message,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyLarge
-                        ?.copyWith(color: Colors.white),
+                        ?.copyWith(color: colorScheme.onSecondary),
                   ),
               ],
             ),

@@ -26,6 +26,9 @@ class ResourceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final secondaryTextColor = theme.colorScheme.onSurfaceVariant;
+
     // Couleur, bordure et angles viennent du thème (lib/theme/app_theme.dart).
     return Card(
       child: InkWell(
@@ -46,8 +49,7 @@ class ResourceCard extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        fontSize: 16,
+                      style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -56,24 +58,22 @@ class ResourceCard extends StatelessWidget {
                       description,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.black54,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: secondaryTextColor,
                       ),
                     ),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.schedule,
                           size: 16,
-                          color: Colors.black54,
+                          color: secondaryTextColor,
                         ),
                         const SizedBox(width: 4),
                         Text(
                           duration,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: Colors.black54,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: secondaryTextColor,
                           ),
                         ),
                         const Spacer(),
@@ -87,7 +87,7 @@ class ResourceCard extends StatelessWidget {
                           ),
                           icon: FavouriteIcon(
                             isFavourite: isFavourite,
-                            color: Theme.of(context).colorScheme.primary,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                       ],

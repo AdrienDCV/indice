@@ -169,7 +169,7 @@ class _DetailView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             resource.content,
-            style: const TextStyle(fontSize: 16, height: 1.5),
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.5),
           ),
         ],
       ),
