@@ -25,11 +25,13 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   Timer? _reconnectTimer;
   int _request = 0;
   final Set<String> _pendingFavourites = {};
-  bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
 
   Future<void> refresh() => _loadFirstPage(showLoading: false);
+
+  Future<void> syncFavouriteDownloads() =>
+      _etfRepository.syncFavouriteDownloads();
 
   void searchChanged(String text) {
     _searchTimer?.cancel();
@@ -55,7 +57,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
       final catalog = (await _retrievePage(state.nextPage)).data;
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           etfs: [...state.etfs, ...catalog.etfs.content],
@@ -65,7 +67,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
         ),
       );
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -87,8 +89,10 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
       } else {
         await _etfRepository.removeFavourite(ticker);
       }
+      if (isClosed) return;
       favouriteChanged(ticker, favourite);
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
@@ -102,11 +106,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   void favouriteChanged(String ticker, bool favourite) {
     final index = state.etfs.indexWhere((etf) => etf.ticker == ticker);
     if (index == -1) return;
-    emit(
-      state.copyWith(
-        etfs: _withFavourite(state.etfs, state.etfs[index], favourite, index),
-      ),
-    );
+    emit(state.copyWith(etfs: _withFavourite(index, favourite)));
   }
 
   @override
@@ -133,7 +133,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     );
     try {
       final result = await _retrievePage(0, favouritesOnly: favourites);
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       final catalog = result.data;
       emit(
         state.copyWith(
@@ -147,18 +147,14 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
           isLoading: false,
         ),
       );
-      if (result.offline && !isClosed) {
+      if (result.offline) {
         _reconnectTimer = Timer(
           _reconnectDelay,
           () => _loadFirstPage(showLoading: false, favouritesOnly: false),
         );
       }
-      if (!result.offline && !_downloadsSynced) {
-        _downloadsSynced = true;
-        unawaited(_etfRepository.syncFavouriteDownloads());
-      }
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           etfs: const [],
@@ -185,20 +181,10 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   bool _hasMore(EtfCatalogData catalog) =>
       catalog.etfs.page + 1 < catalog.etfs.totalPages;
 
-  List<EtfData> _withFavourite(
-    List<EtfData> etfs,
-    EtfData etf,
-    bool favourite,
-    int index,
-  ) {
-    final others = [
-      for (final other in etfs)
-        if (other.ticker != etf.ticker) other,
-    ];
-    if (state.favouritesOnly && !favourite) return others;
-    final position = etfs.any((other) => other.ticker == etf.ticker)
-        ? etfs.indexWhere((other) => other.ticker == etf.ticker)
-        : index.clamp(0, others.length);
-    return [...others]..insert(position, etf.copyWith(favourite: favourite));
+  List<EtfData> _withFavourite(int index, bool favourite) {
+    final etfs = [...state.etfs];
+    if (state.favouritesOnly && !favourite) return etfs..removeAt(index);
+    etfs[index] = etfs[index].copyWith(favourite: favourite);
+    return etfs;
   }
 }

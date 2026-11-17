@@ -35,6 +35,7 @@ class ResourceDetailStore extends Cubit<ResourceDetailState> {
     emit(state.copyWith(isLoading: showLoading, errorKey: null));
     try {
       final result = await _resourceRepository.retrieveResource(_id);
+      if (isClosed) return;
       emit(
         state.copyWith(
           resource: result.data,
@@ -42,10 +43,11 @@ class ResourceDetailStore extends Cubit<ResourceDetailState> {
           isLoading: false,
         ),
       );
-      if (result.cachedAt != null && !isClosed) {
+      if (result.cachedAt != null) {
         _reconnectTimer = Timer(_reconnectDelay, refresh);
       }
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           isLoading: false,
@@ -68,13 +70,16 @@ class ResourceDetailStore extends Cubit<ResourceDetailState> {
       } else {
         await _resourceRepository.removeFavourite(resource.id);
       }
-      emit(
-        state.copyWith(
-          resource: state.resource?.copyWith(favourite: favourite),
-        ),
-      );
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            resource: state.resource?.copyWith(favourite: favourite),
+          ),
+        );
+      }
       return favourite;
     } catch (error) {
+      if (isClosed) return null;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,

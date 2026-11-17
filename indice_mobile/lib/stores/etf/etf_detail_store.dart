@@ -35,6 +35,7 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
     emit(state.copyWith(isLoading: showLoading, errorKey: null));
     try {
       final result = await _etfRepository.retrieveEtf(_ticker);
+      if (isClosed) return;
       emit(
         state.copyWith(
           etf: result.data,
@@ -42,10 +43,11 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
           isLoading: false,
         ),
       );
-      if (result.cachedAt != null && !isClosed) {
+      if (result.cachedAt != null) {
         _reconnectTimer = Timer(_reconnectDelay, refresh);
       }
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           isLoading: false,
@@ -67,9 +69,12 @@ class EtfDetailStore extends Cubit<EtfDetailState> {
       } else {
         await _etfRepository.removeFavourite(etf.ticker);
       }
-      emit(state.copyWith(etf: state.etf?.copyWith(favourite: favourite)));
+      if (!isClosed) {
+        emit(state.copyWith(etf: state.etf?.copyWith(favourite: favourite)));
+      }
       return favourite;
     } catch (error) {
+      if (isClosed) return null;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,

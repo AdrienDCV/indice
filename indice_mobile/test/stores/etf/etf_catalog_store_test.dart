@@ -356,28 +356,6 @@ void main() {
     expect(store.state.favouritesOnly, isTrue);
   });
 
-  test('syncs the favourite downloads once, after loading online', () async {
-    final repository = FakeEtfRepository(() async => buildCatalog());
-    final store = EtfCatalogStore(repository);
-
-    await store.init();
-    await store.refresh();
-
-    expect(repository.syncFavouriteDownloadsCalls, 1);
-  });
-
-  test('does not sync the favourite downloads offline', () async {
-    final repository = FakeEtfRepository(
-      () async => buildCatalog(),
-      catalogOffline: true,
-    );
-    final store = EtfCatalogStore(repository);
-
-    await store.init();
-
-    expect(repository.syncFavouriteDownloadsCalls, 0);
-  });
-
   test('loads the whole catalog once the api answers again', () async {
     final repository = FakeEtfRepository(
       () async => buildCatalog(),
@@ -435,5 +413,39 @@ void main() {
     await waitForReconnect();
 
     expect(repository.retrieveEtfsCalls, 1);
+  });
+
+  test('ignores the page received after being closed', () async {
+    final response = Completer<void>();
+    final store = EtfCatalogStore(
+      FakeEtfRepository(() async {
+        await response.future;
+        return buildCatalog();
+      }),
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
+
+  test('syncs the favourite downloads when asked', () async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    final store = EtfCatalogStore(repository);
+
+    await store.syncFavouriteDownloads();
+
+    expect(repository.syncFavouriteDownloadsCalls, 1);
+  });
+
+  test('does not sync the favourite downloads while loading', () async {
+    final repository = FakeEtfRepository(() async => buildCatalog());
+    final store = EtfCatalogStore(repository);
+
+    await store.init();
+
+    expect(repository.syncFavouriteDownloadsCalls, 0);
   });
 }

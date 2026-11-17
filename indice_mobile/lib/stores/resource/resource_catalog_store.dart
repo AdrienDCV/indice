@@ -26,11 +26,13 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   Timer? _reconnectTimer;
   int _request = 0;
   final Set<String> _pendingFavourites = {};
-  bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
 
   Future<void> refresh() => _loadFirstPage(showLoading: false);
+
+  Future<void> syncFavouriteDownloads() =>
+      _resourceRepository.syncFavouriteDownloads();
 
   void searchChanged(String text) {
     _searchTimer?.cancel();
@@ -67,7 +69,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
       final page = (await _retrievePage(state.nextPage)).data;
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           resources: [...state.resources, ...page.content],
@@ -77,7 +79,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
         ),
       );
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -99,8 +101,10 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
       } else {
         await _resourceRepository.removeFavourite(id);
       }
+      if (isClosed) return;
       favouriteChanged(id, favourite);
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
@@ -114,11 +118,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   void favouriteChanged(String id, bool favourite) {
     final index = state.resources.indexWhere((resource) => resource.id == id);
     if (index == -1) return;
-    emit(
-      state.copyWith(
-        resources: _withFavourite(state.resources[index], favourite, index),
-      ),
-    );
+    emit(state.copyWith(resources: _withFavourite(index, favourite)));
   }
 
   @override
@@ -145,7 +145,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     );
     try {
       final result = await _retrievePage(0, favouritesOnly: favourites);
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       final page = result.data;
       emit(
         state.copyWith(
@@ -157,18 +157,14 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
           isLoading: false,
         ),
       );
-      if (result.offline && !isClosed) {
+      if (result.offline) {
         _reconnectTimer = Timer(
           _reconnectDelay,
-          () => _loadFirstPage(favouritesOnly: false),
+          () => _loadFirstPage(showLoading: false, favouritesOnly: false),
         );
       }
-      if (!result.offline && !_downloadsSynced) {
-        _downloadsSynced = true;
-        unawaited(_resourceRepository.syncFavouriteDownloads());
-      }
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           resources: const [],
@@ -196,21 +192,14 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   bool _hasMore(PaginatedData<ResourceData> page) =>
       page.page + 1 < page.totalPages;
 
-  /// Remet [resource] à sa place avec son nouvel état de favori, ou la retire
-  /// de la liste si seuls les favoris sont affichés et qu'elle n'en est plus un.
-  List<ResourceData> _withFavourite(
-    ResourceData resource,
-    bool favourite,
-    int index,
-  ) {
-    final resources = state.resources;
-    final others = [
-      for (final other in resources)
-        if (other.id != resource.id) other,
-    ];
-    if (state.favouritesOnly && !favourite) return others;
-    final current = resources.indexWhere((other) => other.id == resource.id);
-    final position = current == -1 ? index.clamp(0, others.length) : current;
-    return others..insert(position, resource.copyWith(favourite: favourite));
+  /// Met à jour l'état de favori de la ressource n°[index], ou la retire de la
+  /// liste si seuls les favoris sont affichés et qu'elle n'en est plus un.
+  List<ResourceData> _withFavourite(int index, bool favourite) {
+    final resources = [...state.resources];
+    if (state.favouritesOnly && !favourite) {
+      return resources..removeAt(index);
+    }
+    resources[index] = resources[index].copyWith(favourite: favourite);
+    return resources;
   }
 }

@@ -18,8 +18,7 @@ import '../../widgets/error/error_view.dart';
 import '../../widgets/filter_toggle.dart';
 import '../../widgets/info/info_message.dart';
 import '../../widgets/list/load_more_footer.dart';
-
-const _loadMoreDistance = 300.0;
+import '../../widgets/list/paginated_list_view.dart';
 
 class LearnScreen extends StatelessWidget {
   const LearnScreen({super.key});
@@ -57,50 +56,25 @@ class LearnScreen extends StatelessWidget {
   }
 }
 
-class _ResourcesView extends StatefulWidget {
+class _ResourcesView extends StatelessWidget {
   const _ResourcesView({required this.state});
 
   final ResourceCatalogState state;
 
   @override
-  State<_ResourcesView> createState() => _ResourcesViewState();
-}
-
-class _ResourcesViewState extends State<_ResourcesView> {
-  final _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreNearTheEnd);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _loadMoreNearTheEnd() {
-    if (_scrollController.position.extentAfter < _loadMoreDistance) {
-      context.read<ResourceCatalogStore>().loadMore();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     final store = context.read<ResourceCatalogStore>();
     final errorKey = state.errorKey;
     final offline = state.offline;
+    final showsResources = errorKey == null && !state.isLoading;
 
     return RefreshIndicator(
       onRefresh: store.refresh,
-      child: ListView(
-        controller: _scrollController,
+      child: PaginatedListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: pagePadding(context),
-        children: [
+        onLoadMore: store.loadMore,
+        header: [
           AppSearchBar(
             hintText: 'Rechercher une vidéo ou un article',
             onChanged: store.searchChanged,
@@ -141,36 +115,39 @@ class _ResourcesViewState extends State<_ResourcesView> {
               padding: EdgeInsets.only(top: 32),
               child: Center(child: CircularProgressIndicator()),
             )
-          else ...[
-            if (state.resources.isEmpty && offline)
-              const InfoMessage(
-                icon: Icons.cloud_off,
-                message: LearnTexts.offlineEmptyMessage,
-              )
-            else if (state.resources.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 32),
-                child: Text(_emptyMessage(state), textAlign: TextAlign.center),
-              ),
-            for (final resource in state.resources)
-              ResourceCard(
-                title: resource.title,
-                description: resource.description,
-                duration: resource.durationMinutes.toFrenchDuration(),
-                type: resource.type,
-                isFavourite: resource.favourite,
-                onTap: () => context.push('/resource/${resource.id}'),
-                onFavouriteTap: offline
-                    ? null
-                    : () => store.toggleFavourite(resource.id),
-              ),
-            LoadMoreFooter(
-              isLoading: state.isLoadingMore,
-              hasError: state.loadMoreErrorKey != null,
-              onRetry: store.loadMore,
+          else if (state.resources.isEmpty && offline)
+            const InfoMessage(
+              icon: Icons.cloud_off,
+              message: LearnTexts.offlineEmptyMessage,
+            )
+          else if (state.resources.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 32),
+              child: Text(_emptyMessage(state), textAlign: TextAlign.center),
             ),
-          ],
         ],
+        itemCount: showsResources ? state.resources.length : 0,
+        itemBuilder: (context, index) {
+          final resource = state.resources[index];
+          return ResourceCard(
+            title: resource.title,
+            description: resource.description,
+            duration: resource.durationMinutes.toFrenchDuration(),
+            type: resource.type,
+            isFavourite: resource.favourite,
+            onTap: () => context.push('/resource/${resource.id}'),
+            onFavouriteTap: offline
+                ? null
+                : () => store.toggleFavourite(resource.id),
+          );
+        },
+        footer: showsResources
+            ? LoadMoreFooter(
+                isLoading: state.isLoadingMore,
+                hasError: state.loadMoreErrorKey != null,
+                onRetry: store.loadMore,
+              )
+            : null,
       ),
     );
   }

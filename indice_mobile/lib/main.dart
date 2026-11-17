@@ -37,11 +37,14 @@ class IndiceApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (_) => EtfCatalogStore(getIt<EtfRepository>())..init(),
+          create: (_) => EtfCatalogStore(getIt<EtfRepository>())
+            ..init()
+            ..syncFavouriteDownloads(),
         ),
         BlocProvider(
-          create: (_) =>
-              ResourceCatalogStore(getIt<ResourceRepository>())..init(),
+          create: (_) => ResourceCatalogStore(getIt<ResourceRepository>())
+            ..init()
+            ..syncFavouriteDownloads(),
         ),
       ],
       child: MaterialApp.router(

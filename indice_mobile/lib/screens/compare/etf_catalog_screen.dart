@@ -17,8 +17,7 @@ import '../../widgets/field/search_with_filter.dart';
 import '../../widgets/info/info_message.dart';
 import '../../widgets/info/info_note.dart';
 import '../../widgets/list/load_more_footer.dart';
-
-const _loadMoreDistance = 300.0;
+import '../../widgets/list/paginated_list_view.dart';
 
 class EtfCatalogScreen extends StatelessWidget {
   const EtfCatalogScreen({super.key});
@@ -56,50 +55,25 @@ class EtfCatalogScreen extends StatelessWidget {
   }
 }
 
-class _CatalogView extends StatefulWidget {
+class _CatalogView extends StatelessWidget {
   const _CatalogView({required this.state});
 
   final EtfCatalogState state;
 
   @override
-  State<_CatalogView> createState() => _CatalogViewState();
-}
-
-class _CatalogViewState extends State<_CatalogView> {
-  final _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_loadMoreNearTheEnd);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _loadMoreNearTheEnd() {
-    if (_scrollController.position.extentAfter < _loadMoreDistance) {
-      context.read<EtfCatalogStore>().loadMore();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     final store = context.read<EtfCatalogStore>();
     final errorKey = state.errorKey;
     final offline = state.offline;
+    final showsEtfs = errorKey == null && !state.isLoading;
 
     return RefreshIndicator(
       onRefresh: store.refresh,
-      child: ListView(
-        controller: _scrollController,
+      child: PaginatedListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: pagePadding(context),
-        children: [
+        onLoadMore: store.loadMore,
+        header: [
           SearchWithFilter(
             hintText: 'Rechercher un ETF par nom ou ticker',
             onSearchChanged: store.searchChanged,
@@ -146,26 +120,31 @@ class _CatalogViewState extends State<_CatalogView> {
                 padding: const EdgeInsets.only(top: 32),
                 child: Text(_emptyMessage(state), textAlign: TextAlign.center),
               ),
-            for (final etf in state.etfs)
-              EtfCard(
-                name: etf.name,
-                ticker: etf.ticker,
-                exchange: etf.exchange,
-                currency: etf.currency,
-                isFavourite: etf.favourite,
-                isLeveragedOrInverse: etf.leveragedOrInverse,
-                onFavouriteTap: !offline
-                    ? () => store.toggleFavourite(etf.ticker)
-                    : null,
-                onTap: () => context.push('/compare/etf/${etf.ticker}'),
-              ),
-            LoadMoreFooter(
-              isLoading: state.isLoadingMore,
-              hasError: state.loadMoreErrorKey != null,
-              onRetry: store.loadMore,
-            ),
           ],
         ],
+        itemCount: showsEtfs ? state.etfs.length : 0,
+        itemBuilder: (context, index) {
+          final etf = state.etfs[index];
+          return EtfCard(
+            name: etf.name,
+            ticker: etf.ticker,
+            exchange: etf.exchange,
+            currency: etf.currency,
+            isFavourite: etf.favourite,
+            isLeveragedOrInverse: etf.leveragedOrInverse,
+            onFavouriteTap: !offline
+                ? () => store.toggleFavourite(etf.ticker)
+                : null,
+            onTap: () => context.push('/compare/etf/${etf.ticker}'),
+          );
+        },
+        footer: showsEtfs
+            ? LoadMoreFooter(
+                isLoading: state.isLoadingMore,
+                hasError: state.loadMoreErrorKey != null,
+                onRetry: store.loadMore,
+              )
+            : null,
       ),
     );
   }

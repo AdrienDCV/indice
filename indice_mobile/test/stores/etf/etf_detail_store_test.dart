@@ -51,6 +51,23 @@ void main() {
     expect(repository.retrievedTickers, ['SPY']);
   });
 
+  test('ignores the response received after being closed', () async {
+    final response = Completer<void>();
+    final store = EtfDetailStore(
+      repositoryWith((_) async {
+        await response.future;
+        return buildEtfDetail();
+      }),
+      'SPY',
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
+
   test('keeps the error key sent by the api when loading fails', () async {
     final store = EtfDetailStore(
       repositoryWith((_) async => throw apiError('error.etfs.etf-not-found')),
@@ -227,5 +244,19 @@ void main() {
     await waitForReconnect();
 
     expect(repository.retrievedTickers, ['SPY']);
+  });
+
+  test('confirms the new favourite even when closed in the meantime', () async {
+    final confirmation = Completer<void>();
+    final repository = repositoryWith((_) async => buildEtfDetail());
+    repository.onAddFavourite = (_) => confirmation.future;
+    final store = EtfDetailStore(repository, 'SPY');
+    await store.init();
+    final toggling = store.toggleFavourite();
+    await store.close();
+
+    confirmation.complete();
+
+    expect(await toggling, isTrue);
   });
 }

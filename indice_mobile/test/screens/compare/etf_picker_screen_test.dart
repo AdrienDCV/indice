@@ -10,6 +10,7 @@ import 'package:indice_mobile/widgets/app_search_bar.dart';
 import 'package:indice_mobile/widgets/badge/leverage_badge.dart';
 import 'package:indice_mobile/widgets/banner/offline_bar.dart';
 import 'package:indice_mobile/widgets/card/etf_card.dart';
+import 'package:indice_mobile/widgets/list/paginated_list_view.dart';
 
 import '../../fakes/compare_router.dart';
 import '../../fakes/fake_etf_repository.dart';
@@ -110,7 +111,7 @@ void main() {
     repository.onRetrieveEtfs = () async =>
         buildCatalog(etfs: [qqq], page: 1, totalPages: 2);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -10000));
+    await tester.drag(find.byType(PaginatedListView), const Offset(0, -10000));
     await tester.pumpAndSettle();
 
     expect(repository.catalogRequests.map((request) => request.page), [0, 1]);

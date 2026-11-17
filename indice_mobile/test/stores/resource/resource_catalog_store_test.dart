@@ -347,6 +347,23 @@ void main() {
     await store.close();
   });
 
+  test('keeps the resources displayed while trying to reconnect', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+    final states = <ResourceCatalogState>[];
+    final subscription = store.stream.listen(states.add);
+
+    await waitForReconnect();
+
+    expect(states.where((state) => state.isLoading), isEmpty);
+    await subscription.cancel();
+    await store.close();
+  });
+
   test('keeps trying while the api does not answer', () async {
     final repository = FakeResourceRepository(catalogOffline: true);
     final store = ResourceCatalogStore(
@@ -391,23 +408,39 @@ void main() {
     expect(repository.requests, hasLength(1));
   });
 
-  test('syncs the favourite downloads once, after loading online', () async {
+  test('ignores the page received after being closed', () async {
+    final response = Completer<void>();
+    final store = ResourceCatalogStore(
+      FakeResourceRepository(
+        onRetrieveResources: () async {
+          await response.future;
+          return buildResourcePage();
+        },
+      ),
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
+
+  test('syncs the favourite downloads when asked', () async {
     final repository = FakeResourceRepository();
     final store = ResourceCatalogStore(repository);
 
-    await store.init();
-    await store.favouritesOnlyChanged(true);
+    await store.syncFavouriteDownloads();
 
     expect(repository.syncFavouriteDownloadsCalls, 1);
   });
 
-  test('does not sync the favourite downloads offline', () async {
-    final repository = FakeResourceRepository(catalogOffline: true);
+  test('does not sync the favourite downloads while loading', () async {
+    final repository = FakeResourceRepository();
     final store = ResourceCatalogStore(repository);
 
     await store.init();
 
     expect(repository.syncFavouriteDownloadsCalls, 0);
-    await store.close();
   });
 }

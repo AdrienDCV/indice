@@ -203,4 +203,23 @@ void main() {
 
     expect(repository.retrievedIds, [feesArticle.id]);
   });
+
+  test('ignores the response received after being closed', () async {
+    final response = Completer<void>();
+    final store = ResourceDetailStore(
+      FakeResourceRepository(
+        onRetrieveResource: (_) async {
+          await response.future;
+          return buildResourceDetail();
+        },
+      ),
+      feesArticle.id,
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
 }

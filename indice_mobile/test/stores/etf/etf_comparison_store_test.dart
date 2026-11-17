@@ -135,4 +135,21 @@ void main() {
     expect(store.state.comparison, comparison);
     expect(store.state.errorKey, isNull);
   });
+
+  test('ignores the comparison received after being closed', () async {
+    final response = Completer<void>();
+    final store = EtfComparisonStore(
+      repositoryWith((_, _) async {
+        await response.future;
+        return buildComparison();
+      }),
+      etfA: 'SPY',
+    );
+    final comparing = store.selectEtfB('QQQ');
+    await store.close();
+
+    response.complete();
+
+    await expectLater(comparing, completes);
+  });
 }
