@@ -162,7 +162,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
       if (result.offline) {
         _reconnectTimer = Timer(
           _reconnectDelay,
-          () => _loadFirstPage(favouritesOnly: false),
+          () => _loadFirstPage(showLoading: false, favouritesOnly: false),
         );
       }
       if (!result.offline && !_downloadsSynced) {

@@ -347,6 +347,23 @@ void main() {
     await store.close();
   });
 
+  test('keeps the resources displayed while trying to reconnect', () async {
+    final repository = FakeResourceRepository(catalogOffline: true);
+    final store = ResourceCatalogStore(
+      repository,
+      reconnectDelay: reconnectDelay,
+    );
+    await store.init();
+    final states = <ResourceCatalogState>[];
+    final subscription = store.stream.listen(states.add);
+
+    await waitForReconnect();
+
+    expect(states.where((state) => state.isLoading), isEmpty);
+    await subscription.cancel();
+    await store.close();
+  });
+
   test('keeps trying while the api does not answer', () async {
     final repository = FakeResourceRepository(catalogOffline: true);
     final store = ResourceCatalogStore(
