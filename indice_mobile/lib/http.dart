@@ -15,69 +15,41 @@ void setupHttpClient() {
   http.interceptors.add(LoggingInterceptor());
 }
 
+void _debugLog(String message) => debugPrint(message);
+
 class LoggingInterceptor extends Interceptor {
-  LoggingInterceptor();
+  LoggingInterceptor({this.log = _debugLog});
+
+  final void Function(String message) log;
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    logPrint('*** API Request - Start ***');
-
-    printKV('URI', options.uri);
-    printKV('METHOD', options.method);
-    logPrint('HEADERS:');
-    options.headers.forEach((key, v) => printKV(' - $key', v));
-    logPrint('BODY:');
-    printAll(options.data ?? '');
-
-    logPrint('*** API Request - End ***');
-
+    log('→ ${_describe(options)}');
     handler.next(options);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    logPrint('*** Api Error - Start ***:');
-
-    logPrint('URI: ${err.requestOptions.uri}');
-    if (err.response != null) {
-      logPrint('STATUS CODE: ${err.response?.statusCode?.toString()}');
-    }
-    logPrint('$err');
-    if (err.response != null) {
-      printKV('REDIRECT', err.response?.realUri ?? '');
-      logPrint('BODY:');
-      printAll(err.response?.data.toString());
-    }
-
-    logPrint('*** Api Error - End ***:');
-    handler.next(err);
-  }
-
-  @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    logPrint('*** Api Response - Start ***');
-
-    printKV('URI', response.requestOptions.uri);
-    printKV('STATUS CODE', response.statusCode ?? '');
-    printKV('REDIRECT', response.isRedirect);
-    logPrint('BODY:');
-    printAll(response.data ?? '');
-
-    logPrint('*** Api Response - End ***');
-
+    log('← ${response.statusCode} ${_describe(response.requestOptions)}');
     handler.next(response);
   }
 
-  void printKV(String key, Object? v) {
-    logPrint('$key: $v');
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final request = _describe(err.requestOptions);
+    final statusCode = err.response?.statusCode;
+    if (statusCode == null) {
+      log('✕ $request : ${err.type.name}');
+    } else {
+      final errorKey = _apiErrorKey(err.response?.data);
+      log('✕ $statusCode $request${errorKey == null ? '' : ' : $errorKey'}');
+    }
+    handler.next(err);
   }
 
-  void printAll(Object? msg) {
-    msg.toString().split('\n').forEach(logPrint);
-  }
-
-  void logPrint(String s) {
-    debugPrint(s);
+  String _describe(RequestOptions options) {
+    final uri = options.uri;
+    return '${options.method} ${uri.path}${uri.hasQuery ? '?${uri.query}' : ''}';
   }
 }
 
