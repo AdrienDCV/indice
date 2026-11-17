@@ -15,17 +15,19 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import java.util.UUID
 
 @RestController
+@RequestMapping("/resources")
 class ResourceController(
     private val resourceService: ResourceService,
 ) {
 
-    @GetMapping("/resources")
+    @GetMapping
     fun retrieveResources(
         @RequestParam search: String?,
         @RequestParam levels: Set<ResourceLevel>?,
@@ -34,15 +36,15 @@ class ResourceController(
     ): PageResponseDto<ResourceResponseDto> =
         resourceService.retrieveResources(pageable, search, levels.orEmpty(), favourites).toDto { it.toDto() }
 
-    @GetMapping("/resources/{id}")
+    @GetMapping("/{id}")
     fun retrieveResource(@PathVariable id: UUID): ResourceDetailResponseDto =
         resourceService.retrieveResource(id).toDetailDto()
 
-    @PutMapping("/resources/{id}/favourite")
+    @PutMapping("/{id}/favourite")
     fun addFavourite(@PathVariable id: UUID): ResourceDetailResponseDto =
         resourceService.addFavourite(id).toDetailDto()
 
-    @DeleteMapping("/resources/{id}/favourite")
+    @DeleteMapping("/{id}/favourite")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun removeFavourite(@PathVariable id: UUID) = resourceService.removeFavourite(id)
 }
