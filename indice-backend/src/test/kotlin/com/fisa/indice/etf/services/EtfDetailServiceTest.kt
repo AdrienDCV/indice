@@ -100,7 +100,7 @@ class EtfDetailServiceTest {
     }
 
     @Test
-    fun `should pin an etf that was not a favourite yet`() {
+    fun `should pin an etf`() {
         // Given
         every { etfRepository.findByTicker("SPY") } returns etf
         every { favouriteEtfRepository.save(FavouriteEtfEntity("SPY")) } returns FavouriteEtfEntity("SPY")
@@ -112,21 +112,6 @@ class EtfDetailServiceTest {
         // Then
         assertTrue(detail.etf.favourite)
         verify(exactly = 1) { favouriteEtfRepository.save(FavouriteEtfEntity("SPY")) }
-    }
-
-    @Test
-    fun `should not pin an etf twice`() {
-        // Given
-        every { etfRepository.findByTicker("SPY") } returns etf
-        every { favouriteEtfRepository.existsById("SPY") } returns true
-        every { closingPriceService.retrievePrices(any()) } returns EtfPrices(null, null, stale = true)
-
-        // When
-        val detail = etfDetailService.addFavourite("SPY")
-
-        // Then
-        assertTrue(detail.etf.favourite)
-        verify(exactly = 0) { favouriteEtfRepository.save(any()) }
     }
 
     @Test

@@ -30,7 +30,7 @@ class EtfDetailService(
     fun addFavourite(ticker: String): EtfDetail {
         val normalizedTicker = Etf.normalizeTicker(ticker)
         val etf = findEtf(normalizedTicker)
-        if (!favouriteEtfRepository.existsById(normalizedTicker)) favouriteEtfRepository.save(FavouriteEtfEntity(normalizedTicker))
+        favouriteEtfRepository.save(FavouriteEtfEntity(normalizedTicker))
         return detailOf(etf.toModel(favourite = true))
     }
 
