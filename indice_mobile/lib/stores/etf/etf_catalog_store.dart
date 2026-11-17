@@ -55,7 +55,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
       final catalog = (await _retrievePage(state.nextPage)).data;
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           etfs: [...state.etfs, ...catalog.etfs.content],
@@ -65,7 +65,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
         ),
       );
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -87,8 +87,10 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
       } else {
         await _etfRepository.removeFavourite(ticker);
       }
+      if (isClosed) return;
       favouriteChanged(ticker, favourite);
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
@@ -133,7 +135,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
     );
     try {
       final result = await _retrievePage(0, favouritesOnly: favourites);
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       final catalog = result.data;
       emit(
         state.copyWith(
@@ -147,7 +149,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
           isLoading: false,
         ),
       );
-      if (result.offline && !isClosed) {
+      if (result.offline) {
         _reconnectTimer = Timer(
           _reconnectDelay,
           () => _loadFirstPage(showLoading: false, favouritesOnly: false),
@@ -158,7 +160,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
         unawaited(_etfRepository.syncFavouriteDownloads());
       }
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           etfs: const [],

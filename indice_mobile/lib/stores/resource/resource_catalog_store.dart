@@ -67,7 +67,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     emit(state.copyWith(isLoadingMore: true, loadMoreErrorKey: null));
     try {
       final page = (await _retrievePage(state.nextPage)).data;
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           resources: [...state.resources, ...page.content],
@@ -77,7 +77,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
         ),
       );
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -99,8 +99,10 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
       } else {
         await _resourceRepository.removeFavourite(id);
       }
+      if (isClosed) return;
       favouriteChanged(id, favourite);
     } catch (error) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           favouriteErrorKey: extractErrorMessage(error) ?? unexpectedErrorKey,
@@ -145,7 +147,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
     );
     try {
       final result = await _retrievePage(0, favouritesOnly: favourites);
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       final page = result.data;
       emit(
         state.copyWith(
@@ -157,7 +159,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
           isLoading: false,
         ),
       );
-      if (result.offline && !isClosed) {
+      if (result.offline) {
         _reconnectTimer = Timer(
           _reconnectDelay,
           () => _loadFirstPage(favouritesOnly: false),
@@ -168,7 +170,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
         unawaited(_resourceRepository.syncFavouriteDownloads());
       }
     } catch (error) {
-      if (request != _request) return;
+      if (isClosed || request != _request) return;
       emit(
         state.copyWith(
           resources: const [],

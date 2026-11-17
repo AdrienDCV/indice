@@ -436,4 +436,20 @@ void main() {
 
     expect(repository.retrieveEtfsCalls, 1);
   });
+
+  test('ignores the page received after being closed', () async {
+    final response = Completer<void>();
+    final store = EtfCatalogStore(
+      FakeEtfRepository(() async {
+        await response.future;
+        return buildCatalog();
+      }),
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
 }

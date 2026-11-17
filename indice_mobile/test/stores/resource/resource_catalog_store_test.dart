@@ -410,4 +410,22 @@ void main() {
     expect(repository.syncFavouriteDownloadsCalls, 0);
     await store.close();
   });
+
+  test('ignores the page received after being closed', () async {
+    final response = Completer<void>();
+    final store = ResourceCatalogStore(
+      FakeResourceRepository(
+        onRetrieveResources: () async {
+          await response.future;
+          return buildResourcePage();
+        },
+      ),
+    );
+    final loading = store.init();
+    await store.close();
+
+    response.complete();
+
+    await expectLater(loading, completes);
+  });
 }

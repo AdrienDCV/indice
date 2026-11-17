@@ -47,10 +47,10 @@ class EtfComparisonStore extends Cubit<EtfComparisonState> {
     emit(state.copyWith(isLoading: true, errorKey: null));
     try {
       final comparison = await _etfRepository.compare(etfA, etfB);
-      if (!isCurrentPair()) return;
+      if (isClosed || !isCurrentPair()) return;
       emit(state.copyWith(comparison: comparison, isLoading: false));
     } catch (error) {
-      if (!isCurrentPair()) return;
+      if (isClosed || !isCurrentPair()) return;
       emit(
         state.copyWith(
           isLoading: false,
