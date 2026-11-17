@@ -16,7 +16,8 @@ class FilterToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final contentColor = isSelected
         ? colorScheme.onPrimary
         : colorScheme.primary;
@@ -27,7 +28,10 @@ class FilterToggle extends StatelessWidget {
       selected: isSelected,
       onSelected: onSelected,
       showCheckmark: false,
-      labelStyle: TextStyle(color: contentColor, fontWeight: FontWeight.w600),
+      labelStyle: theme.textTheme.labelLarge?.copyWith(
+        color: contentColor,
+        fontWeight: FontWeight.w600,
+      ),
       color: WidgetStatePropertyAll(
         isSelected ? colorScheme.primary : Colors.transparent,
       ),

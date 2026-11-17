@@ -2,20 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:indice_mobile/pages/home_page.dart';
+import 'package:indice_mobile/screens/home/home_screen.dart';
 import 'package:indice_mobile/stores/resource/resource_catalog_store.dart';
 import 'package:indice_mobile/widgets/card/resource_card.dart';
 
-import '../fakes/fake_resource_repository.dart';
+import '../../fakes/fake_resource_repository.dart';
 
-Future<void> pumpHomePage(
+Future<void> pumpHomeScreen(
   WidgetTester tester,
   FakeResourceRepository repository,
 ) async {
   await tester.pumpWidget(
     BlocProvider(
       create: (_) => ResourceCatalogStore(repository)..init(),
-      child: const MaterialApp(home: HomePage()),
+      child: const MaterialApp(home: HomeScreen()),
     ),
   );
   await tester.pumpAndSettle();
@@ -23,7 +23,7 @@ Future<void> pumpHomePage(
 
 void main() {
   testWidgets('shows the latest resources online', (WidgetTester tester) async {
-    await pumpHomePage(tester, FakeResourceRepository());
+    await pumpHomeScreen(tester, FakeResourceRepository());
 
     expect(find.byType(ResourceCard), findsNWidgets(2));
     expect(
@@ -35,7 +35,7 @@ void main() {
   testWidgets('points to the favourites in Apprendre offline', (
     WidgetTester tester,
   ) async {
-    await pumpHomePage(tester, FakeResourceRepository(catalogOffline: true));
+    await pumpHomeScreen(tester, FakeResourceRepository(catalogOffline: true));
 
     expect(find.byType(ResourceCard), findsNothing);
     expect(find.byIcon(Icons.cloud_off), findsOneWidget);
