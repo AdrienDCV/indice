@@ -118,11 +118,7 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   void favouriteChanged(String id, bool favourite) {
     final index = state.resources.indexWhere((resource) => resource.id == id);
     if (index == -1) return;
-    emit(
-      state.copyWith(
-        resources: _withFavourite(state.resources[index], favourite, index),
-      ),
-    );
+    emit(state.copyWith(resources: _withFavourite(index, favourite)));
   }
 
   @override
@@ -196,21 +192,14 @@ class ResourceCatalogStore extends Cubit<ResourceCatalogState> {
   bool _hasMore(PaginatedData<ResourceData> page) =>
       page.page + 1 < page.totalPages;
 
-  /// Remet [resource] à sa place avec son nouvel état de favori, ou la retire
-  /// de la liste si seuls les favoris sont affichés et qu'elle n'en est plus un.
-  List<ResourceData> _withFavourite(
-    ResourceData resource,
-    bool favourite,
-    int index,
-  ) {
-    final resources = state.resources;
-    final others = [
-      for (final other in resources)
-        if (other.id != resource.id) other,
-    ];
-    if (state.favouritesOnly && !favourite) return others;
-    final current = resources.indexWhere((other) => other.id == resource.id);
-    final position = current == -1 ? index.clamp(0, others.length) : current;
-    return others..insert(position, resource.copyWith(favourite: favourite));
+  /// Met à jour l'état de favori de la ressource n°[index], ou la retire de la
+  /// liste si seuls les favoris sont affichés et qu'elle n'en est plus un.
+  List<ResourceData> _withFavourite(int index, bool favourite) {
+    final resources = [...state.resources];
+    if (state.favouritesOnly && !favourite) {
+      return resources..removeAt(index);
+    }
+    resources[index] = resources[index].copyWith(favourite: favourite);
+    return resources;
   }
 }

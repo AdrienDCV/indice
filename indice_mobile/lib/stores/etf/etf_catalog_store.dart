@@ -106,11 +106,7 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   void favouriteChanged(String ticker, bool favourite) {
     final index = state.etfs.indexWhere((etf) => etf.ticker == ticker);
     if (index == -1) return;
-    emit(
-      state.copyWith(
-        etfs: _withFavourite(state.etfs, state.etfs[index], favourite, index),
-      ),
-    );
+    emit(state.copyWith(etfs: _withFavourite(index, favourite)));
   }
 
   @override
@@ -185,20 +181,10 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   bool _hasMore(EtfCatalogData catalog) =>
       catalog.etfs.page + 1 < catalog.etfs.totalPages;
 
-  List<EtfData> _withFavourite(
-    List<EtfData> etfs,
-    EtfData etf,
-    bool favourite,
-    int index,
-  ) {
-    final others = [
-      for (final other in etfs)
-        if (other.ticker != etf.ticker) other,
-    ];
-    if (state.favouritesOnly && !favourite) return others;
-    final position = etfs.any((other) => other.ticker == etf.ticker)
-        ? etfs.indexWhere((other) => other.ticker == etf.ticker)
-        : index.clamp(0, others.length);
-    return [...others]..insert(position, etf.copyWith(favourite: favourite));
+  List<EtfData> _withFavourite(int index, bool favourite) {
+    final etfs = [...state.etfs];
+    if (state.favouritesOnly && !favourite) return etfs..removeAt(index);
+    etfs[index] = etfs[index].copyWith(favourite: favourite);
+    return etfs;
   }
 }
