@@ -25,11 +25,13 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
   Timer? _reconnectTimer;
   int _request = 0;
   final Set<String> _pendingFavourites = {};
-  bool _downloadsSynced = false;
 
   Future<void> init() => _loadFirstPage();
 
   Future<void> refresh() => _loadFirstPage(showLoading: false);
+
+  Future<void> syncFavouriteDownloads() =>
+      _etfRepository.syncFavouriteDownloads();
 
   void searchChanged(String text) {
     _searchTimer?.cancel();
@@ -154,10 +156,6 @@ class EtfCatalogStore extends Cubit<EtfCatalogState> {
           _reconnectDelay,
           () => _loadFirstPage(showLoading: false, favouritesOnly: false),
         );
-      }
-      if (!result.offline && !_downloadsSynced) {
-        _downloadsSynced = true;
-        unawaited(_etfRepository.syncFavouriteDownloads());
       }
     } catch (error) {
       if (isClosed || request != _request) return;

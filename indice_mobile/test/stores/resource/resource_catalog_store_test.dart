@@ -408,26 +408,6 @@ void main() {
     expect(repository.requests, hasLength(1));
   });
 
-  test('syncs the favourite downloads once, after loading online', () async {
-    final repository = FakeResourceRepository();
-    final store = ResourceCatalogStore(repository);
-
-    await store.init();
-    await store.favouritesOnlyChanged(true);
-
-    expect(repository.syncFavouriteDownloadsCalls, 1);
-  });
-
-  test('does not sync the favourite downloads offline', () async {
-    final repository = FakeResourceRepository(catalogOffline: true);
-    final store = ResourceCatalogStore(repository);
-
-    await store.init();
-
-    expect(repository.syncFavouriteDownloadsCalls, 0);
-    await store.close();
-  });
-
   test('ignores the page received after being closed', () async {
     final response = Completer<void>();
     final store = ResourceCatalogStore(
@@ -444,5 +424,23 @@ void main() {
     response.complete();
 
     await expectLater(loading, completes);
+  });
+
+  test('syncs the favourite downloads when asked', () async {
+    final repository = FakeResourceRepository();
+    final store = ResourceCatalogStore(repository);
+
+    await store.syncFavouriteDownloads();
+
+    expect(repository.syncFavouriteDownloadsCalls, 1);
+  });
+
+  test('does not sync the favourite downloads while loading', () async {
+    final repository = FakeResourceRepository();
+    final store = ResourceCatalogStore(repository);
+
+    await store.init();
+
+    expect(repository.syncFavouriteDownloadsCalls, 0);
   });
 }
