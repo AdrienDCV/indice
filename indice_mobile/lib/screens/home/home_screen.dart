@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../stores/resource/resource_catalog_state.dart';
-import '../stores/resource/resource_catalog_store.dart';
-import '../texts/home_texts.dart';
-import '../theme/module_colors.dart';
-import '../utils/page_padding.dart';
-import '../utils/resource_formatting.dart';
-import '../widgets/card/resource_card.dart';
-import '../widgets/info/info_message.dart';
-import '../widgets/module_button.dart';
+import '../../stores/resource/resource_catalog_state.dart';
+import '../../stores/resource/resource_catalog_store.dart';
+import '../../texts/home_texts.dart';
+import '../../theme/module_colors.dart';
+import '../../utils/page_padding.dart';
+import '../../utils/resource_formatting.dart';
+import '../../widgets/card/resource_card.dart';
+import '../../widgets/info/info_message.dart';
+import '../../widgets/module_button.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -3,16 +3,16 @@ import 'package:go_router/go_router.dart';
 
 import '../widgets/app_navigation_bar.dart';
 
-class MainPage extends StatefulWidget {
-  const MainPage({super.key, required this.navigationShell});
+class MainScreen extends StatefulWidget {
+  const MainScreen({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
   @override
-  State<MainPage> createState() => _MainPageState();
+  State<MainScreen> createState() => _MainScreenState();
 }
 
-class _MainPageState extends State<MainPage>
+class _MainScreenState extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   /// Fait apparaître l'onglet choisi en fondu, en remontant légèrement.
   late final AnimationController _transitionController = AnimationController(
@@ -30,7 +30,7 @@ class _MainPageState extends State<MainPage>
   ).animate(_fade);
 
   @override
-  void didUpdateWidget(MainPage oldWidget) {
+  void didUpdateWidget(MainScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.navigationShell.currentIndex !=
         oldWidget.navigationShell.currentIndex) {

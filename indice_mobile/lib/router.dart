@@ -1,23 +1,23 @@
 import 'package:go_router/go_router.dart';
 
-import 'pages/home_page.dart';
-import 'pages/main_page.dart';
 import 'screens/compare/etf_catalog_screen.dart';
 import 'screens/compare/etf_comparison_screen.dart';
 import 'screens/compare/etf_detail_screen.dart';
 import 'screens/compare/etf_picker_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'screens/learn/learn_screen.dart';
 import 'screens/learn/resource_detail_screen.dart';
+import 'screens/main_screen.dart';
 
 GoRouter buildRouter() => GoRouter(
   initialLocation: '/',
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (_, _, navigationShell) =>
-          MainPage(navigationShell: navigationShell),
+          MainScreen(navigationShell: navigationShell),
       branches: [
         StatefulShellBranch(
-          routes: [GoRoute(path: '/', builder: (_, _) => const HomePage())],
+          routes: [GoRoute(path: '/', builder: (_, _) => const HomeScreen())],
         ),
         StatefulShellBranch(
           routes: [

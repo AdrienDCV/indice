@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:indice_mobile/injection.dart';
 import 'package:indice_mobile/main.dart';
-import 'package:indice_mobile/pages/home_page.dart';
+import 'package:indice_mobile/screens/home/home_screen.dart';
 import 'package:indice_mobile/repositories/etf_repository.dart';
 import 'package:indice_mobile/repositories/resource_repository.dart';
 import 'package:indice_mobile/router.dart';
@@ -35,7 +35,7 @@ void main() {
   testWidgets('displays the home page on startup', (WidgetTester tester) async {
     await tester.pumpWidget(IndiceApp(router: buildRouter()));
 
-    expect(find.byType(HomePage), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.byType(AppBar), findsNothing);
     expect(find.text('Prêt à découvrir\nl’investissement ?'), findsOneWidget);
     expect(find.widgetWithText(ModuleButton, 'Apprendre'), findsOneWidget);
@@ -66,7 +66,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LearnScreen), findsOneWidget);
-    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(HomeScreen), findsNothing);
     expect(find.byType(AppSearchBar), findsOneWidget);
   });
 
@@ -79,7 +79,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LearnScreen), findsOneWidget);
-    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(HomeScreen), findsNothing);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       2,
@@ -98,7 +98,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(EtfCatalogScreen), findsOneWidget);
-    expect(find.byType(HomePage), findsNothing);
+    expect(find.byType(HomeScreen), findsNothing);
     expect(
       tester.widget<NavigationBar>(find.byType(NavigationBar)).selectedIndex,
       1,
