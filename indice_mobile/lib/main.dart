@@ -20,7 +20,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // L'app reste en portrait ; seule la vidéo en plein écran passe en paysage.
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  await dotenv.load(fileName: '.env.local');
+  await dotenv.load(fileName: '.env');
   setupHttpClient();
   final cacheDirectory = await getApplicationCacheDirectory();
   configureDependencies(Directory('${cacheDirectory.path}/api_cache'));
