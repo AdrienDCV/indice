@@ -82,6 +82,31 @@ void main() {
     expect(markerX(tester), -0.5);
   });
 
+  testWidgets('waits for its card to be fully shown before sliding', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: const [
+              RevealOnScrollColumn(children: [CorrelationGauge(value: -0.5)]),
+            ],
+          ),
+        ),
+      ),
+    );
+    for (var frame = 0; frame < 4; frame++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+
+    expect(markerX(tester), 0);
+
+    await tester.pumpAndSettle();
+
+    expect(markerX(tester), -0.5);
+  });
+
   testWidgets('places the marker at the value when animations are disabled', (
     WidgetTester tester,
   ) async {

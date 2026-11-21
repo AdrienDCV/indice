@@ -125,7 +125,7 @@ class _RevealOnScrollColumnState extends State<RevealOnScrollColumn>
                   child: Transform.translate(
                     offset: Offset(0, _offset * (1 - progress)),
                     child: _RevealedScope(
-                      revealed: !controller.isDismissed,
+                      revealed: controller.isCompleted,
                       child: child!,
                     ),
                   ),
