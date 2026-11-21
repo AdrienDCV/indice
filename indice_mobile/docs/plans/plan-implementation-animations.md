@@ -55,8 +55,8 @@ Ces animations ne font que de l'affichage : elles animent des valeurs déjà re�
 
 ## 4. A — Jauge de corrélation (`lib/widgets/indicator/correlation_gauge.dart`)
 
-- Le curseur (`Align` dans le `Stack`) est construit par un `TweenAnimationBuilder<double>`, 600 ms, courbe `Curves.easeOutCubic`. L'alignement horizontal du curseur est la valeur animée.
-- Le `Tween` va de 0 à `value.clamp(-1, 1)` si la carte est apparue (`RevealOnScrollColumn.isRevealed(context)`), et de 0 à 0 sinon : tant que la carte n'est pas à l'écran, le curseur reste au centre. Quand elle apparaît, la fin du `Tween` change et le curseur glisse vers sa valeur.
+- Le curseur (`Align` dans le `Stack`) est construit par un `TweenAnimationBuilder<double>`, 1 500 ms, courbe `Curves.easeInOutCubic`. L'alignement horizontal du curseur est la valeur animée.
+- Le `Tween` va de 0 à `value.clamp(-1, 1)` si la carte est apparue (`RevealOnScrollColumn.isRevealed(context)`), et de 0 à 0 sinon : tant que la carte n'a pas fini d'apparaître, le curseur reste au centre. Une fois la carte entièrement affichée, la fin du `Tween` change et le curseur glisse vers sa valeur.
 - En dehors d'une `RevealOnScrollColumn`, `isRevealed` vaut `true` : le curseur glisse dès l'affichage.
 - Avec « réduire les animations », la durée est `Duration.zero` : le curseur est posé directement.
 - **Rejeu** : pendant le chargement d'une nouvelle paire, l'écran de comparaison affiche la roue de chargement à la place du résultat (`EtfComparisonStore` passe `isLoading` à `true`). La jauge est donc reconstruite à chaque nouvelle paire et repart de 0.
@@ -72,7 +72,7 @@ Ces animations ne font que de l'affichage : elles animent des valeurs déjà re�
 - Il écoute la position de défilement de la page (`Scrollable.maybeOf(context)`). Après chaque image où la page a défilé, et après la première image, il cherche les enfants pas encore apparus qui sont au moins en partie dans la zone visible de la page. La vérification se fait **après** le calcul des positions (`addPostFrameCallback`) : faite pendant le défilement, elle lirait les positions de l'image précédente.
 - Les enfants trouvés lors d'une même vérification démarrent l'un après l'autre, à 80 ms d'écart (`Timer`), dans l'ordre de la colonne. Un enfant ne démarre qu'une fois.
 - Chaque enfant est enveloppé dans une `Opacity` (de 0 à 1) et un `Transform.translate` (de 16 px vers 0), selon la courbe `easeOutCubic`. `SlideTransition` est écarté, car son décalage est proportionnel à la hauteur de l'enfant, et les cartes ont des hauteurs très différentes.
-- **Signal aux enfants** : `RevealOnScrollColumn.isRevealed(context)` indique à un widget descendant si son bloc a commencé à apparaître (un `InheritedWidget` privé, qui ne prévient ses dépendants que quand la valeur change). La jauge s'en sert (section 4).
+- **Signal aux enfants** : `RevealOnScrollColumn.isRevealed(context)` indique à un widget descendant si son bloc a fini d'apparaître (un `InheritedWidget` privé, qui ne prévient ses dépendants que quand la valeur change). La jauge s'en sert (section 4).
 - Hors d'une page qui défile, tous les enfants apparaissent dès la première image.
 - Avec « réduire les animations », les contrôleurs sont créés à la fin (`value = 1`) : tout est affiché tout de suite.
 - **Limite connue** : un enfant ajouté après la première construction (par exemple une bannière qui apparaît après un rafraîchissement) est affiché directement, sans animation. Les contrôleurs sont associés aux enfants par leur position dans la liste : si un bloc s'insère en tête alors que des cartes du bas ne sont pas encore apparues, ce sont les animations des blocs suivants qui se décalent. Ce cas est rare (rafraîchissement de la fiche qui fait apparaître ou disparaître la bannière de données périmées) et n'a pas d'autre effet que visuel.
@@ -112,7 +112,7 @@ Les stores des ressources (`ResourceCatalogStore`, `ResourceDetailStore`) change
 
 | Fichier | Cas |
 |---|---|
-| `test/widgets/indicator/correlation_gauge_test.dart` (adapté) | Le curseur est au centre au premier affichage ; il est entre le centre et la valeur à mi-parcours, puis à la valeur ; dans une `RevealOnScrollColumn`, il reste au centre tant que sa carte est hors de l'écran, puis glisse quand on fait défiler jusqu'à elle ; avec `disableAnimations`, il est à la valeur dès le premier affichage |
+| `test/widgets/indicator/correlation_gauge_test.dart` (adapté) | Le curseur est au centre au premier affichage ; il est entre le centre et la valeur à mi-parcours, puis à la valeur ; dans une `RevealOnScrollColumn`, il reste au centre tant que sa carte est hors de l'écran, puis glisse quand on fait défiler jusqu'à elle ; il attend que sa carte ait fini d'apparaître avant de glisser ; avec `disableAnimations`, il est à la valeur dès le premier affichage |
 | `test/widgets/animation/reveal_on_scroll_column_test.dart` (nouveau) | Les enfants sont transparents au départ ; les enfants visibles apparaissent ; le premier démarre avant le second ; un enfant hors de l'écran attend qu'on fasse défiler jusqu'à lui ; `isRevealed` passe de `false` à `true` ; hors d'une page qui défile, tout apparaît ; avec `disableAnimations`, tout est visible dès le premier affichage ; `spacing` et `crossAxisAlignment` sont transmis |
 | `test/widgets/favourite/favourite_icon_test.dart` (nouveau) | Bonne icône selon `isFavourite` ; pas de rebond au premier affichage ; l'échelle dépasse 1 pendant l'animation quand `isFavourite` change, puis revient à 1 ; pas de rebond avec `disableAnimations` |
 | `test/widgets/card/etf_card_test.dart` | Doit rester vert (les recherches `find.byIcon(Icons.star)` trouvent toujours l'icône) |

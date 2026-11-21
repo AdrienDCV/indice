@@ -46,8 +46,8 @@ class CorrelationGauge extends StatelessWidget {
                 ),
                 duration: MediaQuery.disableAnimationsOf(context)
                     ? Duration.zero
-                    : const Duration(milliseconds: 600),
-                curve: Curves.easeOutCubic,
+                    : const Duration(milliseconds: 1500),
+                curve: Curves.easeInOutCubic,
                 builder: (context, position, marker) =>
                     Align(alignment: Alignment(position, 0), child: marker),
                 child: Container(

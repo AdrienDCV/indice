@@ -19,7 +19,7 @@ Vocabulaire financier, métier et technique : voir `docs/glossaire.md`. Tout nou
 
 ## Stack
 
-Kotlin · Java 25 · Spring Boot 4 (Web MVC, Data JPA, Batch) · PostgreSQL 17 · Flyway · Maven · JUnit 5
+Kotlin · Java 25 · Spring Boot 4 (Web MVC, Data JPA) · PostgreSQL 17 · Flyway · Maven · JUnit 5
 
 ## Commandes
 
